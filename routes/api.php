@@ -4,26 +4,60 @@ use App\Http\Controllers\MssqlController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SAPStockController;
 use App\Http\Controllers\ReceiverController;
+use App\Http\Middleware\VerifySapToken;
+use App\Http\Controllers\MM\MaterialController;
 
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', [AuthController::class, 'user']);
-    Route::post('/logout', [AuthController::class, 'logout']);
-
-
+Route::middleware([VerifySapToken::class])->group(function () {
 
     Route::post('/sap/stock', [SAPStockController::class, 'getStock']);
-
     Route::get('/ceos/db', [MssqlController::class, 'getProducts']);
 
 
-    Route::post('/receive-data', [ReceiverController::class, 'receivePostData']);
+
+
+    Route::prefix('mm')->group(function () {
+        Route::post('/materials', [MaterialController::class, 'store']);
+    });
 
 
 });
+
+
+
+
+
+
+
+   
+
+
+    
+
+
+    // MM-Requests //Material Management
+
+        //MM-31-1: SAP-->CEOS, Materialstammdaten
+        //MM-22-1: CEOS-->SAP, Abfrage Lagerbestände Hauptlager
+        //MM-33-1a: CEOS-->SAP, Liefer-/Leistungsbestätigung mit Erstellung Gutschrift (NU-Abrechnung) (Im Rahmen von Wertkontrakt)
+        //MM-34-1: CEOS-->SAP, Umlagerungsreservierung übergeben
+        //MM-35-2: CEOS-->SAP, Materialverbrauch des Monteurs buchen [ausgewählt]
+        //MM-36-01: Verknüpfung Monteur/NU zu Lagerort
+        //MM-33-1b: NU-Auftragspaket CEOS zu SAP-Bestellung
+        //MM-37-1: SAP Schnittstelle Übertragung Preise NU Leistungspositionen von SAP an CEOS
+
+
+
+
+    //SD-Requests
+
+
+
+
+
+
+    //SE-Requests
 
 
 

@@ -14,10 +14,9 @@ class SAPStockRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'materials' => 'required|array|min:1',
-            'materials.*' => 'string|size:8', // Each material must be 8 characters
+            'materials' => 'required',
             'plant' => 'required|string|size:4',
-            'storage_location' => 'required|string|size:4|in:H001', // Only Hauptlager supported
+            'storage_location' => 'required|string|size:4|in:H001',
         ];
     }
 
@@ -25,7 +24,6 @@ class SAPStockRequest extends FormRequest
     {
         return [
             'materials.required' => 'At least one material number is required.',
-            'materials.*.size' => 'Each material number must be exactly 8 characters.',
             'plant.size' => 'Plant must be exactly 4 characters.',
             'storage_location.in' => 'Only "H001" (Hauptlager) is supported.',
         ];
