@@ -10,28 +10,41 @@ class SAPService
     protected array $auth;
 
     public function __construct()
-    {   
-        $this->baseUrl = env('SAP_API_BASE_URL');
+    {
+        $this->baseUrl = config('sap.base_url');
         $this->auth = [
-            'username' => env('SAP_API_USERNAME'),
-            'password' => env('SAP_API_PASSWORD'),
+            'client_id' => config('sap.client_id'),
+            'client_secret' => config('sap.client_secret'),
         ];
     }
 
-    public function getStockData()
+
+    /**
+     * Get stock data from SAP API.
+     *
+     * @param array $materialNumbers
+     * @param string $plant
+     * @param string $storageLocation
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getStockData(string $materialNumber, string $plant, string $storageLocation)
     {
-        $url = "https://dev-flex.vivawest.dev/tiw/sap/opu/odata/SAP/Z1ERP_MM_SAS_API_SRV/StockSet?\$filter=MaterialNumber eq '112600005' and StorageLocation eq 'H001'";
-        
+        // $url = "https://dev-flex.vivawest.dev/tiw/sap/opu/odata/SAP/Z1ERP_MM_SAS_API_SRV/StockSet?\$filter=MaterialNumber eq '112600005' and StorageLocation eq 'H001'";
+
+        $url = $this->baseUrl .
+            "?\$filter=MaterialNumber eq '{$materialNumber}' and StorageLocation eq '{$storageLocation}'";
+            
         $response = Http::withHeaders([
             'Accept' => 'application/json',
-            'client_id' => '9179e47e7c344e3f873a231921a96646',
-            'client_secret' => '16FaeF41990b49738c87C86326e07A1c',
+            'client_id' => $this->auth['client_id'],
+            'client_secret' => $this->auth['client_secret'],
         ])->get($url);
-        
+    
         if ($response->successful()) {
             return response()->json($response->json(), 200);
         }
-        
+    
         return response()->json(['error' => 'Failed to fetch data'], $response->status());
     }
+    
 }

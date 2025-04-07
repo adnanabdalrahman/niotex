@@ -103,3 +103,38 @@ php artisan test
 ## License
 This project is licensed under the MIT License.
 
+
+
+app/
+├── Http/
+│   ├── Controllers/
+│   │   ├── MMController.php             <-- Handles Material Management (MM) requests
+│   │   ├── SDController.php             <-- Handles Sales & Distribution (SD) requests
+│   │   ├── SEController.php             <-- Handles SE module requests
+│   │   ├── NKController.php             <-- Handles NK module requests
+│   ├── Requests/                        <-- Validation Requests (optional, for reusable validation rules)
+│   │   ├── MMRequests.php               <-- Validation rules for MM requests
+│   │   ├── SDRequests.php               <-- Validation rules for SD requests
+│   ├── Events/                          <-- Events for triggering logic after SAP requests are processed
+│   │   ├── MaterialDataReceived.php     <-- Event for MM data processing
+│   │   ├── OrderConfirmationReceived.php <-- Event for SD data processing
+│   ├── Providers/                       <-- Service Providers for any services or configurations
+│   │   ├── SAPServiceProvider.php      <-- SAP service provider (e.g., SAP authentication, SAP connection handling)
+│   ├── Middleware/                      <-- Middleware for any pre or post processing logic (if required)
+│   │   ├── SAPAuthentication.php       <-- Middleware for SAP Authentication (e.g., validating request headers)
+├── Models/
+│   ├── Material.php                     <-- Model for Material data (MM)
+│   ├── Order.php                        <-- Model for Sales Orders (SD)
+├── Services/
+│   ├── SAPConnection.php               <-- Logic for SAP connection handling (e.g., API client, authentication)
+│   ├── SAPResponseHandler.php          <-- Logic for handling and parsing SAP responses
+├── OpenAPI/                             <-- OpenAPI specifications, docs, and generated files
+│   ├── api-spec.yaml                   <-- OpenAPI specification file (YAML format)
+│   ├── swagger.json                    <-- Generated Swagger JSON (optional, generated via OpenAPI tools)
+│   ├── docs/                            <-- Generated or manually written documentation files
+├── routes/
+│   ├── api.php                          <-- API routes for MM, SD, etc.
+│   └── web.php                          <-- Optional web routes for any other services
+
+
+
