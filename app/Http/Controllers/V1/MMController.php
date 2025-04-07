@@ -17,18 +17,26 @@ class MMController extends Controller
      */
     public function Materialstammdaten(Request $request)
     {
-        $validated = $request->validate([
-            'material'   => 'required|numeric|digits_between:1,18',
-            'bezeichnung1' => 'required|String',
-            'lvorm'          => 'required|boolean', 
-        ]);        
-
-        Log::info('Received SAP Material Data:', $validated);
-
-        ProcessMaterialData::dispatch($validated);
-
-        return response()->json(['message' => 'Material data received and queued'], 202);
+        try {
+            $validated = $request->validate([
+                'material'   => 'required|numeric|digits_between:1,18',
+                'bezeichnung1' => 'required|String',
+                'lvorm'          => 'required|boolean', 
+            ]);  
+    
+            Log::info('Received SAP Material Data:', $validated);
+    
+            // Process the material data asynchronously
+            ProcessMaterialData::dispatch($validated);
+    
+            return response()->json(['message' => 'Material data received and queued'], 202);
+    
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error:', ['errors' => $e->errors()]);
+            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
+        }
     }
+    
 
 
 
