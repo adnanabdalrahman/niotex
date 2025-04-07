@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SAPStockController;
 use App\Http\Controllers\ReceiverController;
 use App\Http\Middleware\VerifySapToken;
-use App\Http\Controllers\MM\MaterialController;
+use App\Http\Controllers\V1\MMController;
 
 
 
@@ -15,12 +15,27 @@ Route::middleware([VerifySapToken::class])->group(function () {
     Route::get('/ceos/db', [MssqlController::class, 'getProducts']);
 
 
+ 
+
+    Route::prefix('v1')
+    ->namespace('App\Http\Controllers\API\V1')
+    ->group(function () {
+        
+        Route::prefix('mm')->group(function () {
+
+            //mm-31-1: SAP-->CEOS, Materialstammdaten
+            Route::post('/materialstammdaten', [MMController::class, 'Materialstammdaten']);
+
+            //mm-22-1: CEOS-->SAP, Abfrage Lagerbestände Hauptlager
+            Route::post('/lagerbestaende', [MMController::class, 'lagerbestaende']);
+        });
 
 
-    Route::prefix('mm')->group(function () {
-        Route::post('/materials', [MaterialController::class, 'store']);
+        Route::prefix('sd')->group(function () {
+            Route::post('/sd', [MMController::class, 'store']);
+        });
+    
     });
-
 
 });
 
