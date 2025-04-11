@@ -11,14 +11,14 @@ use App\Http\Controllers\V1\MMController;
 
 Route::middleware([VerifySapToken::class])->group(function () {
 
-    Route::post('/sap/stock', [SAPStockController::class, 'getStock']);
-    Route::get('/ceos/db', [MssqlController::class, 'getProducts']);
+    // Route::post('/sap/stock', [SAPStockController::class, 'getStock']);
+    // Route::get('/ceos/db', [MssqlController::class, 'getProducts']);
 
 
  
 
     Route::prefix('v1')
-    ->namespace('App\Http\Controllers\API\V1')
+    ->namespace('App\Http\Controllers\V1')
     ->group(function () {
         
         Route::prefix('mm')->group(function () {
@@ -31,9 +31,9 @@ Route::middleware([VerifySapToken::class])->group(function () {
         });
 
 
-        Route::prefix('sd')->group(function () {
-            Route::post('/sd', [MMController::class, 'store']);
-        });
+        // Route::prefix('sd')->group(function () {
+        //     Route::post('/sd', [MMController::class, 'store']);
+        // });
     
     });
 
