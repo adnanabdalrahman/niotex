@@ -1,20 +1,23 @@
 <?php
-
 namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Jobs\MM\ProcessMaterialData;
+use Vyuldashev\LaravelOpenApi\Attributes as OpenApi;
 
+use App\OpenApi\Requests\MaterialstammdatenRequest;
+
+
+
+#[OpenApi\PathItem]
 class MMController extends Controller
 {
-    /**
-     *mm-31-1: SAP-->CEOS, Materialstammdaten
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+    
+    #[OpenApi\Operation(tags: ['MM'], method: 'POST')]
+    #[OpenApi\RequestBody(factory: MaterialstammdatenRequest::class)]
+    #[OpenApi\Response(factory: \App\OpenApi\Responses\Success202::class)]
     public function Materialstammdaten(Request $request)
     {
         try {
@@ -36,15 +39,31 @@ class MMController extends Controller
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
         }
     }
-    
-
-
 
     /**
-     * MM-22-1 CEOS → SAP (Abfrage Lagerbestände) 
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @OpenAPI\Post(
+     *     path="/v1/mm/lagerbestaende",
+     *     summary="CEOS to SAP: Stock Query",
+     *     description="Request stock data from CEOS to SAP.",
+     *     operationId="lagerbestaende",
+     *     tags={"MM"},
+     *     @OpenAPI\RequestBody(
+     *         required=true,
+     *         @OpenAPI\JsonContent(
+     *             required={"material", "plant", "sloc"},
+     *             @OpenAPI\Property(property="material", type="integer", example=12345),
+     *             @OpenAPI\Property(property="plant", type="string", example="Plant 1"),
+     *             @OpenAPI\Property(property="sloc", type="string", example="Main Warehouse")
+     *         )
+     *     ),
+     *     @OpenAPI\Response(
+     *         response=200,
+     *         description="Stock data received successfully",
+     *         @OpenAPI\JsonContent(
+     *             @OpenAPI\Property(property="message", type="string", example="Stock data received successfully")
+     *         )
+     *     )
+     * )
      */
     public function lagerbestaende(Request $request)
     {
@@ -58,8 +77,4 @@ class MMController extends Controller
 
         return response()->json(['message' => 'Stock data received successfully'], 200);
     }
-
-
-
-
 }
