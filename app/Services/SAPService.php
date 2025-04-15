@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Http;
 class SAPService
 {
     protected string $baseUrl;
+    protected string $mm221_path;
     protected array $auth;
 
     public function __construct()
@@ -16,29 +17,33 @@ class SAPService
             'client_id' => config('sap.client_id'),
             'client_secret' => config('sap.client_secret'),
         ];
+
+        $this->mm221_path = config('sap.mm221_path');
     }
 
 
     /**
-     * Get stock data from SAP API.
+     * MM-22-1 Abfrage nach Lagerbestände
+     * Get stock Level from SAP.
      *
      * @param array $materialNumbers
      * @param string $plant
      * @param string $storageLocation
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getStockData(string $materialNumber, string $plant, string $storageLocation)
+    public function mm221_getStockLevels(string $materials, string $storage)
     {
-        // $url = "https://dev-flex.vivawest.dev/tiw/sap/opu/odata/SAP/Z1ERP_MM_SAS_API_SRV/StockSet?\$filter=MaterialNumber eq '112600005' and StorageLocation eq 'H001'";
-
-        $url = $this->baseUrl .
-            "?\$filter=MaterialNumber eq '{$materialNumber}' and StorageLocation eq '{$storageLocation}'";
-            
+        $url = $this->baseUrl . $this->mm221_path . 
+            "?\$filter=Material eq '{$materials}' and Storage eq '{$storage}'";
+        
         $response = Http::withHeaders([
             'Accept' => 'application/json',
             'client_id' => $this->auth['client_id'],
             'client_secret' => $this->auth['client_secret'],
         ])->get($url);
+
+
+        // dd($response->json());
     
         if ($response->successful()) {
             return response()->json($response->json(), 200);

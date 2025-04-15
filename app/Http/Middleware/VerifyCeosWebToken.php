@@ -6,12 +6,12 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class VerifySapToken
+class VerifyCeosWebToken
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $token = $request->header('X-SAP-Token');
-        if (!$token || $token !== config('sap.api_token')) {
+        $token = $request->header('Ceos-Web-Token');
+        if (!$token || $token !== config('ceosweb.api_token')) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
