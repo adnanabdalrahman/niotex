@@ -8,12 +8,21 @@ use App\Jobs\MM\ProcessMaterialData;
 use Vyuldashev\LaravelOpenApi\Attributes as OpenApi;
 
 use App\OpenApi\Requests\MaterialstammdatenRequest;
-
+use App\Http\Requests\MM_221_SAPStockRequest;
+use App\Services\SAPService;
+use Illuminate\Http\JsonResponse;
 
 
 #[OpenApi\PathItem]
 class MMController extends Controller
 {
+
+    protected SAPService $sapService;
+
+    public function __construct(SAPService $sapService)
+    {
+        $this->sapService = $sapService;
+    }
     
     #[OpenApi\Operation(tags: ['MM'], method: 'POST')]
     #[OpenApi\RequestBody(factory: MaterialstammdatenRequest::class)]
@@ -40,41 +49,23 @@ class MMController extends Controller
         }
     }
 
+
     /**
-     * @OpenAPI\Post(
-     *     path="/v1/mm/lagerbestaende",
-     *     summary="CEOS to SAP: Stock Query",
-     *     description="Request stock data from CEOS to SAP.",
-     *     operationId="lagerbestaende",
-     *     tags={"MM"},
-     *     @OpenAPI\RequestBody(
-     *         required=true,
-     *         @OpenAPI\JsonContent(
-     *             required={"material", "plant", "sloc"},
-     *             @OpenAPI\Property(property="material", type="integer", example=12345),
-     *             @OpenAPI\Property(property="plant", type="string", example="Plant 1"),
-     *             @OpenAPI\Property(property="sloc", type="string", example="Main Warehouse")
-     *         )
-     *     ),
-     *     @OpenAPI\Response(
-     *         response=200,
-     *         description="Stock data received successfully",
-     *         @OpenAPI\JsonContent(
-     *             @OpenAPI\Property(property="message", type="string", example="Stock data received successfully")
-     *         )
-     *     )
-     * )
+     * MM-22-1 Abfrage nach Lagerbestände
+     * Get stock Level from SAP.
+     *
+     * @param MM_221_SAPStockRequest $request
+     * @return JsonResponse
      */
-    public function lagerbestaende(Request $request)
+    public function lagerbestaende(MM_221_SAPStockRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'material'   => 'required|numeric|digits_between:1,18',
-            'plant'      => 'required|String',
-            'sloc'       => 'required|String',
-        ]);
+        $validated = $request->validated();
 
-        Log::info('Received CEOS Stock Data:', $validated);
+        $data = $this->sapService->mm221_getStockLevels(
+            $validated['materials'],
+            $validated['storage']
+        );
 
-        return response()->json(['message' => 'Stock data received successfully'], 200);
+        return response()->json($data);
     }
 }
