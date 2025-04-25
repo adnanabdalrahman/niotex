@@ -2,14 +2,15 @@
 namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Jobs\MM\ProcessMaterialData;
 use Vyuldashev\LaravelOpenApi\Attributes as OpenApi;
 
 use App\OpenApi\Requests\MaterialstammdatenRequest;
-use App\Http\Requests\MM_221_SAPStockRequest;
-use App\Services\SAPService;
+use App\Http\Requests\MM_2201_SAPStockRequest;
+use App\Http\Requests\MM_3101_materialStammdatenRequest;
+
+use App\Services\MMServices;
 use Illuminate\Http\JsonResponse;
 
 
@@ -17,30 +18,38 @@ use Illuminate\Http\JsonResponse;
 class MMController extends Controller
 {
 
-    protected SAPService $sapService;
+    protected MMServices $mmServices;
 
-    public function __construct(SAPService $sapService)
+    public function __construct(MMServices $mmServices)
     {
-        $this->sapService = $sapService;
+        $this->mmServices = $mmServices;
     }
     
+
+
+
     #[OpenApi\Operation(tags: ['MM'], method: 'POST')]
     #[OpenApi\RequestBody(factory: MaterialstammdatenRequest::class)]
     #[OpenApi\Response(factory: \App\OpenApi\Responses\Success202::class)]
-    public function Materialstammdaten(Request $request)
+
+    /**
+     * MM-31-1 Materialstammdaten
+     * Receive material data from SAP.
+     *
+     * @param MM_3101_materialStammdatenRequest $request
+     * @return JsonResponse
+     */
+
+    public function Materialstammdaten(MM_3101_materialStammdatenRequest $request)
     {
         try {
-            $validated = $request->validate([
-                'material'   => 'required|numeric|digits_between:1,18',
-                'bezeichnung1' => 'required|String',
-                'lvorm'          => 'required|boolean', 
-            ]);  
-    
+            $validated = $request->validated();
+
             Log::info('Received SAP Material Data:', $validated);
-    
             // Process the material data asynchronously
+
             ProcessMaterialData::dispatch($validated);
-    
+            
             return response()->json(['message' => 'Material data received and queued'], 202);
     
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -54,14 +63,14 @@ class MMController extends Controller
      * MM-22-1 Abfrage nach Lagerbestände
      * Get stock Level from SAP.
      *
-     * @param MM_221_SAPStockRequest $request
+     * @param MM_2201_SAPStockRequest $request
      * @return JsonResponse
      */
-    public function lagerbestaende(MM_221_SAPStockRequest $request): JsonResponse
+    public function lagerbestaende(MM_2201_SAPStockRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
-        $data = $this->sapService->mm221_getStockLevels(
+        $data = $this->mmServices->mm_2201_getLagerbestaende(
             $validated['materials'],
             $validated['storage']
         );

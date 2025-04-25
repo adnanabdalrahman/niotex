@@ -25,12 +25,10 @@ class ProcessMaterialData implements ShouldQueue
     {
         Log::info('Processing SAP Material Data:', $this->data);
 
-
         // Check if the material is marked as deleted
         if (!empty($this->data['deleted']) && $this->data['deleted'] === true) {
             Log::warning("Material {$this->data['material_id']} is marked as deleted.");
         }
-
 
         //Store or update the material in the database
         // \DB::table('materials')->updateOrInsert(
@@ -45,6 +43,6 @@ class ProcessMaterialData implements ShouldQueue
         //     ]
         // );
 
-        Log::info("Material {$this->data['material_id']} processed successfully.");
+        Log::info("Material {\$this->data['material_id']} processed successfully.");
     }
 }

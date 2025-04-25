@@ -138,3 +138,12 @@ app/
 
 
 
+
+## changees
+25.04.2025 
+change Route 
+- mm/311/materialstammdaten -> mm/3101/materialstammdaten
+- mm/221/lagerbestaende     -> mm/2201/lagerbestaende
+
+## New Feature 
+1 - sd/0101/beauftragung

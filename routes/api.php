@@ -1,9 +1,7 @@
 <?php
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\MssqlController;
+
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\SAPStockController;
-use App\Http\Controllers\ReceiverController;
+use App\Http\Controllers\V1\SDController;
 use App\Http\Middleware\VerifySapToken;
 use App\Http\Middleware\VerifyCeosWebToken;
 use App\Http\Controllers\V1\MMController;
@@ -20,16 +18,14 @@ Route::middleware([VerifySapToken::class])->group(function () {
     ->group(function () {
         
         Route::prefix('mm')->group(function () {
-
             //mm-31-1: SAP-->CEOS, Materialstammdaten
-            Route::post('/311/materialstammdaten', [MMController::class, 'Materialstammdaten']);
-
+            Route::post('/3101/materialstammdaten', [MMController::class, 'Materialstammdaten']);
         });
 
-
-        // Route::prefix('sd')->group(function () {
-        //     Route::post('/sd', [MMController::class, 'store']);
-        // });
+        Route::prefix('sd')->group(function () {
+            //SD-01-01: SAP-->CEOS, Beauftragung
+            Route::post('/0101/beauftragung', [SDController::class, 'beauftragung']);
+        });
     
     });
 
@@ -43,8 +39,8 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
     ->namespace('App\Http\Controllers\V1')
     ->group(function () {
         Route::prefix('mm')->group(function () {
-            //mm-22-1: CEOSWEB-->CEOS-->SAP, Abfrage Lagerbestände Hauptlager
-            Route::post('/221/lagerbestaende', [MMController::class, 'lagerbestaende']);
+            //mm-22-01: CEOSWEB-->CEOS-->SAP, Abfrage Lagerbestände Hauptlager
+            Route::post('/2201/lagerbestaende', [MMController::class, 'lagerbestaende']);
         });
     
     });
