@@ -4,7 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 
-class SAPService
+class MMServices
 {
     protected string $baseUrl;
     protected string $mm221_path;
@@ -31,7 +31,7 @@ class SAPService
      * @param string $storageLocation
      * @return \Illuminate\Http\JsonResponse
      */
-    public function mm221_getStockLevels(string $materials, string $storage)
+    public function mm_2201_getLagerbestaende(string $materials, string $storage)
     {
         $url = $this->baseUrl . $this->mm221_path . 
             "?\$filter=Material eq '{$materials}' and Storage eq '{$storage}'";
