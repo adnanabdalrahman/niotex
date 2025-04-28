@@ -25,14 +25,9 @@ class SDServices
     // create poitionen für this Vorgang
     // MaterialGruppen in positionen   => Vorgang.VorGruppe 
 
+    $data  = ['vbeln' => '6000000026', 'vorNummer' => '12301'];
+    return $data;
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Beauftragung erfolgreich empfangen',
-            'vbeln' => '6000000026',
-            'vorNummer' => '12301',
-        ], 202);
-    
     }
 }
 
