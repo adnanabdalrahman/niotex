@@ -20,15 +20,14 @@ Route::middleware([VerifySapToken::class])->group(function () {
         Route::prefix('mm')->group(function () {
             //mm-31-1: SAP-->CEOS, Materialstammdaten
             Route::post('/3101/materialstammdaten', [MMController::class, 'Materialstammdaten']);
+
         });
 
         Route::prefix('sd')->group(function () {
             //SD-01-01: SAP-->CEOS, Beauftragung
             Route::post('/0101/beauftragung', [SDController::class, 'beauftragung']);
         });
-    
     });
-
 });
 
 
