@@ -15,13 +15,27 @@ class SDServices
 
     }
 
-
     /**
         * SD-01-01 Beauftragung
      */
     public function sd_0101_beauftragung()
     {
-        
-    }
+
+    // create Vorgan for beleg 
+    // create poitionen für this Vorgang
+    // MaterialGruppen in positionen   => Vorgang.VorGruppe 
+
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Beauftragung erfolgreich empfangen',
+            'vbeln' => '6000000026',
+            'vorNummer' => '12301',
+        ], 202);
     
+    }
 }
+
+
+
+
