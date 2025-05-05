@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
 
 class MMServices
@@ -26,16 +28,16 @@ class MMServices
      * MM-22-1 Abfrage nach Lagerbestände
      * Get stock Level from SAP.
      *
-     * @param array $materialNumbers
-     * @param string $plant
-     * @param string $storageLocation
-     * @return \Illuminate\Http\JsonResponse
+     * @param string $materials
+     * @param string $storage
+     * @return JsonResponse
+     * @throws ConnectionException
      */
-    public function mm_2201_getLagerbestaende(string $materials, string $storage)
+    public function mm_2201_get_Lagerbestaende(string $materials, string $storage): JsonResponse
     {
-        $url = $this->baseUrl . $this->mm221_path . 
+        $url = $this->baseUrl . $this->mm221_path .
             "?\$filter=Material eq '{$materials}' and Storage eq '{$storage}'";
-        
+
         $response = Http::withHeaders([
             'Accept' => 'application/json',
             'client_id' => $this->auth['client_id'],
@@ -44,12 +46,12 @@ class MMServices
 
 
         // dd($response->json());
-    
+
         if ($response->successful()) {
             return response()->json($response->json(), 200);
         }
-    
+
         return response()->json(['error' => 'Failed to fetch data'], $response->status());
     }
-    
+
 }
