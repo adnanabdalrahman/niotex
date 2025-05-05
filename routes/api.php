@@ -14,20 +14,24 @@ Route::middleware([VerifySapToken::class])->group(function () {
     // Route::get('/ceos/db', [MssqlController::class, 'getProducts']);
 
     Route::prefix('v1')
-    ->namespace('App\Http\Controllers\V1')
-    ->group(function () {
-        
-        Route::prefix('mm')->group(function () {
-            //mm-31-1: SAP-->CEOS, Materialstammdaten
-            Route::post('/3101/materialstammdaten', [MMController::class, 'Materialstammdaten']);
+        ->namespace('App\Http\Controllers\V1')
+        ->group(function () {
 
-        });
+            Route::prefix('mm')->group(function () {
+                //mm-31-1: SAP-->CEOS, Materialstammdaten
+                Route::post('/3101/materialstammdaten', [MMController::class, 'Materialstammdaten']);
+            });
 
-        Route::prefix('sd')->group(function () {
-            //SD-01-01: SAP-->CEOS, Beauftragung
-            Route::post('/0101/beauftragung', [SDController::class, 'beauftragung']);
+            Route::prefix('sd')->group(function () {
+                //SD-01-01: SAP-->CEOS, Beauftragung
+                Route::post('/0101/beauftragung', [SDController::class, 'beauftragung']);
+
+
+
+                //SD-02-01: SAP-->CEOS, Mietvertragsrechnungen
+                Route::post('/0201/mietvertragsrechnungen', [SDController::class, 'mietvertragsrechnungen']);
+            });
         });
-    });
 });
 
 
@@ -35,15 +39,13 @@ Route::middleware([VerifySapToken::class])->group(function () {
 Route::middleware([VerifyCeosWebToken::class])->group(function () {
 
     Route::prefix('v1')
-    ->namespace('App\Http\Controllers\V1')
-    ->group(function () {
-        Route::prefix('mm')->group(function () {
-            //mm-22-01: CEOSWEB-->CEOS-->SAP, Abfrage Lagerbestände Hauptlager
-            Route::post('/2201/lagerbestaende', [MMController::class, 'lagerbestaende']);
+        ->namespace('App\Http\Controllers\V1')
+        ->group(function () {
+            Route::prefix('mm')->group(function () {
+                //mm-22-01: CEOSWEB-->CEOS-->SAP, Abfrage Lagerbestände Hauptlager
+                Route::post('/2201/lagerbestaende', [MMController::class, 'lagerbestaende']);
+            });
         });
-    
-    });
-
 });
 
 
@@ -75,9 +77,3 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
     //SD-Requests
 
     //SE-Requests
-
-
-
-
-
-

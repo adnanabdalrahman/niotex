@@ -10,27 +10,34 @@ class SDServices
     protected string $mm221_path;
     protected array $auth;
 
-    public function __construct()
-    {
-
-    }
+    public function __construct() {}
 
     /**
-        * SD-01-01 Beauftragung
+     * SD-01-01 Beauftragung
      */
-    public function sd_0101_beauftragung()
+    public function sd_0101_beauftragung($recievedData)
     {
 
-    // create Vorgan for beleg 
-    // create poitionen für this Vorgang
-    // MaterialGruppen in positionen   => Vorgang.VorGruppe 
+        // create Vorgan for beleg 
+        // create poitionen für this Vorgang
+        // MaterialGruppen in positionen   => Vorgang.VorGruppe 
 
-    $data  = ['vbeln' => '6000000026', 'vorNummer' => '12301'];
-    return $data;
+        $data  = ['vbeln' => '6000000026', 'vorNummer' => '12301'];
+        return $data;
+    }
 
+
+
+
+    /**
+     * SD-02-01 Mietvertragsrechnungen
+     */
+    public function sd_0201_mietvertragsrechnungen($recievedData)
+    {
+        // create Vorgang with same vorNummer that they sent 
+        // create poitionen für this Vorgang
+
+        $data  = ['vorNummer' => '12301'];
+        return $data;
     }
 }
-
-
-
-
