@@ -5,11 +5,17 @@ namespace App\Services;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
+use App\Services\SapApiClient;
+
+
+
 
 class MMServices
 {
     protected string $baseUrl;
     protected string $mm221_path;
+    protected string $mm341_path;
+
     protected array $auth;
 
     public function __construct()
@@ -21,6 +27,101 @@ class MMServices
         ];
 
         $this->mm221_path = config('sap.mm221_path');
+        $this->mm341_path = config('sap.mm341_path');
+    }
+
+
+    /**
+     * MM-31-1 Materialstammdaten
+     */
+    public function mm_31_materialstammdaten($recievedData)
+    {
+
+        // check if Material exist in CEOS
+        // check LÖv
+        // if not exist, create new Material
+
+
+        $data  = ['vbeln' => '6000000026', 'vorNummer' => '12301'];
+        return $data;
+    }
+
+
+    //MM_34_01 Umlagerungreservierung 
+    /**
+     * MM-34-1 Umlagerungreservierung
+     * Receive material data from SAP.
+     *
+     * @param array $recievedData
+     * @return JsonResponse
+     */
+
+    public function mm_34_01_UmlagerungReservierung()
+    {
+        // where commes the trigger from
+        // source data from CEOS mapping 
+        // what to do with the recieved data?? 
+
+        $data = [
+            "TourId" => "123456",
+            "ReservNo" => "",
+            "MoveStloc" => "H001",
+            "MoveStlocSearch" => "",
+            "to_Items" => [
+                [
+                    "Material" => "10041633",
+                    "EntryQnt" => "1",
+                    "EntryUom" => "ST",
+                    "ReqDate" => "/Date(1747094400000)/",
+                    "TourId" => "123456"
+                ],
+                [
+                    "Material" => "112600005",
+                    "EntryQnt" => "1",
+                    "EntryUom" => "ST",
+                    "ReqDate" => "/Date(1747094400000)/",
+                    "TourId" => "123456"
+                ]
+            ]
+        ];
+        $response = app(SapApiClient::class)->post($this->mm341_path, $data);
+
+        return response()->json($response);
+
+
+        // data to send to SAP:: 
+        /*
+        { 
+            "TourId":"123456", 
+            "ReservNo":"", 
+            "MoveStloc":"H001", 
+            "MoveStlocSearch":"", 
+            "to_Items":[ 
+                { 
+                "Material":"10041633", 
+                "EntryQnt":"1", 
+                "EntryUom":"ST", 
+                "ReqDate":"/Date(1747094400000)/", 
+                "TourId":"123456" 
+                }, 
+                { 
+                "Material":"112600005", 
+                "EntryQnt":"1", 
+                "EntryUom":"ST", 
+                "ReqDate":"/Date(1747094400000)/", 
+                "TourId":"123456" 
+                } 
+            ] 
+        } 
+                    
+        // response from SAP: 
+        
+        
+
+
+
+        
+        */
     }
 
 
@@ -53,5 +154,4 @@ class MMServices
 
         return response()->json(['error' => 'Failed to fetch data'], $response->status());
     }
-
 }

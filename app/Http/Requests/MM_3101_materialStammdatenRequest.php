@@ -13,6 +13,22 @@ class MM_3101_materialStammdatenRequest extends FormRequest
 
     public function rules(): array
     {
+
+
+        /*
+            'KZArtikelgruppe' => 'required|string',
+            'KZWarengruppe' => 'required|string',
+            'Artikelnummer' => 'required|string',
+            'NRPreisbasis' => 'required|integer',
+            'MwstNummer' => 'required|integer',
+            'ArtVerkaufspreis1' => 'required|numeric',
+            'ArtMaterialkosten' => 'required|numeric',
+            'ArtSondereinzelkosten' => 'required|numeric',
+            'ArtFertigungskosten' => 'required|numeric',
+            'ArtStkAuftragLagerbuchung' => 'required|integer', 
+        */
+
+
         return [
             'Material'              => 'required|numeric|digits:18',
             'Basisempfindlichkeit'  => 'required|numeric|min:0',

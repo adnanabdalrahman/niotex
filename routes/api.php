@@ -22,6 +22,8 @@ Route::middleware([VerifySapToken::class])->group(function () {
                 Route::post('/3101/materialstammdaten', [MMController::class, 'Materialstammdaten']);
             });
 
+
+
             Route::prefix('sd')->group(function () {
                 //SD-01-01: SAP-->CEOS, Beauftragung
                 Route::post('/0101/beauftragung', [SDController::class, 'beauftragung']);
@@ -44,6 +46,10 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
             Route::prefix('mm')->group(function () {
                 //mm-22-01: CEOSWEB-->CEOS-->SAP, Abfrage Lagerbestände Hauptlager
                 Route::post('/2201/lagerbestaende', [MMController::class, 'lagerbestaende']);
+
+
+                //mm-34-1: CEOSWEB-->CEOS-->SAP, Umlagerungsreservierung
+                Route::post('/3401/umlagerungsreservierung', [MMController::class, 'Umlagerungsreservierung']);
             });
         });
 });
