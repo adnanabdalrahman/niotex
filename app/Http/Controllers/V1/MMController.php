@@ -46,13 +46,48 @@ class MMController extends Controller
             Log::info('Received SAP Material Data:', $validated);
             // Process the material data asynchronously
 
-            ProcessMaterialData::dispatch($validated);
-            return response()->json(['message' => 'Material data received and queued'], 202);
+            // ProcessMaterialData::dispatch($validated);
+            $data = $this->mmServices->mm_31_materialstammdaten($validated);
+
+            return response()->json(['message' => 'Material erfolgreich gespeichert.'], 202);
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Validation error:', ['errors' => $e->errors()]);
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
         }
     }
+
+
+
+    /**
+     * MM-31-1 Materialstammdaten
+     * Receive material data from SAP.
+     *
+     * @param MM_3101_materialStammdatenRequest $request
+     * @return JsonResponse
+     */
+
+    public function Umlagerungsreservierung(): JsonResponse
+    {
+        try {
+            // ProcessMaterialData::dispatch($validated);
+            $data = $this->mmServices->mm_34_01_UmlagerungReservierung();
+
+            return $data;
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error:', ['errors' => $e->errors()]);
+            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
+        }
+    }
+
+
+
+
+
+
+
+
+
+
 
     /**
      * MM-22-1 Abfrage nach Lagerbestände
