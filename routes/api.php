@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\V1\BPController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\V1\SDController;
 use App\Http\Middleware\VerifySapToken;
@@ -19,16 +20,22 @@ Route::middleware([VerifySapToken::class])->group(function () {
 
             Route::prefix('mm')->group(function () {
                 //mm-31-1: SAP-->CEOS, Materialstammdaten
-                Route::post('/3101/materialstammdaten', [MMController::class, 'Materialstammdaten']);
+                Route::post('/3101/materialstammdaten', [MMController::class, 'materialstammdaten']);
             });
 
+
+            Route::prefix('bp')->group(function () {
+                //bp-01-01: SAP-->CEOS, Geschäftspartner
+                Route::post('/0101/geschaeftspartner', [BPController::class, 'geschaeftspartner']);
+
+                //bp-01-03: Kundenstamm SAP – CEOS Verwalter
+                Route::post('/0103/verwalter', [BPController::class, 'verwalter']);
+            });
 
 
             Route::prefix('sd')->group(function () {
                 //SD-01-01: SAP-->CEOS, Beauftragung
                 Route::post('/0101/beauftragung', [SDController::class, 'beauftragung']);
-
-
 
                 //SD-02-01: SAP-->CEOS, Mietvertragsrechnungen
                 Route::post('/0201/mietvertragsrechnungen', [SDController::class, 'mietvertragsrechnungen']);
@@ -49,7 +56,7 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
 
 
                 //mm-34-1: CEOSWEB-->CEOS-->SAP, Umlagerungsreservierung
-                Route::post('/3401/umlagerungsreservierung', [MMController::class, 'Umlagerungsreservierung']);
+                Route::post('/3401/umlagerungsreservierung', [MMController::class, 'umlagerungsreservierung']);
             });
         });
 });
@@ -60,10 +67,10 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
 
 
 
-   
 
 
-    
+
+
 
 
     // MM-Requests //Material Management
