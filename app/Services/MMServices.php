@@ -6,7 +6,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
 use App\Services\SapApiClient;
-
+use Illuminate\Support\Facades\DB;
 
 
 
@@ -34,17 +34,46 @@ class MMServices
     /**
      * MM-31-1 Materialstammdaten
      */
-    public function mm_31_materialstammdaten($recievedData)
+    public function mm_31_materialstammdaten($data)
     {
+        // check if Material exist in CEOS materianummer
+        // check LÖv => 1/0   
 
-        // check if Material exist in CEOS
-        // check LÖv
         // if not exist, create new Material
 
+        try {
+            DB::transaction(function () use ($data) {
+                // Insert into users table
+                $interneArtikelnummer = DB::connection('sqlsrv2')->table('cis.Artikel')->insertGetId([
+                    'KZArtikelgruppe'      => $data['Produktgruppe'] ?? null,
+                    'KZWarengruppe'      => $data['Warengruppe'] ?? null,
+                    'Artikelnummer'      => $data['Material'] ?? null,
+                    'NRPreisbasis'      => $data['NRPreisbasis'] ?? null,
+                    'MwstNummer'      => $data['MwstNummer'] ?? null, // 3
+                    'ArtVerkaufspreis1'      => $data['ArtVerkaufspreis1'] ?? 0, // 0
+                    'ArtMaterialkosten'      => $data['ArtMaterialkosten'] ?? null, // missbrauchen 
+                    'ArtSondereinzelkosten'      => $data['ArtSondereinzelkosten'] ?? null, // null
+                    'ArtFertigungskosten'      => $data['ArtFertigungskosten'] ?? null, // null
+                    'ArtStkAuftragLagerbuchung'      => $data['ArtStkAuftragLagerbuchung'] ?? null, //??
+                ]);
 
-        $data  = ['vbeln' => '6000000026', 'vorNummer' => '12301'];
+                return $interneArtikelnummer;
+            });
+        } catch (\Throwable $e) {
+            return $e->getMessage();
+        }
+
+
+
+
+
         return $data;
     }
+
+
+
+
+
 
 
     //MM_34_01 Umlagerungreservierung 
@@ -58,7 +87,7 @@ class MMServices
 
     public function mm_34_01_UmlagerungReservierung()
     {
-        // where commes the trigger from
+        // where commes the trigger from    from Blau exist anpassungen 
         // source data from CEOS mapping 
         // what to do with the recieved data?? 
 
@@ -115,11 +144,6 @@ class MMServices
         } 
                     
         // response from SAP: 
-        
-        
-
-
-
         
         */
     }

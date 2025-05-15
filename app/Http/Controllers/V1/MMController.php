@@ -5,7 +5,6 @@ namespace App\Http\Controllers\V1;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Log;
-use App\Jobs\MM\ProcessMaterialData;
 use Vyuldashev\LaravelOpenApi\Attributes as OpenApi;
 
 use App\OpenApi\Requests\MaterialstammdatenRequest;
@@ -14,8 +13,8 @@ use App\Http\Requests\MM_3101_materialStammdatenRequest;
 
 use App\Services\MMServices;
 use Illuminate\Http\JsonResponse;
-
-
+use App\OpenApi\Responses\Success202;
+use Illuminate\Validation\ValidationException;
 #[OpenApi\PathItem]
 class MMController extends Controller
 {
@@ -28,7 +27,7 @@ class MMController extends Controller
 
     #[OpenApi\Operation(tags: ['MM'], method: 'POST')]
     #[OpenApi\RequestBody(factory: MaterialstammdatenRequest::class)]
-    #[OpenApi\Response(factory: \App\OpenApi\Responses\Success202::class)]
+    #[OpenApi\Response(factory: Success202::class)]
 
     /**
      * MM-31-1 Materialstammdaten
@@ -38,7 +37,7 @@ class MMController extends Controller
      * @return JsonResponse
      */
 
-    public function Materialstammdaten(MM_3101_materialStammdatenRequest $request): JsonResponse
+    public function materialstammdaten(MM_3101_materialStammdatenRequest $request): JsonResponse
     {
         try {
             $validated = $request->validated();
@@ -49,44 +48,31 @@ class MMController extends Controller
             // ProcessMaterialData::dispatch($validated);
             $data = $this->mmServices->mm_31_materialstammdaten($validated);
 
-            return response()->json(['message' => 'Material erfolgreich gespeichert.'], 202);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['message' => 'Material erfolgreich gespeichert.', 'data' => $data], 202);
+        } catch (ValidationException $e) {
             Log::error('Validation error:', ['errors' => $e->errors()]);
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
         }
     }
-
 
 
     /**
      * MM-31-1 Materialstammdaten
      * Receive material data from SAP.
      *
-     * @param MM_3101_materialStammdatenRequest $request
      * @return JsonResponse
      */
 
-    public function Umlagerungsreservierung(): JsonResponse
+    public function umlagerungsreservierung(): JsonResponse
     {
         try {
             // ProcessMaterialData::dispatch($validated);
-            $data = $this->mmServices->mm_34_01_UmlagerungReservierung();
-
-            return $data;
-        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->mmServices->mm_34_01_UmlagerungReservierung();
+        } catch (ValidationException $e) {
             Log::error('Validation error:', ['errors' => $e->errors()]);
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
         }
     }
-
-
-
-
-
-
-
-
-
 
 
     /**
