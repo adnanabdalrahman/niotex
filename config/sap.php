@@ -5,5 +5,6 @@ return [
     'client_secret' => env('SAP_CLIENT_SECRET'),
     'api_token' => env('SAP_API_TOKEN'),
     'mm221_path' => '/Z1ERP_MM_CEOS_STOCK_SRV/ZCEOSStockSet',
-    'mm341_path' => '/Z1ERP_MM_CEOS_STOCK_SRV/CEOSReservationHeaderSet'
+    'mm341_path' => '/Z1ERP_MM_CEOS_STOCK_SRV/CEOSReservationHeaderSet',
+    'mm352_path' => '/Z1ERP_MM_CEOS_STOCK_SRV/CEOSGoodsmovementHeaderSet'
 ];

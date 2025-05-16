@@ -2,12 +2,11 @@
 
 namespace App\Services;
 
-use Illuminate\Http\Client\ConnectionException;
+use Exception;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Http;
-use App\Services\SapApiClient;
 use Illuminate\Support\Facades\DB;
-
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 
 class MMServices
@@ -15,6 +14,8 @@ class MMServices
     protected string $baseUrl;
     protected string $mm221_path;
     protected string $mm341_path;
+    protected string $mm352_path;
+
 
     protected array $auth;
 
@@ -28,68 +29,56 @@ class MMServices
 
         $this->mm221_path = config('sap.mm221_path');
         $this->mm341_path = config('sap.mm341_path');
+        $this->mm352_path = config('sap.mm341_path');
     }
 
 
     /**
      * MM-31-1 Materialstammdaten
+     * SAP -> CEOS
      */
-    public function mm_31_materialstammdaten($data)
+    public function mm_31_01_materialstammdaten($data): ?string
     {
-        // check if Material exist in CEOS materianummer
-        // check LÖv => 1/0   
-
+        //Todo check if Material exist in CEOS materialnummer
+        // check LÖv => 1/0
         // if not exist, create new Material
 
         try {
             DB::transaction(function () use ($data) {
                 // Insert into users table
-                $interneArtikelnummer = DB::connection('sqlsrv2')->table('cis.Artikel')->insertGetId([
-                    'KZArtikelgruppe'      => $data['Produktgruppe'] ?? null,
-                    'KZWarengruppe'      => $data['Warengruppe'] ?? null,
-                    'Artikelnummer'      => $data['Material'] ?? null,
-                    'NRPreisbasis'      => $data['NRPreisbasis'] ?? null,
-                    'MwstNummer'      => $data['MwstNummer'] ?? null, // 3
-                    'ArtVerkaufspreis1'      => $data['ArtVerkaufspreis1'] ?? 0, // 0
-                    'ArtMaterialkosten'      => $data['ArtMaterialkosten'] ?? null, // missbrauchen 
-                    'ArtSondereinzelkosten'      => $data['ArtSondereinzelkosten'] ?? null, // null
-                    'ArtFertigungskosten'      => $data['ArtFertigungskosten'] ?? null, // null
-                    'ArtStkAuftragLagerbuchung'      => $data['ArtStkAuftragLagerbuchung'] ?? null, //??
+                return DB::connection('sqlsrv2')->table('cis.Artikel')->updateOrInsert([
+                    'KZArtikelgruppe' => $data['Produktgruppe'] ?? null,
+                    'KZWarengruppe' => $data['Warengruppe'] ?? null,
+                    'Artikelnummer' => $data['Material'] ?? null,
+                    'NRPreisbasis' => $data['NRPreisbasis'] ?? null,
+                    'MwstNummer' => $data['MwstNummer'] ?? null, // 3
+                    'ArtVerkaufspreis1' => $data['ArtVerkaufspreis1'] ?? 0, // 0
+                    'ArtMaterialkosten' => $data['ArtMaterialkosten'] ?? null, // missbrauchen
+                    'ArtSondereinzelkosten' => $data['ArtSondereinzelkosten'] ?? null, // null
+                    'ArtFertigungskosten' => $data['ArtFertigungskosten'] ?? null, // null
+                    'ArtStkAuftragLagerbuchung' => $data['ArtStkAuftragLagerbuchung'] ?? null, //??
                 ]);
-
-                return $interneArtikelnummer;
             });
         } catch (\Throwable $e) {
             return $e->getMessage();
         }
-
-
-
-
-
-        return $data;
+        return null;
     }
 
+    //MM_34_01 Umlagerungsreservierung
 
-
-
-
-
-
-    //MM_34_01 Umlagerungreservierung 
     /**
-     * MM-34-1 Umlagerungreservierung
+     * MM-34-1 Umlagerungsreservierung
      * Receive material data from SAP.
      *
-     * @param array $recievedData
-     * @return JsonResponse
+     * @throws Exception
      */
 
-    public function mm_34_01_UmlagerungReservierung()
+    public function mm_34_01_umlagerungsreservierung()
     {
-        // where commes the trigger from    from Blau exist anpassungen 
-        // source data from CEOS mapping 
-        // what to do with the recieved data?? 
+        //Todo where comes the trigger from Blau exist anpassungen
+        // source data from CEOS mapping
+        // what to do with the recieved data??
 
         $data = [
             "TourId" => "123456",
@@ -113,39 +102,7 @@ class MMServices
                 ]
             ]
         ];
-        $response = app(SapApiClient::class)->post($this->mm341_path, $data);
-
-        return response()->json($response);
-
-
-        // data to send to SAP:: 
-        /*
-        { 
-            "TourId":"123456", 
-            "ReservNo":"", 
-            "MoveStloc":"H001", 
-            "MoveStlocSearch":"", 
-            "to_Items":[ 
-                { 
-                "Material":"10041633", 
-                "EntryQnt":"1", 
-                "EntryUom":"ST", 
-                "ReqDate":"/Date(1747094400000)/", 
-                "TourId":"123456" 
-                }, 
-                { 
-                "Material":"112600005", 
-                "EntryQnt":"1", 
-                "EntryUom":"ST", 
-                "ReqDate":"/Date(1747094400000)/", 
-                "TourId":"123456" 
-                } 
-            ] 
-        } 
-                    
-        // response from SAP: 
-        
-        */
+        return app(SapApiClient::class)->post($this->mm341_path, $data);
     }
 
 
@@ -156,26 +113,54 @@ class MMServices
      * @param string $materials
      * @param string $storage
      * @return JsonResponse
-     * @throws ConnectionException
      */
-    public function mm_2201_get_Lagerbestaende(string $materials, string $storage): JsonResponse
+    public function mm_22_01_lagerbestaende(string $materials, string $storage): JsonResponse
     {
-        $url = $this->baseUrl . $this->mm221_path .
-            "?\$filter=Material eq '{$materials}' and Storage eq '{$storage}'";
-
-        $response = Http::withHeaders([
-            'Accept' => 'application/json',
-            'client_id' => $this->auth['client_id'],
-            'client_secret' => $this->auth['client_secret'],
-        ])->get($url);
-
-
-        // dd($response->json());
-
-        if ($response->successful()) {
-            return response()->json($response->json(), 200);
+        $data = "?\$filter=Material eq '{$materials}' and Storage eq '{$storage}'";
+        try {
+            $response = app(SapApiClient::class)->get($this->mm221_path, $data);
+            return response()->json($response, 200);
+        } catch (Exception|NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        return response()->json(['error' => 'Failed to fetch data'], $response->status());
     }
+
+
+    public function mm_35_02_materialverbrauch()
+    {
+        // todo data mapping
+        /*
+            Belegdatum = date vorgangsTable (lieferscheindatum)
+            Materialnummer = varchar(18)
+            Bewegungsart = varchar(3) 261  vorgangsart
+            Lager = varchar(4)  muss gebaut werden
+            monturNR (Suchbegriff1) = varchar(20)
+            Menge = position
+            Mengeneinheit = Artikel
+            TourID  =  Benötigte Menge
+            Liegenschaft = varchar(9)
+            SD-Verkaufsbeleg/Auftrag
+            SD-Verkaufs-belegsposition/Auftragsposition
+            Materialbeleg
+            Fehlertext
+        */
+        $data = [
+            "Belegdatum" => "123456",
+            "Materialnummer" => "",
+            "Bewegungsart" => "H001",
+            "Suchbegriff1" => "",
+            "Menge" => "",
+            "Mengeneinheit" => "",
+            "TourID" => "",
+            "Liegenschaft" => "",
+            "SD-Verkaufsbeleg/Auftrag" => "",  //muss gebaut werden
+            "SD-Verkaufs-belegsposition/Auftragsposition" => "",
+            "Materialbeleg" => "",
+            "Fehlertext" => "",
+
+        ];
+        return app(SapApiClient::class)->post($this->mm341_path, $data);
+    }
+
+
 }

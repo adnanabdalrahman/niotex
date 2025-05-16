@@ -64,59 +64,61 @@ class BPServices
 
         try {
             DB::transaction(function () use ($data) {
+                //todo
                 //Vorname + Nachname
                 $AdrFirmenbezeichnung1 = $data['Vorname'] . " " . $data['Nachname'];
 
                 $streetArray = $this->splitStreet($data['Strasse']);
-
-                if ($data['Strasse'] == 1) {
+                //todo
+                if ($data['LVorm'] == 1) {
+                    //todo delete (as ALT)
                 }
 
-                // LAND CODE
+                //todo LAND CODE
 
-
+                //todo
                 //        'InternAdressnummer'      =>  $data['Kundengruppe'],    /// N:N
                 //                                  =>  $data['Kundengruppe12'],    /// N:N
 
 
                 // Insert into users table
                 return DB::connection('sqlsrv2')->table('cis.Adresse')->updateOrInsert([
-                    'KZAdresstyp'                   =>  "KUN", // ???????
-                    'KZWaehrung'                    =>  "EUR", // ???????
-                    'MwstTypID'                     =>   3, // ???????
-                    'AdrKarenztage'                 =>   0, // ???????
-                    'KZSprache'                     =>   "DE", // ???????
-                    'AdrFactoringJN'                =>   0, // ???????
-                    'AdrMahnSperreJN'                =>   0, // ???????
-                    'AdrFibunummer'                 => $data['Geschaeftspartnernummer'],
-                    'AdressNummer'                  => $data['Debitoren_Kreditorennummer'],
-                    'NRAnrede'                      => $data['Anrede'],
-                    'NRTitel'                       => $data['Titel'],
-                    'AdrFirmenbezeichnung1'         =>  $AdrFirmenbezeichnung1,
-                    'AdrFirmenbezeichnung2'         =>  $data['Name1'],
-                    'AdrFirmenbezeichnung3'         =>  $data['Name2'],
-                    'AdrFirmenbezeichnung4'         =>  $data['Name3'],
-                    'AdrMatchcode'                  =>  $data['Suchbegriff1'],
+                    'KZAdresstyp' => "KUN", // ???????
+                    'KZWaehrung' => "EUR", // ???????
+                    'MwstTypID' => 3, // ???????
+                    'AdrKarenztage' => 0, // ???????
+                    'KZSprache' => "DE", // ???????
+                    'AdrFactoringJN' => 0, // ???????
+                    'AdrMahnSperreJN' => 0, // ???????
+                    'AdrFibunummer' => $data['Geschaeftspartnernummer'],
+                    'AdressNummer' => $data['Debitoren_Kreditorennummer'],
+                    'NRAnrede' => $data['Anrede'],
+                    'NRTitel' => $data['Titel'],
+                    'AdrFirmenbezeichnung1' => $AdrFirmenbezeichnung1,
+                    'AdrFirmenbezeichnung2' => $data['Name1'],
+                    'AdrFirmenbezeichnung3' => $data['Name2'],
+                    'AdrFirmenbezeichnung4' => $data['Name3'],
+                    'AdrMatchcode' => $data['Suchbegriff1'],
                     //'AdrMatchcode'                =>  $data['Suchbegriff2'], //?? es gibt nur 1 Matchcode-Feld
-                    'AdrStrasse'                    =>  $streetArray['strasse'],
-                    'AdrStrasse2'                   =>  $streetArray['strasse2'],
-                    'AdrStrasse3'                   =>  $streetArray['hausnummer'],
-                    'AdrPLZ'                        =>  $data['Postleitzahl'],
-                    'AdrOrt'                        =>  $data['Ort'],
-                    'KZLand'                        =>  $data['Land'],
-                    'AdrPostfach'                   =>  $data['Postfach'],
-                    'AdrPLZPostfach'                =>  $data['Postleitzahl_Postfach'],
-                    'AdrOrtPostfach'                =>  $data['Ort_Postfach'],
-                    'AdrTelefon'                    =>  $data['Telefon'],
-                    'AdrMobiltelefon'               =>  $data['Mobiltelefon'],
-                    'AdrFax'                        =>  $data['Fax'],
-                    'AdrEmail'                      =>  $data['Email'],
-                    'AdrGutschriftsverfahrenJN'     =>  $data['AutoWEAbr'],
-                    'AdrLiefersperreJN'             =>  $data['Sperrkennzeichen'],
+                    'AdrStrasse' => $streetArray['strasse'],
+                    'AdrStrasse2' => $streetArray['strasse2'],
+                    'AdrStrasse3' => $streetArray['hausnummer'],
+                    'AdrPLZ' => $data['Postleitzahl'],
+                    'AdrOrt' => $data['Ort'],
+                    'KZLand' => $data['Land'],
+                    'AdrPostfach' => $data['Postfach'],
+                    'AdrPLZPostfach' => $data['Postleitzahl_Postfach'],
+                    'AdrOrtPostfach' => $data['Ort_Postfach'],
+                    'AdrTelefon' => $data['Telefon'],
+                    'AdrMobiltelefon' => $data['Mobiltelefon'],
+                    'AdrFax' => $data['Fax'],
+                    'AdrEmail' => $data['Email'],
+                    'AdrGutschriftsverfahrenJN' => $data['AutoWEAbr'],
+                    'AdrLiefersperreJN' => $data['Sperrkennzeichen'],
                     //'InternAdressnummer'          =>  $data['Kundengruppe'],    /// N:N
                     // ''                           =>  $data['Kundengruppe12'],    /// N:N
-                    'ADRindividualC2'               =>  $data['UVI_Mailadresse'],
-                    'ADRindividualC3'               =>  $data['PDF_Mailadresse'],
+                    'ADRindividualC2' => $data['UVI_Mailadresse'],
+                    'ADRindividualC3' => $data['PDF_Mailadresse'],
                 ]);
             });
         } catch (Throwable $e) {
@@ -125,7 +127,26 @@ class BPServices
         return $data;
     }
 
+    public function splitStreet($recievedStreet): array
+    {
+        // Strasse + Hausnummer
+        // Extract Hausnummer from the end using regex (e.g., "Musterstraße 123a")
+        preg_match('/^(.*?)[\s,]+(\d+\w*)$/', $recievedStreet, $matches);
 
+        if ($matches) {
+            $street = $matches[1];           // Street name without Hausnummer
+            $hausnummer = $matches[2];       // Hausnummer
+        } else {
+            // No Hausnummer found, use as-is
+            $street = $recievedStreet;
+            $hausnummer = '';
+        }
+        return [
+            'strasse' => mb_substr($street, 0, 39),
+            'strasse2' => mb_substr($street, 39),
+            'hausnummer' => $hausnummer,
+        ];
+    }
 
     /**
      * BP-01-03 Geschäftspartner (GP-Rolle "Verwalter")
@@ -153,77 +174,47 @@ class BPServices
 
                 // Insert into users table
                 return DB::connection('sqlsrv2')->table('cis.Adresse')->updateOrInsert([
-                    'KZAdresstyp'                   =>  "KUN", // ???????
-                    'KZWaehrung'                    =>  "EUR", // ???????
-                    'MwstTypID'                     =>   3, // ???????
-                    'AdrKarenztage'                 =>   0, // ???????
-                    'KZSprache'                     =>   "DE", // ???????
-                    'AdrFactoringJN'                =>   0, // ???????
-                    'AdrMahnSperreJN'                =>   0, // ???????
-                    'AdrFibunummer'                 => $data['Geschaeftspartnernummer'],
-                    'AdressNummer'                  => $data['Debitoren_Kreditorennummer'],
-                    'NRAnrede'                      => $data['Anrede'],
-                    'NRTitel'                       => $data['Titel'],
-                    'AdrFirmenbezeichnung1'         =>  $AdrFirmenbezeichnung1,
-                    'AdrFirmenbezeichnung2'         =>  $data['Name1'],
-                    'AdrFirmenbezeichnung3'         =>  $data['Name2'],
-                    'AdrFirmenbezeichnung4'         =>  $data['Name3'],
-                    'AdrMatchcode'                  =>  $data['Suchbegriff1'],
+                    'KZAdresstyp' => "KUN", // ???????
+                    'KZWaehrung' => "EUR", // ???????
+                    'MwstTypID' => 3, // ???????
+                    'AdrKarenztage' => 0, // ???????
+                    'KZSprache' => "DE", // ???????
+                    'AdrFactoringJN' => 0, // ???????
+                    'AdrMahnSperreJN' => 0, // ???????
+                    'AdrFibunummer' => $data['Geschaeftspartnernummer'],
+                    'AdressNummer' => $data['Debitoren_Kreditorennummer'],
+                    'NRAnrede' => $data['Anrede'],
+                    'NRTitel' => $data['Titel'],
+                    'AdrFirmenbezeichnung1' => $AdrFirmenbezeichnung1,
+                    'AdrFirmenbezeichnung2' => $data['Name1'],
+                    'AdrFirmenbezeichnung3' => $data['Name2'],
+                    'AdrFirmenbezeichnung4' => $data['Name3'],
+                    'AdrMatchcode' => $data['Suchbegriff1'],
                     //'AdrMatchcode'                =>  $data['Suchbegriff2'], //?? es gibt nur 1 Matchcode-Feld
-                    'AdrStrasse'                    =>  $streetArray['strasse'],
-                    'AdrStrasse2'                   =>  $streetArray['strasse2'],
-                    'AdrStrasse3'                   =>  $streetArray['hausnummer'],
-                    'AdrPLZ'                        =>  $data['Postleitzahl'],
-                    'AdrOrt'                        =>  $data['Ort'],
-                    'KZLand'                        =>  $data['Land'],
-                    'AdrPostfach'                   =>  $data['Postfach'],
-                    'AdrPLZPostfach'                =>  $data['Postleitzahl_Postfach'],
-                    'AdrOrtPostfach'                =>  $data['Ort_Postfach'],
-                    'AdrTelefon'                    =>  $data['Telefon'],
-                    'AdrMobiltelefon'               =>  $data['Mobiltelefon'],
-                    'AdrFax'                        =>  $data['Fax'],
-                    'AdrEmail'                      =>  $data['Email'],
-                    'AdrGutschriftsverfahrenJN'     =>  $data['AutoWEAbr'],
-                    'AdrLiefersperreJN'             =>  $data['Sperrkennzeichen'],
+                    'AdrStrasse' => $streetArray['strasse'],
+                    'AdrStrasse2' => $streetArray['strasse2'],
+                    'AdrStrasse3' => $streetArray['hausnummer'],
+                    'AdrPLZ' => $data['Postleitzahl'],
+                    'AdrOrt' => $data['Ort'],
+                    'KZLand' => $data['Land'],
+                    'AdrPostfach' => $data['Postfach'],
+                    'AdrPLZPostfach' => $data['Postleitzahl_Postfach'],
+                    'AdrOrtPostfach' => $data['Ort_Postfach'],
+                    'AdrTelefon' => $data['Telefon'],
+                    'AdrMobiltelefon' => $data['Mobiltelefon'],
+                    'AdrFax' => $data['Fax'],
+                    'AdrEmail' => $data['Email'],
+                    'AdrGutschriftsverfahrenJN' => $data['AutoWEAbr'],
+                    'AdrLiefersperreJN' => $data['Sperrkennzeichen'],
                     //'InternAdressnummer'            =>  $data['Kundengruppe'],    /// N:N
                     // ''                              =>  $data['Kundengruppe12'],    /// N:N
-                    'ADRindividualC2'               =>  $data['UVI_Mailadresse'],
-                    'ADRindividualC3'               =>  $data['PDF_Mailadresse'],
+                    'ADRindividualC2' => $data['UVI_Mailadresse'],
+                    'ADRindividualC3' => $data['PDF_Mailadresse'],
                 ]);
             });
         } catch (Throwable $e) {
             return $e->getMessage();
         }
         return $data;
-    }
-
-
-
-
-
-
-
-
-
-
-    public function splitStreet($recievedStreet): array
-    {
-        // Strasse + Hausnummer
-        // Extract Hausnummer from the end using regex (e.g., "Musterstraße 123a")
-        preg_match('/^(.*?)[\s,]+(\d+\w*)$/', $recievedStreet, $matches);
-
-        if ($matches) {
-            $street = $matches[1];           // Street name without Hausnummer
-            $hausnummer = $matches[2];       // Hausnummer
-        } else {
-            // No Hausnummer found, use as-is
-            $street = $recievedStreet;
-            $hausnummer = '';
-        }
-        return [
-            'strasse' => mb_substr($street, 0, 39),
-            'strasse2' => mb_substr($street, 39),
-            'hausnummer' => $hausnummer,
-        ];
     }
 }
