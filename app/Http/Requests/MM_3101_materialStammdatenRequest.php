@@ -25,24 +25,47 @@ class MM_3101_materialStammdatenRequest extends FormRequest
             'ArtMaterialkosten' => 'required|numeric',
             'ArtSondereinzelkosten' => 'required|numeric',
             'ArtFertigungskosten' => 'required|numeric',
-            'ArtStkAuftragLagerbuchung' => 'required|integer', 
+            'ArtStkAuftragLagerbuchung' => 'required|integer',
         */
 
 
         return [
-            'Material'              => 'required|numeric|digits:18',
-            'Basisempfindlichkeit'  => 'required|numeric|min:0',
-            'Basismengeneinheit'    => 'required|string|size:2',
-            'Bezeichnung1'          => 'required|string|max:255',
-            'Bezeichnung2'          => 'nullable|string|max:255',
-            'Ean'                   => 'nullable|string|max:50',
-            'Erloescode'            => 'required|integer|min:0',
-            'Langtext'              => 'nullable|string|max:1000',
-            'LVorm'                 => 'nullable|boolean',
-            'Matchcode'             => 'nullable|string|max:100',
-            'Mfrpn'                 => 'nullable|string|max:100',
-            'Produktgruppe'         => 'nullable|string|max:100',
-            'Warengruppe'           => 'nullable|string|max:100',
+            'Material' => 'required|numeric|digits:18',
+            'Materialkurztext' => 'required|numeric|min:0',
+            'Basismengeneinheit' => 'required|string|size:2',
+            'Bezeichnung1' => 'required|string|max:255',
+            'Bezeichnung2' => 'nullable|string|max:255',
+            'Ean' => 'nullable|string|max:50',
+            'Erloescode' => 'required|integer|min:0',
+            'Langtext' => 'nullable|string|max:1000',
+            'LVorm' => 'nullable|boolean',
+            'Matchcode' => 'nullable|string|max:100',
+            'Mfrpn' => 'nullable|string|max:100',
+            'Produktgruppe' => 'nullable|string|max:100',
+            'Warengruppe' => 'nullable|string|max:100',
+            /*
+            Material 960000016
+
+            Materialkurztext
+            Warengruppe
+            Bezeichnung1
+            Bezeichnung2
+            Basismengeneinheit
+            Loeschvormerkung
+            BK_Schluessel
+            CEOS–Warengruppe
+            CEOS_Artikelgruppe
+            CEOS_Artikeluntergruppe
+            MappingHIBE_HAWA1
+            MappingHIBE_HAWA2
+            MappingHIBE_HAWA3
+            Produktgruppe CEOS
+            Basisempfindlichkeit
+            Hersteller
+            Herstellerteilenummer
+            EAN
+            */
+
         ];
     }
 

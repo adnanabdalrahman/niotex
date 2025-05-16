@@ -38,6 +38,9 @@ Route::middleware([VerifySapToken::class])->group(function () {
 
                 //SD-02-01: SAP-->CEOS, Mietvertragsrechnungen
                 Route::post('/0201/mietvertragsrechnungen', [SDController::class, 'mietvertragsrechnungen']);
+
+                //SD-03-01: SAP-->CEOS, Dienstleistungsabrechnung
+                Route::post('/0301/dienstleistungsabrechnung ', [SDController::class, 'dienstleistungsabrechnung']);
             });
         });
 });
