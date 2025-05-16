@@ -76,15 +76,13 @@ class BPServices
                  }
                 */
 
-                //todo LAND CODE
-
                 //todo
                 //       =>  $data['Kundengruppe'],    /// N:N
                 //                                  =>  $data['Kundengruppe12'],    /// N:N
 
 
-                // Insert into users table
-                $data = DB::connection('sqlsrv2')->table('cis.Adresse')->updateOrInsert([
+                // Insert into users' table
+                return DB::connection('sqlsrv2')->table('cis.Adresse')->updateOrInsert([
                     'AdrFibunummer' => $data['Geschaeftspartnernummer'], // Primary
                     'AdressNummer' => $data['Debitoren_Kreditorennummer'],
                     'KZAdresstyp' => "KUN", // ???????
@@ -95,7 +93,7 @@ class BPServices
                     'AdrFactoringJN' => 0, // ???????
                     'AdrMahnSperreJN' => 0, // ???????
                     'NRAnrede' => $data['Anrede'],
-                    'NRTitel' => $data['Titel'],
+                    'NRTitel' => $data['Titel'],// todo
                     'AdrFirmenbezeichnung1' => $AdrFirmenbezeichnung1,
                     'AdrFirmenbezeichnung2' => $data['Name1'],
                     'AdrFirmenbezeichnung3' => $data['Name2'],
@@ -128,19 +126,19 @@ class BPServices
         }
         return $data;
     }
-        
-    public function splitStreet($recievedStreet): array
+
+    public function splitStreet($receivedStreet): array
     {
         // Strasse + Hausnummer
         // Extract Hausnummer from the end using regex (e.g., "Musterstraße 123a")
-        preg_match('/^(.*?)[\s,]+(\d+\w*)$/', $recievedStreet, $matches);
+        preg_match('/^(.*?)[\s,]+(\d+\w*)$/', $receivedStreet, $matches);
 
         if ($matches) {
             $street = $matches[1];           // Street name without Hausnummer
             $hausnummer = $matches[2];       // Hausnummer
         } else {
             // No Hausnummer found, use as-is
-            $street = $recievedStreet;
+            $street = $receivedStreet;
             $hausnummer = '';
         }
         return [
@@ -162,57 +160,25 @@ class BPServices
 
         try {
             DB::transaction(function () use ($data) {
-                //Vorname + Nachname
-                $AdrFirmenbezeichnung1 = $data['Vorname'] . " " . $data['Nachname'];
-
-                $streetArray = $this->splitStreet($data['Strasse']);
-
-                // LAND CODE
-
-
-                //        'InternAdressnummer'      =>  $data['Kundengruppe'],    /// N:N
-                //                                  =>  $data['Kundengruppe12'],    /// N:N
-
-
-                // Insert into users table
-                return DB::connection('sqlsrv2')->table('cis.Adresse')->updateOrInsert([
-                    'KZAdresstyp' => "KUN", // ???????
-                    'KZWaehrung' => "EUR", // ???????
-                    'MwstTypID' => 3, // ???????
-                    'AdrKarenztage' => 0, // ???????
-                    'KZSprache' => "DE", // ???????
-                    'AdrFactoringJN' => 0, // ???????
-                    'AdrMahnSperreJN' => 0, // ???????
-                    'AdrFibunummer' => $data['Geschaeftspartnernummer'],
-                    'AdressNummer' => $data['Debitoren_Kreditorennummer'],
-                    'NRAnrede' => $data['Anrede'],
-                    'NRTitel' => $data['Titel'],
-                    'AdrFirmenbezeichnung1' => $AdrFirmenbezeichnung1,
-                    'AdrFirmenbezeichnung2' => $data['Name1'],
-                    'AdrFirmenbezeichnung3' => $data['Name2'],
-                    'AdrFirmenbezeichnung4' => $data['Name3'],
-                    'AdrMatchcode' => $data['Suchbegriff1'],
-                    //'AdrMatchcode'                =>  $data['Suchbegriff2'], //?? es gibt nur 1 Matchcode-Feld
-                    'AdrStrasse' => $streetArray['strasse'],
-                    'AdrStrasse2' => $streetArray['strasse2'],
-                    'AdrStrasse3' => $streetArray['hausnummer'],
-                    'AdrPLZ' => $data['Postleitzahl'],
-                    'AdrOrt' => $data['Ort'],
-                    'KZLand' => $data['Land'],
-                    'AdrPostfach' => $data['Postfach'],
-                    'AdrPLZPostfach' => $data['Postleitzahl_Postfach'],
-                    'AdrOrtPostfach' => $data['Ort_Postfach'],
-                    'AdrTelefon' => $data['Telefon'],
-                    'AdrMobiltelefon' => $data['Mobiltelefon'],
-                    'AdrFax' => $data['Fax'],
-                    'AdrEmail' => $data['Email'],
-                    'AdrGutschriftsverfahrenJN' => $data['AutoWEAbr'],
-                    'AdrLiefersperreJN' => $data['Sperrkennzeichen'],
-                    //'InternAdressnummer'            =>  $data['Kundengruppe'],    /// N:N
-                    // ''                              =>  $data['Kundengruppe12'],    /// N:N
-                    'ADRindividualC2' => $data['UVI_Mailadresse'],
-                    'ADRindividualC3' => $data['PDF_Mailadresse'],
+                // Insert into users' table
+                $data = DB::connection('sqlsrv2')->table('cis.Ansprechpartner')->insertGetId([
+                    'InterneAdressnummer' => $data['Adressnummer'], // todo to clarify
+                    'NRTitel' => $data['Titel'],// todo
+                    'NRAnrede' => $data['Anrede'],// todo
+                    'AnsVorname' => $data['Vorname'],
+                    'AnsNachname' => $data['Nachname'],
+                    'AnsPrivatStrasse' => $data['Strasse'],//todo split Hnr
+                    'AnsPrivatOrt' => $data['Postleitzahl'] . " " . $data['Ort'],//todo same filed with ORT
+                    'AnsPrivatTelefon' => $data['Telefon'],
+                    'AnsMobiltelefon' => $data['Mobiltelefon'],
+                    'AnsFax' => $data['Fax'],
+                    'AnsEMail' => $data['Email'],
+                    'AnsIndividualD1' => $data['DatumVon'],
+                    'AnsIndividualD2' => $data['DatumBis'],
+                    'AnsIndividualC1' => $data['Ansprechpartner1'],
+                    'AnsIndividualC2' => $data['Ansprechpartner2'],
                 ]);
+                dd($data);
             });
         } catch (Throwable $e) {
             return $e->getMessage();
