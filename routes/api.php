@@ -57,6 +57,10 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
 
                 //mm-34-1: CEOSWEB-->CEOS-->SAP, Umlagerungsreservierung
                 Route::post('/3401/umlagerungsreservierung', [MMController::class, 'umlagerungsreservierung']);
+
+
+                //mm-35-02: CEOSWEB-->CEOS-->SAP, Materialverbrauch des Monteurs / NU
+                Route::post('/3502/materialverbrauch', [MMController::class, 'materialverbrauch']);
             });
         });
 });

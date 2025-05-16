@@ -46,7 +46,7 @@ class MMController extends Controller
             // Process the material data asynchronously
 
             // ProcessMaterialData::dispatch($validated);
-            $data = $this->mmServices->mm_31_materialstammdaten($validated);
+            $data = $this->mmServices->mm_31_01_materialstammdaten($validated);
 
             return response()->json(['message' => 'Material erfolgreich gespeichert.', 'data' => $data], 202);
         } catch (ValidationException $e) {
@@ -57,8 +57,8 @@ class MMController extends Controller
 
 
     /**
-     * MM-31-1 Materialstammdaten
-     * Receive material data from SAP.
+     * MM_34_01 Umlagerungsreservierung
+     * CEOSWEB-->CEOS-->SAP
      *
      * @return JsonResponse
      */
@@ -67,12 +67,27 @@ class MMController extends Controller
     {
         try {
             // ProcessMaterialData::dispatch($validated);
-            return $this->mmServices->mm_34_01_UmlagerungReservierung();
-        } catch (ValidationException $e) {
-            Log::error('Validation error:', ['errors' => $e->errors()]);
-            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
+            $data =  $this->mmServices->mm_34_01_umlagerungsreservierung();
+            return response()->json(['data' => $data], 202);
+        }  catch (\Exception $e) {
+            Log::error('Internal error:', ['errors' => $e->getMessage()]);
+            return response()->json(['message' => 'Internal error', 'errors' => $e->getMessage()], 500);
+        }
+
+    }
+
+
+    public function materialverbrauch (): JsonResponse
+    {
+        try {
+            return $this->mmServices->mm_35_02_materialverbrauch();
+        } catch (\Exception $e) {
+            Log::error('Internal error:', ['errors' => $e->getMessage()]);
+            return response()->json(['message' => 'Internal error', 'errors' => $e->getMessage()], 500);
         }
     }
+
+
 
 
     /**
@@ -87,7 +102,7 @@ class MMController extends Controller
     {
         $validated = $request->validated();
 
-        $data = $this->mmServices->mm_2201_get_Lagerbestaende(
+        $data = $this->mmServices->mm_22_01_lagerbestaende(
             $validated['materials'],
             $validated['storage']
         );

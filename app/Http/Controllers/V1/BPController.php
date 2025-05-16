@@ -18,18 +18,16 @@ class BPController extends Controller
         $this->bpServices = $bpServices;
     }
 
-
-
-    // Geschäftspartner
+    /*
+     * BP_01_01 Geschaeftspartner
+     * SAP -> CEOS
+     */
     public function geschaeftspartner(BP_0101_geschaeftspartnerRequest $request): JsonResponse
     {
         try {
             $validated = $request->validated();
+            Log::info('Received SAP Geschäftspartner Data:', $validated);
 
-            Log::info('Received SAP Material Data:', $validated);
-            // Process the material data asynchronously
-
-            // ProcessMaterialData::dispatch($validated);
             $data = $this->bpServices->bp_0101_geschaeftspartner($validated);
             return response()->json(['message' => 'Geschäftspartner erfolgreich gespeichert.', 'data' => $data], 202);
         } catch (ValidationException $e) {
@@ -38,7 +36,10 @@ class BPController extends Controller
         }
     }
 
-
+    /*
+     * BP_0103 Geschaeftspartner Verwalter
+     * SAP -> CEOS
+     * */
     public function verwalter(BP_0103_verwalterRequest $request): JsonResponse
     {
         try {

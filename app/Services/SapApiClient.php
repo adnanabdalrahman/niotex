@@ -2,15 +2,16 @@
 
 namespace App\Services;
 
+use Exception;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
 
 class SapApiClient
 {
-    protected $baseUrl;
-    protected $client_id;
-    protected $client_secret;
+    protected mixed $baseUrl;
+    protected mixed $client_id;
+    protected mixed $client_secret;
 
     public function __construct()
     {
@@ -21,18 +22,20 @@ class SapApiClient
 
     /**
      * Fetch CSRF token and cookies from SAP
+     * @throws ConnectionException
+     * @throws Exception
      */
-    protected function fetchToken($tokenEndpoint): array
+    /*protected function fetchToken($tokenEndpoint): array
     {
         $response = Http::withHeaders([
             'x-csrf-token' => 'Fetch',
             'client_id' => $this->client_id,
             'client_secret' => $this->client_secret,
-        ])->get("{$this->baseUrl}{$tokenEndpoint}");
+        ])->get($this->baseUrl.$tokenEndpoint);
 
 
         if ($response->header('x-csrf-token') == "") {
-            throw new \Exception("Token request failed: " . $response->body());
+            throw new Exception("Token request failed: " . $response->body());
         }
         // Convert cookies into associative array
         $cookies = [];
@@ -44,29 +47,46 @@ class SapApiClient
             'token' => $response->header('x-csrf-token'),
             'cookies' => $cookies,
         ];
-    }
+    }*/
 
     /**
      * General method to send POST request with CSRF token
+     * @throws Exception
      */
-    public function post(string $endpoint, array $data): array
+    public function post(string $endpoint, array $data)
     {
-        $tokenEndpoint = $endpoint;
-        $auth = $this->fetchToken($tokenEndpoint);
+//        $tokenEndpoint = $endpoint;
+//        $auth = $this->fetchToken($tokenEndpoint);
         $response = Http::withHeaders([
-            'x-csrf-token' => $auth['token'],
+            'X-Requested-With' => 'XMLHttpRequest',
             'Accept' => 'application/json',
             'client_id' => $this->client_id,
             'client_secret' => $this->client_secret,
-        ])->withCookies($auth['cookies'], parse_url($this->baseUrl, PHP_URL_HOST))
-            ->post("{$this->baseUrl}{$endpoint}", $data);
-
-
+        ])->post($this->baseUrl.$endpoint, $data);
 
         if (!$response->successful()) {
-            throw new \Exception("SAP POST to '{$endpoint}' failed: " . $response->body());
+            throw new Exception("SAP POST to '{$endpoint}' failed: " . $response->body());
         }
-
         return $response->json();
     }
+
+
+    /**
+     * @throws ConnectionException
+     * @throws Exception
+     */
+    public function get(string $endpoint, string $data)
+    {
+        $response = Http::withHeaders([
+            'Accept' => 'application/json',
+            'client_id' => $this->client_id,
+            'client_secret' =>  $this->client_secret,
+        ])->get($this->baseUrl.$endpoint.$data);
+
+        if (!$response->successful()) {
+            throw new Exception("SAP GET to '{$endpoint}' failed: " . $response->body());
+        }
+        return $response->json();
+    }
+
 }
