@@ -70,19 +70,23 @@ class BPServices
 
                 $streetArray = $this->splitStreet($data['Strasse']);
                 //todo
-                if ($data['LVorm'] == 1) {
-                    //todo delete (as ALT)
-                }
+                /*
+                     if ($data['LVorm'] === 1) {
+                     //todo delete (as ALT)
+                 }
+                */
 
                 //todo LAND CODE
 
                 //todo
-                //        'InternAdressnummer'      =>  $data['Kundengruppe'],    /// N:N
+                //       =>  $data['Kundengruppe'],    /// N:N
                 //                                  =>  $data['Kundengruppe12'],    /// N:N
 
 
                 // Insert into users table
-                return DB::connection('sqlsrv2')->table('cis.Adresse')->updateOrInsert([
+                $data = DB::connection('sqlsrv2')->table('cis.Adresse')->updateOrInsert([
+                    'AdrFibunummer' => $data['Geschaeftspartnernummer'], // Primary
+                    'AdressNummer' => $data['Debitoren_Kreditorennummer'],
                     'KZAdresstyp' => "KUN", // ???????
                     'KZWaehrung' => "EUR", // ???????
                     'MwstTypID' => 3, // ???????
@@ -90,8 +94,6 @@ class BPServices
                     'KZSprache' => "DE", // ???????
                     'AdrFactoringJN' => 0, // ???????
                     'AdrMahnSperreJN' => 0, // ???????
-                    'AdrFibunummer' => $data['Geschaeftspartnernummer'],
-                    'AdressNummer' => $data['Debitoren_Kreditorennummer'],
                     'NRAnrede' => $data['Anrede'],
                     'NRTitel' => $data['Titel'],
                     'AdrFirmenbezeichnung1' => $AdrFirmenbezeichnung1,
@@ -115,8 +117,8 @@ class BPServices
                     'AdrEmail' => $data['Email'],
                     'AdrGutschriftsverfahrenJN' => $data['AutoWEAbr'],
                     'AdrLiefersperreJN' => $data['Sperrkennzeichen'],
-                    //'InternAdressnummer'          =>  $data['Kundengruppe'],    /// N:N
-                    // ''                           =>  $data['Kundengruppe12'],    /// N:N
+                    //''                =>  $data['Kundengruppe'],    // N:N
+                    // ''               =>  $data['Kundengruppe12'],  // N:N
                     'ADRindividualC2' => $data['UVI_Mailadresse'],
                     'ADRindividualC3' => $data['PDF_Mailadresse'],
                 ]);
@@ -126,7 +128,7 @@ class BPServices
         }
         return $data;
     }
-
+        
     public function splitStreet($recievedStreet): array
     {
         // Strasse + Hausnummer
