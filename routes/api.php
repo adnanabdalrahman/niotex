@@ -1,12 +1,11 @@
 <?php
 
 use App\Http\Controllers\V1\BPController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\V1\SDController;
-use App\Http\Middleware\VerifySapToken;
-use App\Http\Middleware\VerifyCeosWebToken;
 use App\Http\Controllers\V1\MMController;
-
+use App\Http\Controllers\V1\SDController;
+use App\Http\Middleware\VerifyCeosWebToken;
+use App\Http\Middleware\VerifySapToken;
+use Illuminate\Support\Facades\Route;
 
 
 Route::middleware([VerifySapToken::class])->group(function () {
@@ -28,7 +27,7 @@ Route::middleware([VerifySapToken::class])->group(function () {
                 //bp-01-01: SAP-->CEOS, Geschäftspartner
                 Route::post('/0101/geschaeftspartner', [BPController::class, 'geschaeftspartner']);
 
-                //bp-01-03: Kundenstamm SAP – CEOS Verwalter
+                //bp-01-03: Kundenstamm SAP –> CEOS Verwalter
                 Route::post('/0103/verwalter', [BPController::class, 'verwalter']);
             });
 
@@ -77,20 +76,18 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
 
 
 
-    // MM-Requests //Material Management
+// MM-Requests //Material Management
 
-        //MM-31-1: SAP-->CEOS, Materialstammdaten
-        //MM-22-1: CEOS-->SAP, Abfrage Lagerbestände Hauptlager
-        //MM-33-1a: CEOS-->SAP, Liefer-/Leistungsbestätigung mit Erstellung Gutschrift (NU-Abrechnung) (Im Rahmen von Wertkontrakt)
-        //MM-34-1: CEOS-->SAP, Umlagerungsreservierung übergeben
-        //MM-35-2: CEOS-->SAP, Materialverbrauch des Monteurs buchen [ausgewählt]
-        //MM-36-01: Verknüpfung Monteur/NU zu Lagerort
-        //MM-33-1b: NU-Auftragspaket CEOS zu SAP-Bestellung
-        //MM-37-1: SAP Schnittstelle Übertragung Preise NU Leistungspositionen von SAP an CEOS
-
-
+//MM-31-1: SAP-->CEOS, Materialstammdaten
+//MM-22-1: CEOS-->SAP, Abfrage Lagerbestände Hauptlager
+//MM-33-1a: CEOS-->SAP, Liefer-/Leistungsbestätigung mit Erstellung Gutschrift (NU-Abrechnung) (Im Rahmen von Wertkontrakt)
+//MM-34-1: CEOS-->SAP, Umlagerungsreservierung übergeben
+//MM-35-2: CEOS-->SAP, Materialverbrauch des Monteurs buchen [ausgewählt]
+//MM-36-01: Verknüpfung Monteur/NU zu Lagerort
+//MM-33-1b: NU-Auftragspaket CEOS zu SAP-Bestellung
+//MM-37-1: SAP Schnittstelle Übertragung Preise NU Leistungspositionen von SAP an CEOS
 
 
-    //SD-Requests
+//SD-Requests
 
-    //SE-Requests
+//SE-Requests

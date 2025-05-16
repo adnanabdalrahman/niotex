@@ -126,6 +126,9 @@ class MMServices
     }
 
 
+    /**
+     * @throws Exception
+     */
     public function mm_35_02_materialverbrauch()
     {
         // todo data mapping

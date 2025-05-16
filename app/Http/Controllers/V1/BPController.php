@@ -5,14 +5,16 @@ namespace App\Http\Controllers\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BP_0101_geschaeftspartnerRequest;
 use App\Http\Requests\BP_0103_verwalterRequest;
-use Illuminate\Support\Facades\Log;
 use App\Services\BPServices;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+
 class BPController extends Controller
 {
 
     protected BPServices $bpServices;
+
     public function __construct(BPServices $bpServices)
     {
         $this->bpServices = $bpServices;
@@ -45,7 +47,7 @@ class BPController extends Controller
         try {
             $validated = $request->validated();
 
-            Log::info('Received SAP Material Data:', $validated);
+            Log::info('Received Geschaeftspartner Verwalter Data:', $validated);
             $data = $this->bpServices->bp_0103_verwalter($validated);
             return response()->json(['message' => 'Verwalter erfolgreich gespeichert.', 'data' => $data], 202);
         } catch (ValidationException $e) {
@@ -53,7 +55,6 @@ class BPController extends Controller
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
         }
     }
-
 
 
 }
