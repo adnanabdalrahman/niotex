@@ -46,7 +46,6 @@ class BPController extends Controller
     {
         try {
             $validated = $request->validated();
-
             Log::info('Received Geschaeftspartner Verwalter Data:', $validated);
             $data = $this->bpServices->bp_0103_verwalter($validated);
             return response()->json(['message' => 'Verwalter erfolgreich gespeichert.', 'data' => $data], 202);
@@ -55,6 +54,4 @@ class BPController extends Controller
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
         }
     }
-
-
 }

@@ -3,22 +3,22 @@
 namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Support\Facades\Log;
-use Vyuldashev\LaravelOpenApi\Attributes as OpenApi;
-
-use App\OpenApi\Requests\MaterialstammdatenRequest;
 use App\Http\Requests\MM_2201_SAPStockRequest;
 use App\Http\Requests\MM_3101_materialStammdatenRequest;
-
-use App\Services\MMServices;
-use Illuminate\Http\JsonResponse;
+use App\OpenApi\Requests\MaterialstammdatenRequest;
 use App\OpenApi\Responses\Success202;
+use App\Services\MMServices;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Vyuldashev\LaravelOpenApi\Attributes as OpenApi;
+
 #[OpenApi\PathItem]
 class MMController extends Controller
 {
     protected MMServices $mmServices;
+
     public function __construct(MMServices $mmServices)
     {
         $this->mmServices = $mmServices;
@@ -28,7 +28,6 @@ class MMController extends Controller
     #[OpenApi\Operation(tags: ['MM'], method: 'POST')]
     #[OpenApi\RequestBody(factory: MaterialstammdatenRequest::class)]
     #[OpenApi\Response(factory: Success202::class)]
-
     /**
      * MM-31-1 Materialstammdaten
      * Receive material data from SAP.
@@ -43,12 +42,9 @@ class MMController extends Controller
             $validated = $request->validated();
 
             Log::info('Received SAP Material Data:', $validated);
-            // Process the material data asynchronously
+            $result = $this->mmServices->mm_31_01_materialstammdaten($validated);
 
-            // ProcessMaterialData::dispatch($validated);
-            $data = $this->mmServices->mm_31_01_materialstammdaten($validated);
-
-            return response()->json(['message' => 'Material erfolgreich gespeichert.', 'data' => $data], 202);
+            return response()->json(['message' => $result['message'], 'InterneArtikelnummer' => $result['interneArtikelnummer']], 202);
         } catch (ValidationException $e) {
             Log::error('Validation error:', ['errors' => $e->errors()]);
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
@@ -67,9 +63,9 @@ class MMController extends Controller
     {
         try {
             // ProcessMaterialData::dispatch($validated);
-            $data =  $this->mmServices->mm_34_01_umlagerungsreservierung();
+            $data = $this->mmServices->mm_34_01_umlagerungsreservierung();
             return response()->json(['data' => $data], 202);
-        }  catch (\Exception $e) {
+        } catch (\Exception $e) {
             Log::error('Internal error:', ['errors' => $e->getMessage()]);
             return response()->json(['message' => 'Internal error', 'errors' => $e->getMessage()], 500);
         }
@@ -77,7 +73,7 @@ class MMController extends Controller
     }
 
 
-    public function materialverbrauch (): JsonResponse
+    public function materialverbrauch(): JsonResponse
     {
         try {
             return $this->mmServices->mm_35_02_materialverbrauch();
@@ -86,8 +82,6 @@ class MMController extends Controller
             return response()->json(['message' => 'Internal error', 'errors' => $e->getMessage()], 500);
         }
     }
-
-
 
 
     /**

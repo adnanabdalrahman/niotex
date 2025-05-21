@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Adresse extends Model
+class Basisempfindlichkeit extends Model
 {
     public $timestamps = false;
     protected $connection = 'sqlsrv2';
-    protected $table = 'cis.Adresse';
-    protected $primaryKey = 'InterneAdressnummer';
+    protected $table = 'cis.RakArtikel';
+    protected $primaryKey = 'InterneArtikelNummer';
     protected $guarded = [];
+
 
 }

@@ -2,12 +2,15 @@
 
 namespace App\Services;
 
+use App\Models\Adresse;
+use App\Models\Artikel;
+use App\Models\ArtikelLieferant;
+use App\Models\Basisempfindlichkeit;
 use Exception;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
-
 
 class MMServices
 {
@@ -32,37 +35,168 @@ class MMServices
         $this->mm352_path = config('sap.mm341_path');
     }
 
-
-    /**
-     * MM-31-1 Materialstammdaten
-     * SAP -> CEOS
-     */
-    public function mm_31_01_materialstammdaten($data): ?string
+    public function mm_31_01_materialstammdaten($data): array
     {
-        //Todo check if Material exist in CEOS materialnummer
-        // check LÖv => 1/0
-        // if not exist, create new Material
+        /*
+        CEOSArtikelgruppe   =>Artikel.KZArtikelgruppe (10) → cis.Artikelgruppe.KZArtikelgruppe
+        - Required NOT NULL
+        - saved as it is
+        - todo should Combination between (KZWarengruppe - KZArtikelgruppe ) exist in Artikelgruppe Validation
+        - EX: ART - HKV
+
+
+        CEOSWarengruppe => Artikel.KZWarengruppe (4) → cis.Warengruppe.KZWarengruppe
+        - Required NOT NULL
+        - saved as it is
+        - todo should exist in Warengruppe Validation
+        - EX: ART
+
+         todo CEOSArtikeluntergruppe => Artikel.ArtikelUntergruppeID (int) → cis.ArtikelUntergruppe.KZUnterArtikelgruppe
+        - todo compare combination
+            KZWarengruppe => CEOSWarengruppe
+            KZArtikelgruppe => CEOSArtikelgruppe
+            KZUnterArtikelgruppe => CEOSArtikeluntergruppe
+            then get the ArtikelUntergruppeID
+        - NULL ACCEPTED
+
+        todo ProduktgruppeCEOS => Artikel.KZProduktgruppe (4) → cis.Produktgruppe need List
+        - saved as it comes directly
+        - Liste benötigt
+        - todo should exist in Warengruppe Validation
+        - NULL ACCEPTED
+
+        Basismengeneinheit =>  Artikel.KZArtMengeneinheit1 (m:1)→cis.Mengeneinheit.KZMengeneinheit
+        - saved as it is
+        - todo should exist in Mengeneinheit.KZMengeneinheit Validation
+        - NULL ACCEPTED
+    -----------------------------------------------------------------------------
+        todo
+        HIBEzuHAWA1 =>  String (18)
+        HIBEzuHAWA2 => String (18)
+        HIBEzuHAWA3 => String (18)
+    -----------------------------------------------------------------------------
+        /**
+         * MM-31-1 Materialstammdaten
+         * SAP -> CEOS
+         */
+        //EAN Splitt
+        $artEAN1 = substr($data['EANNummerSAP'], 0, 8);        // first 8 characters
+        $artEAN2 = substr($data['EANNummerSAP'], 8, 8);
+
+        $data['NRPreisbasis'] = 1;
+        $data['MwstNummer'] = 3;
+        $data['ArtVerkaufspreis1'] = 0;
+        $data['ArtMaterialkosten'] = 0;
+        $data['ArtSondereinzelkosten'] = 0;
+        $data['ArtStkAuftragLagerbuchung'] = 0;
+        $data['ArtFremdFertigungskosten'] = 0;
+        $data['ArtFertigungskosten'] = 0;
+        //    ------------------------------------
+        $data['ArtRabattfaehigJN'] = 0;
+        $data['ArtSeriennummernfaehigJN'] = 0;
+        $data['ArtStuecklisteJN'] = 0;
+        $data['ArtProvisionsfaehigJN'] = 0;
+        $data['ArtLieferantenfaehigJN'] = 0;
+        $data['ArtVerkaufsfaehigJN'] = 0;
+        $data['ArtSkontofaehigJN'] = 0;
+        $message = "";
 
         try {
-            DB::transaction(function () use ($data) {
-                // Insert into users table
-                return DB::connection('sqlsrv2')->table('cis.Artikel')->updateOrInsert([
-                    'KZArtikelgruppe' => $data['Produktgruppe'] ?? null,
-                    'KZWarengruppe' => $data['Warengruppe'] ?? null,
-                    'Artikelnummer' => $data['Material'] ?? null,
-                    'NRPreisbasis' => $data['NRPreisbasis'] ?? null,
-                    'MwstNummer' => $data['MwstNummer'] ?? null, // 3
-                    'ArtVerkaufspreis1' => $data['ArtVerkaufspreis1'] ?? 0, // 0
-                    'ArtMaterialkosten' => $data['ArtMaterialkosten'] ?? null, // missbrauchen
-                    'ArtSondereinzelkosten' => $data['ArtSondereinzelkosten'] ?? null, // null
-                    'ArtFertigungskosten' => $data['ArtFertigungskosten'] ?? null, // null
-                    'ArtStkAuftragLagerbuchung' => $data['ArtStkAuftragLagerbuchung'] ?? null, //??
-                ]);
-            });
+            $artikel = Artikel::updateOrCreate(
+                ['Artikelnummer' => $data['Material']],
+                [
+                    'Artikelnummer' => $data['Material'],
+                    'ArtBezeichnung1' => $data['Materialkurztext'],
+                    'ArtBezeichnung2' => $data['Bezeichnung1'] . "|" . $data['Bezeichnung2'],
+                    'Artikel.KZArtMengeneinheit1 ' => $data['Basismengeneinheit'],
+                    'ArtAltJN' => $data['LVorm'],
+                    'Artikel.ArtIndividualC5' => $data['BKSchluessel'],
+                    'KZWarengruppe' => $data['CEOSWarengruppe'],
+                    'KZArtikelgruppe' => $data['CEOSArtikelgruppe'],
+                    'ArtikelUntergruppeID' => Null, //todo should later be built
+                    'KZProduktgruppe' => $data['Produktgruppe'],
+                    'ArtEAN1' => $artEAN1,
+                    'ArtEAN2' => $artEAN2,
+                    // default values for CEOS
+                    'NRPreisbasis' => $data['NRPreisbasis'],
+                    'MwstNummer' => $data['MwstNummer'],
+                    'ArtVerkaufspreis1' => $data['ArtVerkaufspreis1'],
+                    'ArtMaterialkosten' => $data['ArtMaterialkosten'],
+                    'ArtSondereinzelkosten' => $data['ArtSondereinzelkosten'],
+                    'ArtStkAuftragLagerbuchung' => $data['ArtStkAuftragLagerbuchung'],
+                    'ArtFremdFertigungskosten' => $data['ArtFremdFertigungskosten'],
+                    'ArtFertigungskosten' => $data['ArtFertigungskosten'],
+                    'ArtRabattfaehigJN' => $data['ArtRabattfaehigJN'],
+                    'ArtSeriennummernfaehigJN' => $data['ArtSeriennummernfaehigJN'],
+                    'ArtStuecklisteJN' => $data['ArtStuecklisteJN'],
+                    'ArtProvisionsfaehigJN' => $data['ArtProvisionsfaehigJN'],
+                    'ArtLieferantenfaehigJN' => $data['ArtLieferantenfaehigJN'],
+                    'ArtVerkaufsfaehigJN' => $data['ArtVerkaufsfaehigJN'],
+                ]
+            );
+            $interneArtikelNummer = $artikel['InterneArtikelnummer'];
+            $message .= "Artikel $interneArtikelNummer erfolgreich gespeichert ,";
         } catch (\Throwable $e) {
-            return $e->getMessage();
+            Log::error('mm_31_01_materialstammdaten Save Artikel Error', ['exception' => $e]);
+            return ['message' => $e->getMessage(), 'Material' => $data['Material']];
         }
-        return null;
+
+        // add Basisempfindlichkeit
+        try {
+            $rak_basisempfindlichkeit = Basisempfindlichkeit::updateOrCreate(
+                ['InterneArtikelNummer' => $interneArtikelNummer],
+                [
+                    'InterneArtikelNummer' => $interneArtikelNummer,
+                    'BasisempfindlichkeitSkala' => $data['Basisempfindlichkeit'],
+                ]
+            );
+            if ($rak_basisempfindlichkeit) {
+                $message .= "basisempfindlichkeit für $interneArtikelNummer erfolgreich gespeichert ,";
+            }
+        } catch (\Throwable $e) {
+            Log::error('mm_31_01_materialstammdaten Save Basisempfindlichkeit Error', ['exception' => $e]);
+            return ['message' => $e->getMessage(), 'Material' => $data['Material']];
+        }
+
+        //  Lieferschein (Hersteller)
+        $adresse = Adresse::where('AdressNummer', $data['Hersteller'])->first();
+
+        if ($adresse) {
+            $interneAdressnummer = $adresse->InterneAdressnummer;
+            try {
+
+                $artikelLieferant = ArtikelLieferant::updateOrCreate(
+                    [
+                        'InterneAdressnummer' => $interneAdressnummer,
+                        'InterneArtikelnummer' => $interneArtikelNummer
+                    ],
+                    [
+                        'InterneAdressnummer' => $interneAdressnummer,
+                        'InterneArtikelnummer' => $interneArtikelNummer,
+                        'AliBestellnummer' => $data['Herstellerteilenummer'],
+                        'AliLetzterEK' => 0,
+                        'AliLetzteMenge1' => 0,
+                        'AliLetzteMenge2' => 0,
+                        'AliLetzterRabatt1' => 0,
+                        'AliLetzterRabatt2' => 0,
+                        'AliLetzterRabatt3' => 0,
+                        'AliLetzterRabattWert1' => 0,
+                        'AliLetzterRabattWert2' => 0,
+                        'AliMindestbestellmenge' => 0,
+                    ]
+                );
+            } catch (\Exception $e) {
+                Log::error('mm_31_01_materialstammdaten Lieferschein Error', ['exception' => $e]);
+                return ['message' => $e->getMessage(), 'Material' => $data['Material']];
+            }
+
+            if ($artikelLieferant) {
+                $message .= "Lieferschein für $interneArtikelNummer , $interneAdressnummer erfolgreich gespeichert ,";
+            }
+        } else {
+            $message .= "Kein Adresse für Lieferschein gefunden";
+        }
+        return ['message' => $message, 'interneArtikelnummer' => $interneArtikelNummer];
     }
 
     //MM_34_01 Umlagerungsreservierung

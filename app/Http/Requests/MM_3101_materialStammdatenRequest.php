@@ -13,107 +13,100 @@ class MM_3101_materialStammdatenRequest extends FormRequest
 
     public function rules(): array
     {
-
-
-        /*
-            'KZArtikelgruppe' => 'required|string',
-            'KZWarengruppe' => 'required|string',
-            'Artikelnummer' => 'required|string',
-            'NRPreisbasis' => 'required|integer',
-            'MwstNummer' => 'required|integer',
-            'ArtVerkaufspreis1' => 'required|numeric',
-            'ArtMaterialkosten' => 'required|numeric',
-            'ArtSondereinzelkosten' => 'required|numeric',
-            'ArtFertigungskosten' => 'required|numeric',
-            'ArtStkAuftragLagerbuchung' => 'required|integer',
-        */
-
-
         return [
             'Material' => 'required|numeric|digits:18',
-            'Materialkurztext' => 'required|numeric|min:0',
-            'Basismengeneinheit' => 'required|string|size:2',
-            'Bezeichnung1' => 'required|string|max:255',
-            'Bezeichnung2' => 'nullable|string|max:255',
-            'Ean' => 'nullable|string|max:50',
-            'Erloescode' => 'required|integer|min:0',
-            'Langtext' => 'nullable|string|max:1000',
+            'Materialkurztext' => 'required|string|max:40',
+            'Warengruppe' => 'required|string|max:9',
+            'Bezeichnung1' => 'required|string|max:100',
+            'Bezeichnung2' => 'nullable|string|max:50',
+            'Basismengeneinheit' => 'required|string|max:3',
             'LVorm' => 'nullable|boolean',
+            'BKSchluessel' => 'nullable|string|max:3',
+            'CEOSWarengruppe' => 'required|string|max:4',
+            'CEOSArtikelgruppe' => 'required|string|max:10',
+            'CEOSArtikeluntergruppe' => 'nullable|string|max:10',
+            'MappingHIBE_HAWA1' => 'nullable|string|max:18',
+            'MappingHIBE_HAWA2' => 'nullable|string|max:18',
+            'MappingHIBE_HAWA3' => 'nullable|string|max:18',
+            'Produktgruppe' => 'nullable|string|max:4',
+            'Basisempfindlichkeit' => 'required|numeric',
+            'Hersteller' => 'nullable|string|max:10',
+            'Herstellerteilenummer' => 'nullable|string|max:40',
+            'EANNummerSAP' => 'nullable|string|max:16',
+            'Langtext' => 'nullable|string|max:1000',
+            //todo Matchcode not exist in Doc
             'Matchcode' => 'nullable|string|max:100',
-            'Mfrpn' => 'nullable|string|max:100',
-            'Produktgruppe' => 'nullable|string|max:100',
-            'Warengruppe' => 'nullable|string|max:100',
-            /*
-            Material 960000016
-
-            Materialkurztext
-            Warengruppe
-            Bezeichnung1
-            Bezeichnung2
-            Basismengeneinheit
-            Loeschvormerkung
-            BK_Schluessel
-            CEOS–Warengruppe
-            CEOS_Artikelgruppe
-            CEOS_Artikeluntergruppe
-            MappingHIBE_HAWA1
-            MappingHIBE_HAWA2
-            MappingHIBE_HAWA3
-            Produktgruppe CEOS
-            Basisempfindlichkeit
-            Hersteller
-            Herstellerteilenummer
-            EAN
-            */
-
         ];
     }
 
     public function messages(): array
     {
         return [
-            'Material.required' => 'Material number is required.',
-            'Material.numeric' => 'Material number must be numeric.',
-            'Material.digits' => 'Material number must be exactly 18 digits.',
+            [
+                'Material.required' => 'Das Feld "Material" ist erforderlich.',
+                'Material.numeric' => 'Das Feld "Material" muss eine Zahl sein.',
+                'Material.digits' => 'Das Feld "Material" muss genau 18 Stellen haben.',
 
-            'Basisempfindlichkeit.required' => 'Basisempfindlichkeit is required.',
-            'Basisempfindlichkeit.numeric' => 'Basisempfindlichkeit must be a number.',
-            'Basisempfindlichkeit.min' => 'Basisempfindlichkeit must be a positive number.',
+                'Materialkurztext.required' => 'Das Feld "Materialkurztext" ist erforderlich.',
+                'Materialkurztext.string' => 'Das Feld "Materialkurztext" muss eine Zeichenkette sein.',
+                'Materialkurztext.max' => 'Das Feld "Materialkurztext" darf maximal 40 Zeichen lang sein.',
 
-            'Basismengeneinheit.required' => 'Base unit is required.',
-            'Basismengeneinheit.string' => 'Base unit must be a string.',
-            'Basismengeneinheit.size' => 'Base unit must be exactly 2 characters.',
+                'Warengruppe.required' => 'Das Feld "Warengruppe" ist erforderlich.',
+                'Warengruppe.string' => 'Das Feld "Warengruppe" muss eine Zeichenkette sein.',
+                'Warengruppe.max' => 'Das Feld "Warengruppe" darf maximal 9 Zeichen lang sein.',
 
-            'Bezeichnung1.required' => 'Primary description is required.',
-            'Bezeichnung1.string' => 'Primary description must be a string.',
-            'Bezeichnung1.max' => 'Primary description may not be greater than 255 characters.',
+                'Bezeichnung1.required' => 'Das Feld "Bezeichnung1" ist erforderlich.',
+                'Bezeichnung1.string' => 'Das Feld "Bezeichnung1" muss eine Zeichenkette sein.',
+                'Bezeichnung1.max' => 'Das Feld "Bezeichnung1" darf maximal 100 Zeichen lang sein.',
 
-            'Bezeichnung2.string' => 'Secondary description must be a string.',
-            'Bezeichnung2.max' => 'Secondary description may not be greater than 255 characters.',
+                'Bezeichnung2.string' => 'Das Feld "Bezeichnung2" muss eine Zeichenkette sein.',
+                'Bezeichnung2.max' => 'Das Feld "Bezeichnung2" darf maximal 50 Zeichen lang sein.',
 
-            'Ean.string' => 'EAN must be a string.',
-            'Ean.max' => 'EAN may not be greater than 50 characters.',
+                'Basismengeneinheit.required' => 'Das Feld "Basismengeneinheit" ist erforderlich.',
+                'Basismengeneinheit.string' => 'Das Feld "Basismengeneinheit" muss eine Zeichenkette sein.',
+                'Basismengeneinheit.max' => 'Das Feld "Basismengeneinheit" darf maximal 3 Zeichen lang sein.',
 
-            'Erloescode.required' => 'Revenue code is required.',
-            'Erloescode.integer' => 'Revenue code must be an integer.',
-            'Erloescode.min' => 'Revenue code must be at least 0.',
+                'LVorm.boolean' => 'Das Feld "LVorm" muss true oder false sein.',
 
-            'Langtext.string' => 'Long text must be a string.',
-            'Langtext.max' => 'Long text may not be greater than 1000 characters.',
+                'BKSchluessel.required' => 'Das Feld "BKSchluessel" ist erforderlich.',
+                'BKSchluessel.string' => 'Das Feld "BKSchluessel" muss eine Zeichenkette sein.',
+                'BKSchluessel.max' => 'Das Feld "BKSchluessel" darf maximal 3 Zeichen lang sein.',
 
-            'LVorm.boolean' => 'LVorm must be true or false.',
+                'CEOSWarengruppe.required' => 'Das Feld "CEOSWarengruppe" ist erforderlich.',
+                'CEOSWarengruppe.string' => 'Das Feld "CEOSWarengruppe" muss eine Zeichenkette sein.',
+                'CEOSWarengruppe.max' => 'Das Feld "CEOSWarengruppe" darf maximal 4 Zeichen lang sein.',
 
-            'Matchcode.string' => 'Matchcode must be a string.',
-            'Matchcode.max' => 'Matchcode may not be greater than 100 characters.',
+                'CEOSArtikelgruppe.required' => 'Das Feld "CEOSArtikelgruppe" ist erforderlich.',
+                'CEOSArtikelgruppe.string' => 'Das Feld "CEOSArtikelgruppe" muss eine Zeichenkette sein.',
+                'CEOSArtikelgruppe.max' => 'Das Feld "CEOSArtikelgruppe" darf maximal 10 Zeichen lang sein.',
 
-            'Mfrpn.string' => 'Manufacturer part number must be a string.',
-            'Mfrpn.max' => 'Manufacturer part number may not be greater than 100 characters.',
+                'CEOSArtikeluntergruppe.string' => 'Das Feld "CEOSArtikeluntergruppe" muss eine Zeichenkette sein.',
+                'CEOSArtikeluntergruppe.max' => 'Das Feld "CEOSArtikeluntergruppe" darf maximal 10 Zeichen lang sein.',
 
-            'Produktgruppe.string' => 'Product group must be a string.',
-            'Produktgruppe.max' => 'Product group may not be greater than 100 characters.',
+                'MappingHIBE_HAWA1.string' => 'Das Feld "MappingHIBE_HAWA1" muss eine Zeichenkette sein.',
+                'MappingHIBE_HAWA1.max' => 'Das Feld "MappingHIBE_HAWA1" darf maximal 18 Zeichen lang sein.',
 
-            'Warengruppe.string' => 'Material group must be a string.',
-            'Warengruppe.max' => 'Material group may not be greater than 100 characters.',
+                'MappingHIBE_HAWA2.string' => 'Das Feld "MappingHIBE_HAWA2" muss eine Zeichenkette sein.',
+                'MappingHIBE_HAWA2.max' => 'Das Feld "MappingHIBE_HAWA2" darf maximal 18 Zeichen lang sein.',
+
+                'MappingHIBE_HAWA3.string' => 'Das Feld "MappingHIBE_HAWA3" muss eine Zeichenkette sein.',
+                'MappingHIBE_HAWA3.max' => 'Das Feld "MappingHIBE_HAWA3" darf maximal 18 Zeichen lang sein.',
+
+                'Produktgruppe.string' => 'Das Feld "Produktgruppe" muss eine Zeichenkette sein.',
+                'Produktgruppe.max' => 'Das Feld "Produktgruppe" darf maximal 4 Zeichen lang sein.',
+
+                'Basisempfindlichkeit.required' => 'Das Feld "Basisempfindlichkeit" ist erforderlich.',
+                'Basisempfindlichkeit.numeric' => 'Das Feld "Basisempfindlichkeit" muss eine Zahl sein.',
+
+                'Hersteller.string' => 'Das Feld "Hersteller" muss eine Zeichenkette sein.',
+                'Hersteller.max' => 'Das Feld "Hersteller" darf maximal 10 Zeichen lang sein.',
+
+                'Herstellerteilenummer.string' => 'Das Feld "Herstellerteilenummer" muss eine Zeichenkette sein.',
+                'Herstellerteilenummer.max' => 'Das Feld "Herstellerteilenummer" darf maximal 40 Zeichen lang sein.',
+
+                'EANNummerSAP.string' => 'Das Feld "EANNummerSAP" muss eine Zeichenkette sein.',
+                'EANNummerSAP.max' => 'Das Feld "EANNummerSAP" darf maximal 16 Zeichen lang sein.',
+            ]
         ];
     }
 }
