@@ -64,6 +64,16 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
                 //mm-35-02: CEOSWEB-->CEOS-->SAP, Materialverbrauch des Monteurs / NU
                 Route::post('/3502/materialverbrauch', [MMController::class, 'materialverbrauch']);
             });
+
+
+            Route::prefix('sd')->group(function () {
+                //SD-01-01: SAP-->CEOS, Beauftragung
+                Route::post('/0102/beauftragungRueckmeldung', [SDController::class, 'beauftragungRueckmeldung']);
+
+
+            });
+
+
         });
 });
 

@@ -550,6 +550,93 @@ class SDServices
         return $positionsResultArray;
     }
 
+
+    public function sd_0101_beauftragung_rueckmeldung($request): ?array
+    {
+        try {
+            $header = [];
+            $vorgang = Vorgang::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->first();
+            if (is_null($vorgang)) {
+                return null;
+            }
+
+
+            $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
+            if ($adresse) {
+                $header['kunnr'] = $adresse->AdressNummer;
+            } else {
+                Log::error("Kein Adresse für Vorgang gefunden");
+                return null;
+            }
+            $header['vbeln'] = $vorgang->VorIndividualC1;
+            $header['auart'] = $vorgang->VorIndividualC2;
+            $header['vdatu'] = Carbon::parse($vorgang->VorLieferungWunschDatum)->format('Y-m-d');
+            $header['zzlgsnr'] = $vorgang->VorIndividualC3;
+            $header['genrCeos'] = $vorgang->VorIndividualD4;
+            $header['txtZ013'] = $vorgang->VorStichwort;
+            $vorgang2Text = DB::connection('sqlsrv2')->table('cis.Vorgang2Text')
+                ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->first();
+
+            if ($vorgang2Text !== null) {
+                $header['txtZ012'] = $vorgang2Text->VorNotiz;
+            }
+
+            //---------------------------------------------------------------------------------------------
+            $positions = DB::connection('sqlsrv2')->table('cis.Position')
+                ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->get();
+            $positionArray = [];
+            foreach ($positions as $position) {
+
+                $artikel = Artikel::where('InterneArtikelnummer', $position->InterneArtikelnummer)->first();
+                if (is_null($artikel)) {
+                    Log::error("Artikel nicht gefunden");
+                    return null;
+                }
+
+
+                //todo need more validation for ever query :
+
+                $position5Individual = DB::connection('sqlsrv2')->table('cis.Position5Individual')
+                    ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
+                    ->where('InternePositionsnummer', $position->InternePositionsnummer)
+                    ->first();
+
+                $position3Menge = DB::connection('sqlsrv2')->table('cis.Position3Menge')
+                    ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
+                    ->where('InternePositionsnummer', $position->InternePositionsnummer)
+                    ->first();
+
+                $position2Text = DB::connection('sqlsrv2')->table('cis.Position2Text')
+                    ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
+                    ->where('InternePositionsnummer', $position->InternePositionsnummer)
+                    ->first();
+
+                $positionArray[] = [
+                    'matnr' => $artikel->Artikelnummer,
+                    'posErl' => 1,
+                    'kwmengO' => 0,
+                    'vorgn' => $vorgang->VorNummer,
+                    'vbeln' => $vorgang->VorIndividualC1,
+                    'vorgn_int' => $vorgang->InterneVorgangsnummer,
+                    'kondm' => $position5Individual->PosIndividualC3,
+                    'posnr' => $position5Individual->PosIndividualD1,
+                    'kwmeng' => $position3Menge->PosMenge1,
+                    'vrkme' => $position3Menge->PosKZMengeneinheit1,
+                    'txtZ002' => $position2Text->PosZusatztextLieferschein,
+                    'txtZ009' => $position2Text->PosZusatztext,
+                    'txtZ010' => $position2Text->PosNotiz,
+                ];
+            }
+            return ['Header' => $header, 'Positions' => $positionArray];
+
+        } catch (Throwable $e) {
+            Log::error($e);
+            return null;
+        }
+
+    }
+
+
     /**
      * SD-02-01 Mietvertragsrechnungen
      */
