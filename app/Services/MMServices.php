@@ -67,6 +67,8 @@ class MMServices
 
         Basismengeneinheit =>  Artikel.KZArtMengeneinheit1 (m:1)→cis.Mengeneinheit.KZMengeneinheit
         - saved as it is
+        // todo mappin to our Mengeneinheit Skibatron = KG--> Coes = kg //LE fehlt: noch klären VE fehlt: hinzufügen
+        // todo clarify in example request send another format than Excell, ex: ST in request => Stck in Excel ???
         - todo should exist in Mengeneinheit.KZMengeneinheit Validation
         - NULL ACCEPTED
     -----------------------------------------------------------------------------
@@ -106,7 +108,7 @@ class MMServices
                 ['Artikelnummer' => $data['Material']],
                 [
                     'Artikelnummer' => $data['Material'],
-                    'ArtBezeichnung1' => $data['Materialkurztext'],
+                    'ArtBezeichnung1' => $data['Materialkurztext'], // ArtMatchcode
                     'ArtBezeichnung2' => $data['Bezeichnung1'] . "|" . $data['Bezeichnung2'],
                     'Artikel.KZArtMengeneinheit1 ' => $data['Basismengeneinheit'],
                     'ArtAltJN' => $data['LVorm'],
@@ -212,8 +214,86 @@ class MMServices
     {
         //Todo where comes the trigger from Blau exist anpassungen
         // source data from CEOS mapping
-        // what to do with the recieved data??
+        // what to do with the received data??
 
+
+        /*
+            Basistermin für die Reservierung
+            Materialnummer
+            Benötigte Menge
+            Mengeneinheit
+            Tour ID für die Bearbeitung
+            Empfangener Lagerort (oder)
+            Empfangener Lagerort wird ermittelt (CHAR 20 Datenfeld, da die Ermittlung des Lagerortes auch über die Kreditorennummer des Nachunternehmers oder die Anmeldekennung des eigenen Handwerkers in SAP erfolgen kann)
+            Statusfeld für Rückmeldung SAP an CEOS mit Reservierungsnummer
+            Statusfeld für Fehlertext falls Verbuchung nicht funktioniert hat
+
+
+            Tour ID für die Bearbeitung  => TourID
+            Reservierungsnummer (lieferscheinnr) => ReservationNumber
+            Materialnummer Artikelstammsatz => Material
+            EmpfangenderLagerort => ReceivingStorage
+            Empfangener Lagerort wird ermittelt  => SupplierStorage
+            Benötigte Menge => NeededAmount
+            Mengeneinheit => UoM
+            Nachrichtentext => Remark
+            Bedarfstermin => TourDate  ReqDate()
+
+            // todo
+            - to clerify from Vivawest
+            - was ist MoveStloc in Payload ?
+            - was ist MoveStlocSearch in Payload ?
+            - ist ReqDate gleich TourDate (Bedarfstermin ) ?
+            Wieso ist die Payload nicht mit den vereinbarten Schnittstellenfeldern zugeordnet?
+
+
+            - Datumsformat von uns wird so geschickt: 2025-03-31 09:41:05.000
+            - wo ist Nachrichtentext in Payload?
+            - Warum TourId und Bedarfstermin in jeder position ?
+            - Response is von uns nicht brauchbar ist das eine Empfangsbestätigung? Wo steht zB die Fehlermeldung falls vorhanden.
+
+
+            TourID
+            Nachrichtentext
+             "MoveStloc":"H001",
+            {
+                Material
+                Menge
+                Mengeneinheit
+                Bedarfstermin
+            },
+            {
+                Material
+                Menge
+                Mengeneinheit
+                Bedarfstermin
+            }
+
+        response success => ReservNo
+        response Error =>
+                {
+            "error": {
+                "code": "0050569259751EE4BA9710043F8A5115",
+                "message": {
+                    "lang": "de",
+                    "value": "Im Rahmen der Datenservices ist ein unbekannter interner Serverfehler aufgetreten"
+                },
+                "innererror": {
+                    "transactionid": "36A6D97C62BB0240E006810DB73F35AF",
+                    "timestamp": "20250522140226.5639860",
+                    "Error_Resolution": {
+                        "SAP_Transaction": "For backend administrators: run transaction /IWFND/ERROR_LOG on SAP Gateway hub system and search for entries with the timestamp above for more details",
+                        "SAP_Note": "See SAP Note 1797736 for error analysis (https://service.sap.com/sap/support/notes/1797736)"
+                    }
+                }
+            }
+        }
+
+
+
+
+
+      */
         $data = [
             "TourId" => "123456",
             "ReservNo" => "",
@@ -239,11 +319,9 @@ class MMServices
         return app(SapApiClient::class)->post($this->mm341_path, $data);
     }
 
-
     /**
      * MM-22-1 Abfrage nach Lagerbestände
      * Get stock Level from SAP.
-     *
      * @param string $materials
      * @param string $storage
      * @return JsonResponse
