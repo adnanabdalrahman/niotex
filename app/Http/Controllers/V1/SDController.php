@@ -9,8 +9,8 @@ use App\Http\Requests\SD_0201_mietvertragsrechnungenRequest;
 use App\Http\Requests\SD_0301_dienstleistungsabrechnungRequest;
 use App\Services\SDServices;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Vyuldashev\LaravelOpenApi\Attributes as OpenApi;
 
 class SDController extends Controller
 {
@@ -40,6 +40,7 @@ class SDController extends Controller
             $vorgangDataArray = $this->sdServices->sd_0101_beauftragung_vorgang($validated['header']);
             if ($vorgangDataArray !== null) {
                 $positionsNrArray = $this->sdServices->sd_0101_beauftragung_positions($validated['positions'], $vorgangDataArray);
+                Log::info('Received Vorgang: ', $vorgangDataArray);
                 return response()->json([
                     'status' => 'success',
                     'message' => 'Beauftragung erfolgreich empfangen',
@@ -59,10 +60,37 @@ class SDController extends Controller
     }
 
 
+    // SD-01-02: CEOS-->SAP, beauftragung Rueckmeldung
+    public function beauftragungRueckmeldung(Request $request)
+    {
+        try {
+            $vorgangDataArray = $this->sdServices->sd_0101_beauftragung_rueckmeldung($request);
+            if ($vorgangDataArray !== null) {
+                Log::info('Sent Vorgang: ', $vorgangDataArray);
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Auftrag Status erfolgreich geändert',
+                    'data' => $vorgangDataArray
+                ], 202);
+            }
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'Beauftragung fehlgeschlagen',
+            ], 400);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error:', ['errors' => $e->errors()]);
+            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
+
+        }
+    }
+
+
+
+
+
     // SD-02-01: SAP-->CEOS, Übergabe Werte aus Mietvertragsrechnungen an die CEOS
-    #[OpenApi\Operation(tags: ['SD'], method: 'POST')]
-    #[OpenApi\RequestBody(factory: SD_0201_mietvertragsrechnungenRequest::class)]
-    #[OpenApi\Response(factory: \App\OpenApi\Responses\Success202::class)]
+
     /**
      * SD-02-01 Mietvertragsrechnungen
      * Receive rental contract invoice data from SAP.
