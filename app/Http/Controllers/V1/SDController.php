@@ -25,9 +25,6 @@ class SDController extends Controller
     // SD-01-01: SAP-->CEOS, in SAP wird ein Kundenauftrag angelegt -
     // dieser wird auf Unvollständigkeit geprüft und danach wird CEOS mit den Daten positionsgenau beauftragt
 
-    #[OpenApi\Operation(tags: ['SD'], method: 'POST')]
-    #[OpenApi\RequestBody(factory: SD_0101_beauftragungRequest::class)]
-    #[OpenApi\Response(factory: \App\OpenApi\Responses\Success202::class)]
     /**
      * SD-01-01 Beauftragung
      * Receive order data from SAP.
@@ -40,19 +37,24 @@ class SDController extends Controller
         try {
             $validated = $request->validated();
 
-            $data = $this->sdServices->sd_0101_beauftragung($validated);
-
+            $vorgangDataArray = $this->sdServices->sd_0101_beauftragung_vorgang($validated['header']);
+            if ($vorgangDataArray !== null) {
+                $positionsNrArray = $this->sdServices->sd_0101_beauftragung_positions($validated['positions'], $vorgangDataArray);
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Beauftragung erfolgreich empfangen',
+                    'data' => $positionsNrArray
+                ], 202);
+            }
             return response()->json([
-                'status' => 'success',
-                'message' => 'Beauftragung erfolgreich empfangen',
-                'vbeln' => $data['vbeln'],
-                'vorNummer' => $data['vorNummer'],
-            ], 202);
+                'status' => 'Error',
+                'message' => 'Beauftragung fehlgeschlagen',
+            ], 400);
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Validation error:', ['errors' => $e->errors()]);
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
 
-            // message is max 255 characters
         }
     }
 
@@ -73,7 +75,7 @@ class SDController extends Controller
         try {
             $validated = $request->validated();
 
-            $data = $this->sdServices->sd_0201_mietvertragsrechnungen($validated);
+            $data = $this->sdServices->sd_0201_mietvertragsrechnungen();
 
             return response()->json([
                 'status' => 'success',
@@ -99,7 +101,7 @@ class SDController extends Controller
         try {
             $validated = $request->validated();
 
-            $data = $this->sdServices->sd_0301_dienstleistungsabrechnung($validated);
+            $data = $this->sdServices->sd_0301_dienstleistungsabrechnung();
 
             return response()->json([
                 'status' => 'success',
