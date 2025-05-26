@@ -36,16 +36,17 @@ class SDController extends Controller
     {
         try {
             $validated = $request->validated();
-
+            Log::info('Received Vorgang: ', $validated);
             $vorgangDataArray = $this->sdServices->sd_0101_beauftragung_vorgang($validated['header']);
             if ($vorgangDataArray !== null) {
                 $positionsNrArray = $this->sdServices->sd_0101_beauftragung_positions($validated['positions'], $vorgangDataArray);
-                Log::info('Received Vorgang: ', $vorgangDataArray);
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Beauftragung erfolgreich empfangen',
-                    'data' => $positionsNrArray
-                ], 202);
+                if ($positionsNrArray !== null) {
+                    return response()->json([
+                        'status' => 'success',
+                        'message' => 'Beauftragung erfolgreich empfangen',
+                        'data' => $positionsNrArray
+                    ], 202);
+                }
             }
             return response()->json([
                 'status' => 'Error',
