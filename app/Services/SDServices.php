@@ -291,7 +291,7 @@ class SDServices
 
     }
 
-    public function sd_0101_beauftragung_positions($positions, $vorgangDataArray): array
+    public function sd_0101_beauftragung_positions($positions, $vorgangDataArray): ?array
     {
         $interneVorgangsnummer = $vorgangDataArray['InterneVorgangsnummer'];
         $vorNummer = $vorgangDataArray['VorNummer'];
@@ -320,9 +320,13 @@ class SDServices
         $positionsResultArray = array();
         foreach ($positions as $key => $position) {
             try {
+                $position['matnr'] = ltrim($position['matnr'], '0');
                 $interneArtikelnummer = Artikel::where('Artikelnummer', $position['matnr'])->first();
+                if ($interneArtikelnummer === null) {
+                    Log::error("Material {$position['matnr']} für Vorgang gefunden");
+                    return null;
+                }
                 $preisbasis = Preisbasis::where('NRPreisbasis', $interneArtikelnummer->NRPreisbasis)->first();
-
                 $internePositionsnummer = DB::connection('sqlsrv2')->table('cis.Position')->insertGetId([
                     'InterneVorgangsnummer' => $interneVorgangsnummer,
                     'PosVorgaenger' => 0,
