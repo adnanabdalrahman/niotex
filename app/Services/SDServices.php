@@ -15,10 +15,19 @@ use Throwable;
 class SDServices
 {
     protected string $baseUrl;
+    protected string $sd0102_path;
+
+
     protected array $auth;
 
     public function __construct()
     {
+        $this->baseUrl = config('sap.base_url');
+        $this->auth = [
+            'client_id' => config('sap.client_id'),
+            'client_secret' => config('sap.client_secret'),
+        ];
+        $this->sd0102_path = config('sap.sd0102_path');
     }
 
     /**
@@ -285,7 +294,7 @@ class SDServices
             ];
 
         } catch (Throwable $e) {
-            Log::error($e);
+            Log::error('sd_0101_beauftragung_vorgang' . $e->getMessage());
             return null;
         }
 
@@ -323,7 +332,12 @@ class SDServices
                 $position['matnr'] = ltrim($position['matnr'], '0');
                 $interneArtikelnummer = Artikel::where('Artikelnummer', $position['matnr'])->first();
                 if ($interneArtikelnummer === null) {
-                    Log::error("Material {$position['matnr']} für Vorgang gefunden");
+                    Log::error("Material für Vorgang nicht gefunden",
+                        [
+                            'Materila' => $position['matnr'],
+                            'Vorgangnummer' => $vorNummer
+                        ]
+                    );
                     return null;
                 }
                 $preisbasis = Preisbasis::where('NRPreisbasis', $interneArtikelnummer->NRPreisbasis)->first();
@@ -547,15 +561,15 @@ class SDServices
                     'vorgn' => $vorNummer,
                 ];
             } catch (Throwable $e) {
-                Log::error($e->getMessage());
-                return [$e->getMessage()];
+                Log::error('sd_0101_beauftragung_positions Error:' . $e->getMessage());
+                return null;
             }
         }
         return $positionsResultArray;
     }
 
 
-    public function sd_0101_beauftragung_rueckmeldung($request): ?array
+    public function sd_0101_beauftragung_rueckmeldung($request)
     {
         try {
             $header = [];
@@ -563,13 +577,13 @@ class SDServices
             if (is_null($vorgang)) {
                 return null;
             }
-
-
             $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
             if ($adresse) {
                 $header['kunnr'] = $adresse->AdressNummer;
             } else {
-                Log::error("Kein Adresse für Vorgang gefunden");
+                Log::error("Kein Adresse für Vorgang gefunden",
+                    ['Vorgangnummer' => $request->InterneVorgangsnummer]
+                );
                 return null;
             }
             $header['vbeln'] = $vorgang->VorIndividualC1;
@@ -593,27 +607,60 @@ class SDServices
 
                 $artikel = Artikel::where('InterneArtikelnummer', $position->InterneArtikelnummer)->first();
                 if (is_null($artikel)) {
-                    Log::error("Artikel nicht gefunden");
+                    Log::error(
+                        "Artikel für Position nicht gefunden",
+                        [
+                            'Vorgangnummer' => $request->InterneVorgangsnummer,
+                            'InterneArtikelnummer' => $position->InterneArtikelnummer,
+                            'InternePositionsnummer' => $position->InternePositionsnummer,
+                        ]
+                    );
                     return null;
                 }
-
-
-                //todo need more validation for ever query :
 
                 $position5Individual = DB::connection('sqlsrv2')->table('cis.Position5Individual')
                     ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
                     ->where('InternePositionsnummer', $position->InternePositionsnummer)
                     ->first();
+                if (is_null($position5Individual)) {
+                    Log::error(
+                        "Position5Individual nicht gefunden",
+                        [
+                            'Vorgangnummer' => $request->InterneVorgangsnummer,
+                            'InternePositionsnummer' => $position->InternePositionsnummer,
+                        ]
+                    );
+                    return null;
 
+                }
                 $position3Menge = DB::connection('sqlsrv2')->table('cis.Position3Menge')
                     ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
                     ->where('InternePositionsnummer', $position->InternePositionsnummer)
                     ->first();
-
+                if (is_null($position3Menge)) {
+                    Log::error(
+                        "Position3Menge nicht gefunden",
+                        [
+                            'Vorgangnummer' => $request->InterneVorgangsnummer,
+                            'InternePositionsnummer' => $position->InternePositionsnummer,
+                        ]
+                    );
+                    return null;
+                }
                 $position2Text = DB::connection('sqlsrv2')->table('cis.Position2Text')
                     ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
                     ->where('InternePositionsnummer', $position->InternePositionsnummer)
                     ->first();
+                if (is_null($position2Text)) {
+                    Log::error(
+                        "Position2Text nicht gefunden",
+                        [
+                            'Vorgangnummer' => $request->InterneVorgangsnummer,
+                            'InternePositionsnummer' => $position->InternePositionsnummer,
+                        ]
+                    );
+                    return null;
+                }
 
                 $positionArray[] = [
                     'matnr' => $artikel->Artikelnummer,
@@ -631,13 +678,16 @@ class SDServices
                     'txtZ010' => $position2Text->PosNotiz,
                 ];
             }
-            return ['Header' => $header, 'Positions' => $positionArray];
-
+            $data = ['Header' => $header, 'Positions' => $positionArray];
+            $result = app(SapApiClient::class)->post($this->sd0102_path, $data);
+            if ($result === null) {
+                return null;
+            }
         } catch (Throwable $e) {
-            Log::error($e);
+            Log::error($e->getMessage());
             return null;
         }
-
+        return $result;
     }
 
 
@@ -656,7 +706,7 @@ class SDServices
      * SAP -> CEOS
      * SD-03-01 Dienstleistungsabrechnung
      */
-    public function sd_0301_dienstleistungsabrechnung(): array
+    public function sd_0301_dienstleistungsabrechnung($validated): array
     {
         // create Vorgang with same vorNummer that they sent
         // create positioned für this Vorgang
