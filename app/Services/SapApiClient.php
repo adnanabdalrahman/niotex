@@ -4,7 +4,6 @@ namespace App\Services;
 
 use Exception;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Http;
 
 class SapApiClient
@@ -62,10 +61,11 @@ class SapApiClient
             'Accept' => 'application/json',
             'client_id' => $this->client_id,
             'client_secret' => $this->client_secret,
-        ])->post($this->baseUrl.$endpoint, $data);
+        ])->post($this->baseUrl . $endpoint, $data);
 
         if (!$response->successful()) {
-            throw new Exception("SAP POST to '{$endpoint}' failed: " . $response->body());
+            \Log::error("SAP POST to '{$endpoint}' failed: " . $response->body());
+            return null;
         }
         return $response->json();
     }
@@ -80,8 +80,8 @@ class SapApiClient
         $response = Http::withHeaders([
             'Accept' => 'application/json',
             'client_id' => $this->client_id,
-            'client_secret' =>  $this->client_secret,
-        ])->get($this->baseUrl.$endpoint.$data);
+            'client_secret' => $this->client_secret,
+        ])->get($this->baseUrl . $endpoint . $data);
 
         if (!$response->successful()) {
             throw new Exception("SAP GET to '{$endpoint}' failed: " . $response->body());

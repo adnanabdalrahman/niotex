@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
+
 class SDController extends Controller
 {
 
@@ -34,56 +35,43 @@ class SDController extends Controller
      */
     public function beauftragung(SD_0101_beauftragungRequest $request)
     {
-        try {
-            $validated = $request->validated();
-            Log::info('Received Vorgang: ', $validated);
-            $vorgangDataArray = $this->sdServices->sd_0101_beauftragung_vorgang($validated['header']);
-            if ($vorgangDataArray !== null) {
-                $positionsNrArray = $this->sdServices->sd_0101_beauftragung_positions($validated['positions'], $vorgangDataArray);
-                if ($positionsNrArray !== null) {
-                    return response()->json([
-                        'status' => 'success',
-                        'message' => 'Beauftragung erfolgreich empfangen',
-                        'data' => $positionsNrArray
-                    ], 202);
-                }
+        $validated = $request->validated();
+
+        Log::info('Received Vorgang: ', $validated);
+        $vorgangDataArray = $this->sdServices->sd_0101_beauftragung_vorgang($validated['header']);
+        if ($vorgangDataArray !== null) {
+            $positionsNrArray = $this->sdServices->sd_0101_beauftragung_positions($validated['positions'], $vorgangDataArray);
+            if ($positionsNrArray !== null) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Beauftragung erfolgreich empfangen',
+                    'data' => $positionsNrArray
+                ], 202);
             }
-            return response()->json([
-                'status' => 'Error',
-                'message' => 'Beauftragung fehlgeschlagen',
-            ], 400);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation error:', ['errors' => $e->errors()]);
-            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
-
         }
+        return response()->json([
+            'status' => 'Error',
+            'message' => 'Beauftragung fehlgeschlagen',
+        ], 400);
     }
 
 
-    // SD-01-02: CEOS-->SAP, beauftragung Rueckmeldung
+    // SD-01-02: CEOS-->SAP, beauftragung Rückmeldung
     public function beauftragungRueckmeldung(Request $request)
     {
-        try {
-            $vorgangDataArray = $this->sdServices->sd_0101_beauftragung_rueckmeldung($request);
-            if ($vorgangDataArray !== null) {
-                Log::info('Sent Vorgang: ', $vorgangDataArray);
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Auftrag Status erfolgreich geändert',
-                    'data' => $vorgangDataArray
-                ], 202);
-            }
+        $vorgangDataArray = $this->sdServices->sd_0101_beauftragung_rueckmeldung($request);
+        if ($vorgangDataArray !== null) {
+            Log::info('Sent Vorgang: ', $vorgangDataArray);
             return response()->json([
-                'status' => 'Error',
-                'message' => 'Beauftragung fehlgeschlagen',
-            ], 400);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation error:', ['errors' => $e->errors()]);
-            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
-
+                'status' => 'success',
+                'message' => 'Auftrag Status erfolgreich geändert',
+                'data' => $vorgangDataArray
+            ], 202);
         }
+        return response()->json([
+            'status' => 'Error',
+            'message' => 'Beauftragung fehlgeschlagen',
+        ], 400);
     }
 
 
@@ -101,22 +89,16 @@ class SDController extends Controller
      */
     public function mietvertragsrechnungen(SD_0201_mietvertragsrechnungenRequest $request)
     {
-        try {
-            $validated = $request->validated();
+        $validated = $request->validated();
 
-            $data = $this->sdServices->sd_0201_mietvertragsrechnungen();
+        $data = $this->sdServices->sd_0201_mietvertragsrechnungen();
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Faktura erfolgreich übernommen',
-                'vorNummer' => $data['vorNummer'],
-            ], 202);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation error:', ['errors' => $e->errors()]);
-            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Faktura erfolgreich übernommen',
+            'vorNummer' => $data['vorNummer'],
+        ], 202);
 
-            // message is max 255 characters
-        }
     }
 
     /*
@@ -127,21 +109,14 @@ class SDController extends Controller
      */
     public function dienstleistungsabrechnung(SD_0301_dienstleistungsabrechnungRequest $request)
     {
-        try {
-            $validated = $request->validated();
+        $validated = $request->validated();
+        $data = $this->sdServices->sd_0301_dienstleistungsabrechnung($validated);
 
-            $data = $this->sdServices->sd_0301_dienstleistungsabrechnung();
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Fakturierte Dienstleistungsabrechnung erfolgreich übernommen',
+            'vorNummer' => $data['vorNummer'],
+        ], 202);
 
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Fakturierte Dienstleistungsabrechnung erfolgreich übernommen',
-                'vorNummer' => $data['vorNummer'],
-            ], 202);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation error:', ['errors' => $e->errors()]);
-            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
-
-            // message is max 255 characters
-        }
     }
 }

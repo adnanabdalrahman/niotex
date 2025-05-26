@@ -123,8 +123,6 @@ class SD_0101_beauftragungRequest extends FormRequest
             'header.zzlgsnr.max' => 'Die Zusatznummer (zzlgsnr) darf maximal 9 Zeichen lang sein.',
 
             'header.genrCeos.integer' => 'Der Wert von genrCeos muss eine ganze Zahl sein.',
-
-
             'positions.required' => 'Die Liste der Positionen ("positions") ist erforderlich.',
             'positions.*.PosNr.required' => 'Die Positionsnummer ("PosNr") ist für jede Position erforderlich.',
             'positions.*.PosNr.integer' => 'Die Positionsnummer ("PosNr") muss eine ganze Zahl sein.',
