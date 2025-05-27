@@ -341,6 +341,7 @@ class SDServices
                     return null;
                 }
                 $preisbasis = Preisbasis::where('NRPreisbasis', $interneArtikelnummer->NRPreisbasis)->first();
+                //todo convert to model
                 $internePositionsnummer = DB::connection('sqlsrv2')->table('cis.Position')->insertGetId([
                     'InterneVorgangsnummer' => $interneVorgangsnummer,
                     'PosVorgaenger' => 0,

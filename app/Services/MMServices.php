@@ -7,7 +7,10 @@ use App\Models\Artikel;
 use App\Models\Artikelgruppe;
 use App\Models\ArtikelLieferant;
 use App\Models\Basisempfindlichkeit;
+use App\Models\Position;
+use App\Models\Position3Menge;
 use App\Models\Produktgruppe;
+use App\Models\Vorgang;
 use App\Models\Warengruppe;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -113,6 +116,13 @@ class MMServices
         $data['ArtVerkaufsfaehigJN'] = 0;
         $data['ArtSkontofaehigJN'] = 0;
 
+        if ($data['LVorm'] == "") {
+            $data['LVorm'] = 0;
+        } else {
+            $data['LVorm'] = 1;
+        }
+
+
         try {
             $artikel = Artikel::updateOrCreate(
                 ['Artikelnummer' => $data['Material']],
@@ -169,38 +179,41 @@ class MMServices
         }
 
         //  Lieferschein (Hersteller)
-        $adresse = Adresse::where('AdressNummer', $data['Hersteller'])->first();
-        if ($adresse === null) {
-            Log::error('mm_31_01_materialstammdaten Kein Adresse für Lieferschein gefunden',
-                ['AdressNummer' => $data['Hersteller']]);
-            return null;
+        if ($data['Hersteller'] !== "") {
+            $adresse = Adresse::where('AdressNummer', $data['Hersteller'])->first();
+            if ($adresse === null) {
+                Log::error('mm_31_01_materialstammdaten Kein Adresse für Lieferschein gefunden',
+                    ['AdressNummer' => $data['Hersteller']]);
+                return null;
+            }
+            $interneAdressnummer = $adresse->InterneAdressnummer;
+            try {
+                $artikelLieferant = ArtikelLieferant::updateOrCreate(
+                    [
+                        'InterneAdressnummer' => $interneAdressnummer,
+                        'InterneArtikelnummer' => $interneArtikelNummer
+                    ],
+                    [
+                        'InterneAdressnummer' => $interneAdressnummer,
+                        'InterneArtikelnummer' => $interneArtikelNummer,
+                        'AliBestellnummer' => $data['Herstellerteilenummer'],
+                        'AliLetzterEK' => 0,
+                        'AliLetzteMenge1' => 0,
+                        'AliLetzteMenge2' => 0,
+                        'AliLetzterRabatt1' => 0,
+                        'AliLetzterRabatt2' => 0,
+                        'AliLetzterRabatt3' => 0,
+                        'AliLetzterRabattWert1' => 0,
+                        'AliLetzterRabattWert2' => 0,
+                        'AliMindestbestellmenge' => 0,
+                    ]
+                );
+            } catch (\Exception $e) {
+                Log::error('mm_31_01_materialstammdaten Lieferschein Error', ['Material' => $data['Material']]);
+                return null;
+            }
         }
-        $interneAdressnummer = $adresse->InterneAdressnummer;
-        try {
-            $artikelLieferant = ArtikelLieferant::updateOrCreate(
-                [
-                    'InterneAdressnummer' => $interneAdressnummer,
-                    'InterneArtikelnummer' => $interneArtikelNummer
-                ],
-                [
-                    'InterneAdressnummer' => $interneAdressnummer,
-                    'InterneArtikelnummer' => $interneArtikelNummer,
-                    'AliBestellnummer' => $data['Herstellerteilenummer'],
-                    'AliLetzterEK' => 0,
-                    'AliLetzteMenge1' => 0,
-                    'AliLetzteMenge2' => 0,
-                    'AliLetzterRabatt1' => 0,
-                    'AliLetzterRabatt2' => 0,
-                    'AliLetzterRabatt3' => 0,
-                    'AliLetzterRabattWert1' => 0,
-                    'AliLetzterRabattWert2' => 0,
-                    'AliMindestbestellmenge' => 0,
-                ]
-            );
-        } catch (\Exception $e) {
-            Log::error('mm_31_01_materialstammdaten Lieferschein Error', ['Material' => $data['Material']]);
-            return null;
-        }
+
         return [
             'interneArtikelnummer' => $interneArtikelNummer,
             'Material' => $data['Material'],
@@ -216,12 +229,11 @@ class MMServices
      * @throws Exception
      */
 
-    public function mm_34_01_umlagerungsreservierung()
+    public function mm_34_01_umlagerungsreservierung($data)
     {
         //Todo where comes the trigger from Blau exist anpassungen
         // source data from CEOS mapping
         // what to do with the received data??
-
 
         /*
             Basistermin für die Reservierung
@@ -249,7 +261,7 @@ class MMServices
             - to clerify from Vivawest
             - was ist MoveStloc in Payload ?
             - was ist MoveStlocSearch in Payload ?
-            - ist ReqDate gleich TourDate (Bedarfstermin ) ?
+            - ist ReqDate gleich TourDate (Bedarfstermin) ?
             Wieso ist die Payload nicht mit den vereinbarten Schnittstellenfeldern zugeordnet?
 
 
@@ -295,33 +307,69 @@ class MMServices
             }
         }
 
+*/
+        $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])->first();
+
+        if ($vorgang === null) {
+            Log::error('mm_34_01_umlagerungsreservierung Kein Vorgang vorhanden',
+                ['Vorgangnummer' => $data['Vorgangnummer']]);
+            return null;
+        }
 
 
+        //todo later get date from Blau (now Fake + 10 days)
+        $milliseconds = now()->addDays(10)->timestamp * 1000;
+        $tourDate = "/Date({$milliseconds})/";
 
 
-      */
+        $tourId = $vorgang->VorIndividualC5;
+        $reservNo = $vorgang->VorIndividualC6;
+
+        // get all Positions
+        $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
+
+        $to_Items = [];
+        foreach ($positions as $position) {
+            if ($position->InterneArtikelnummer === null) {
+                Log::error('mm_34_01_umlagerungsreservierung Kein InterneArtikelnummer in Position gefunden',
+                    [
+                        'InterneVorgangsnummer' => $data['Vorgangnummer'],
+                        'Position' => $position->InternePositionsnummer
+                    ]);
+                //todo Clarify if continue or Out
+                continue;
+            }
+            //get Artikelnummer by $position->InterneArtikelnummer.
+            $artikel = Artikel::find($position->InterneArtikelnummer);
+
+            if ($artikel === null) {
+                Log::error('mm_34_01_umlagerungsreservierung Kein Artikel für Position gefunden',
+                    [
+                        'InterneVorgangsnummer' => $data['Vorgangnummer'],
+                        'Position' => $position->InternePositionsnummer,
+                        'InterneArtikelnummer' => $position->InterneArtikelnummer
+                    ]);
+                //todo Clarify if continue or Out
+                continue;
+            }
+
+            $position3Menge = Position3Menge::where('InternePositionsnummer', $position->InternePositionsnummer)
+                ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
+                ->first();
+            $to_Items[] = [
+                'Material' => $artikel->Artikelnummer,
+                "EntryQnt" => $position3Menge->PosMenge1,
+                "EntryUom" => $position3Menge->PosKZMengeneinheit1,
+                "ReqDate" => $tourDate,
+            ];
+        }
+
         $data = [
-            "TourId" => "123456",
-            "ReservNo" => "",
+            "TourId" => $tourId,
             "MoveStloc" => "H001",
-            "MoveStlocSearch" => "",
-            "to_Items" => [
-                [
-                    "Material" => "10041633",
-                    "EntryQnt" => "1",
-                    "EntryUom" => "ST",
-                    "ReqDate" => "/Date(1747094400000)/",
-                    "TourId" => "123456"
-                ],
-                [
-                    "Material" => "112600005",
-                    "EntryQnt" => "1",
-                    "EntryUom" => "ST",
-                    "ReqDate" => "/Date(1747094400000)/",
-                    "TourId" => "123456"
-                ]
-            ]
+            "to_Items" => $to_Items
         ];
+
         return app(SapApiClient::class)->post($this->mm341_path, $data);
     }
 
