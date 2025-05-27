@@ -9,9 +9,12 @@ use App\Models\Artikel;
 use App\Services\MMServices;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Vyuldashev\LaravelOpenApi\Attributes as OpenApi;
+
+;
 
 #[OpenApi\PathItem]
 class MMController extends Controller
@@ -34,10 +37,16 @@ class MMController extends Controller
     public function materialstammdaten(MM_3101_materialStammdatenRequest $request): JsonResponse
     {
         try {
+
+            Log::info('Received SAP Material Data:', $request);
+
             $validated = $request->validated();
             $artikelNummer = ltrim($validated['Material'], '0');
             $currentArtikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
             $status = $currentArtikel !== null ? 'aktualisiert' : 'gespeichert';
+            if ($request['LVorm'] !== "") {
+                $status = 'gelöscht';
+            }
 
             Log::info('Received SAP Material Data:', $validated);
             $data = $this->mmServices->mm_31_01_materialstammdaten($validated);
@@ -69,11 +78,21 @@ class MMController extends Controller
      * @return JsonResponse
      */
 
-    public function umlagerungsreservierung(): JsonResponse
+    public function umlagerungsreservierung(Request $request): JsonResponse
     {
+        $data = $request->validate([
+            'Vorgangnummer' => 'required',
+        ]);
+
+
         try {
-            // ProcessMaterialData::dispatch($validated);
-            $data = $this->mmServices->mm_34_01_umlagerungsreservierung();
+            $response = $this->mmServices->mm_34_01_umlagerungsreservierung($request);
+            
+            $data = json_decode($response, true); // decode JSON to array
+            $tourId = $data['d']['TourId'] ?? null;
+            if ($tourId !== null) {
+                Log::info('Received SAP Material Data:', $request);
+            }
             return response()->json(['data' => $data], 202);
         } catch (\Exception $e) {
             Log::error('Internal error:', ['errors' => $e->getMessage()]);
