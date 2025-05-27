@@ -4,8 +4,11 @@ namespace App\Services;
 
 use App\Models\Adresse;
 use App\Models\Artikel;
+use App\Models\Artikelgruppe;
 use App\Models\ArtikelLieferant;
 use App\Models\Basisempfindlichkeit;
+use App\Models\Produktgruppe;
+use App\Models\Warengruppe;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -35,54 +38,62 @@ class MMServices
         $this->mm352_path = config('sap.mm341_path');
     }
 
-    public function mm_31_01_materialstammdaten($data): array
+
+    /**
+     * MM-31-1 Materialstammdaten
+     * SAP -> CEOS
+     */
+    public function mm_31_01_materialstammdaten($data): ?array
     {
+
         /*
-        CEOSArtikelgruppe   =>Artikel.KZArtikelgruppe (10) → cis.Artikelgruppe.KZArtikelgruppe
-        - Required NOT NULL
-        - saved as it is
-        - todo should Combination between (KZWarengruppe - KZArtikelgruppe ) exist in Artikelgruppe Validation
-        - EX: ART - HKV
+        todo CEOSArtikeluntergruppe => Artikel.ArtikelUntergruppeID (int) → cis.ArtikelUntergruppe.KZUnterArtikelgruppe
+       - todo compare combination
+           KZWarengruppe => CEOSWarengruppe
+           KZArtikelgruppe => CEOSArtikelgruppe
+           KZUnterArtikelgruppe => CEOSArtikeluntergruppe
+           then get the ArtikelUntergruppeID
+       - NULL ACCEPTED
 
+       Basismengeneinheit =>  Artikel.KZArtMengeneinheit1 (m:1)→cis.Mengeneinheit.KZMengeneinheit
+       - saved as it is
+       // todo mapping to our Mengeneinheit Skipatron = KG--> Coes = kg //LE fehlt: noch klären VE fehlt: hinzufügen
+       - todo should exist in Mengeneinheit.KZMengeneinheit Validation
+       - NULL ACCEPTED
+   -----------------------------------------------------------------------------
+       todo
+       HIBEzuHAWA1 =>  String (18)
+       HIBEzuHAWA2 => String (18)
+       HIBEzuHAWA3 => String (18)
+        */
 
-        CEOSWarengruppe => Artikel.KZWarengruppe (4) → cis.Warengruppe.KZWarengruppe
-        - Required NOT NULL
-        - saved as it is
-        - todo should exist in Warengruppe Validation
-        - EX: ART
+        //trim Artikelnummer
+        $data['Material'] = ltrim($data['Material'], '0');
 
-         todo CEOSArtikeluntergruppe => Artikel.ArtikelUntergruppeID (int) → cis.ArtikelUntergruppe.KZUnterArtikelgruppe
-        - todo compare combination
-            KZWarengruppe => CEOSWarengruppe
-            KZArtikelgruppe => CEOSArtikelgruppe
-            KZUnterArtikelgruppe => CEOSArtikeluntergruppe
-            then get the ArtikelUntergruppeID
-        - NULL ACCEPTED
+        //Validate Warengruppe
+        $validateWarengruppe = Warengruppe::where('KZWarengruppe', $data['CEOSWarengruppe'])->first();
+        if ($validateWarengruppe === null) {
+            Log::error('Kein Warengruppe für diese Material ', $data);
+            return null;
+        }
 
-        todo ProduktgruppeCEOS => Artikel.KZProduktgruppe (4) → cis.Produktgruppe need List
-        - saved as it comes directly
-        - Liste benötigt
-        - todo should exist in Warengruppe Validation
-        - NULL ACCEPTED
+        //Validate KZWarengruppe+KZArtikelgruppe
+        $validateArtikelGruppe = Artikelgruppe::where('KZArtikelgruppe', $data['CEOSArtikelgruppe'])
+            ->where('KZWarengruppe', $data['CEOSWarengruppe'])
+            ->first();
+        if ($validateArtikelGruppe === null) {
+            Log::error('Kein Artikelgruppe für diese Material ', $data);
+            return null;
+        }
 
-        Basismengeneinheit =>  Artikel.KZArtMengeneinheit1 (m:1)→cis.Mengeneinheit.KZMengeneinheit
-        - saved as it is
-        // todo mappin to our Mengeneinheit Skibatron = KG--> Coes = kg //LE fehlt: noch klären VE fehlt: hinzufügen
-        // todo clarify in example request send another format than Excell, ex: ST in request => Stck in Excel ???
-        - todo should exist in Mengeneinheit.KZMengeneinheit Validation
-        - NULL ACCEPTED
-    -----------------------------------------------------------------------------
-        todo
-        HIBEzuHAWA1 =>  String (18)
-        HIBEzuHAWA2 => String (18)
-        HIBEzuHAWA3 => String (18)
-    -----------------------------------------------------------------------------
-        /**
-         * MM-31-1 Materialstammdaten
-         * SAP -> CEOS
-         */
+        //Validate Produktgruppe saved as it comes directly - NULL ACCEPTED
+        $validateProduktgruppe = Produktgruppe::where('KZProduktgruppe', $data['Produktgruppe'])->first();
+        if ($validateProduktgruppe === null) {
+            Log::info('Kein Produktgruppe für diese Material ', $data);
+        }
+
         //EAN Splitt
-        $artEAN1 = substr($data['EANNummerSAP'], 0, 8);        // first 8 characters
+        $artEAN1 = substr($data['EANNummerSAP'], 0, 8); // first 8 characters
         $artEAN2 = substr($data['EANNummerSAP'], 8, 8);
 
         $data['NRPreisbasis'] = 1;
@@ -101,7 +112,6 @@ class MMServices
         $data['ArtLieferantenfaehigJN'] = 0;
         $data['ArtVerkaufsfaehigJN'] = 0;
         $data['ArtSkontofaehigJN'] = 0;
-        $message = "";
 
         try {
             $artikel = Artikel::updateOrCreate(
@@ -137,68 +147,64 @@ class MMServices
                 ]
             );
             $interneArtikelNummer = $artikel['InterneArtikelnummer'];
-            $message .= "Artikel $interneArtikelNummer erfolgreich gespeichert ,";
         } catch (\Throwable $e) {
-            Log::error('mm_31_01_materialstammdaten Save Artikel Error', ['exception' => $e]);
-            return ['message' => $e->getMessage(), 'Material' => $data['Material']];
+            Log::error('mm_31_01_materialstammdaten Save Artikel Error:' . $e->getMessage(),
+                ['Material' => $data['Material']]);
+            return null;
         }
 
         // add Basisempfindlichkeit
         try {
-            $rak_basisempfindlichkeit = Basisempfindlichkeit::updateOrCreate(
+            Basisempfindlichkeit::updateOrCreate(
                 ['InterneArtikelNummer' => $interneArtikelNummer],
                 [
                     'InterneArtikelNummer' => $interneArtikelNummer,
                     'BasisempfindlichkeitSkala' => $data['Basisempfindlichkeit'],
                 ]
             );
-            if ($rak_basisempfindlichkeit) {
-                $message .= "basisempfindlichkeit für $interneArtikelNummer erfolgreich gespeichert ,";
-            }
         } catch (\Throwable $e) {
-            Log::error('mm_31_01_materialstammdaten Save Basisempfindlichkeit Error', ['exception' => $e]);
-            return ['message' => $e->getMessage(), 'Material' => $data['Material']];
+            Log::error('mm_31_01_materialstammdaten Save Basisempfindlichkeit Error' . $e->getMessage(),
+                ['Material' => $data['Material']]);
+            return null;
         }
 
         //  Lieferschein (Hersteller)
         $adresse = Adresse::where('AdressNummer', $data['Hersteller'])->first();
-
-        if ($adresse) {
-            $interneAdressnummer = $adresse->InterneAdressnummer;
-            try {
-
-                $artikelLieferant = ArtikelLieferant::updateOrCreate(
-                    [
-                        'InterneAdressnummer' => $interneAdressnummer,
-                        'InterneArtikelnummer' => $interneArtikelNummer
-                    ],
-                    [
-                        'InterneAdressnummer' => $interneAdressnummer,
-                        'InterneArtikelnummer' => $interneArtikelNummer,
-                        'AliBestellnummer' => $data['Herstellerteilenummer'],
-                        'AliLetzterEK' => 0,
-                        'AliLetzteMenge1' => 0,
-                        'AliLetzteMenge2' => 0,
-                        'AliLetzterRabatt1' => 0,
-                        'AliLetzterRabatt2' => 0,
-                        'AliLetzterRabatt3' => 0,
-                        'AliLetzterRabattWert1' => 0,
-                        'AliLetzterRabattWert2' => 0,
-                        'AliMindestbestellmenge' => 0,
-                    ]
-                );
-            } catch (\Exception $e) {
-                Log::error('mm_31_01_materialstammdaten Lieferschein Error', ['exception' => $e]);
-                return ['message' => $e->getMessage(), 'Material' => $data['Material']];
-            }
-
-            if ($artikelLieferant) {
-                $message .= "Lieferschein für $interneArtikelNummer , $interneAdressnummer erfolgreich gespeichert ,";
-            }
-        } else {
-            $message .= "Kein Adresse für Lieferschein gefunden";
+        if ($adresse === null) {
+            Log::error('mm_31_01_materialstammdaten Kein Adresse für Lieferschein gefunden',
+                ['AdressNummer' => $data['Hersteller']]);
+            return null;
         }
-        return ['message' => $message, 'interneArtikelnummer' => $interneArtikelNummer];
+        $interneAdressnummer = $adresse->InterneAdressnummer;
+        try {
+            $artikelLieferant = ArtikelLieferant::updateOrCreate(
+                [
+                    'InterneAdressnummer' => $interneAdressnummer,
+                    'InterneArtikelnummer' => $interneArtikelNummer
+                ],
+                [
+                    'InterneAdressnummer' => $interneAdressnummer,
+                    'InterneArtikelnummer' => $interneArtikelNummer,
+                    'AliBestellnummer' => $data['Herstellerteilenummer'],
+                    'AliLetzterEK' => 0,
+                    'AliLetzteMenge1' => 0,
+                    'AliLetzteMenge2' => 0,
+                    'AliLetzterRabatt1' => 0,
+                    'AliLetzterRabatt2' => 0,
+                    'AliLetzterRabatt3' => 0,
+                    'AliLetzterRabattWert1' => 0,
+                    'AliLetzterRabattWert2' => 0,
+                    'AliMindestbestellmenge' => 0,
+                ]
+            );
+        } catch (\Exception $e) {
+            Log::error('mm_31_01_materialstammdaten Lieferschein Error', ['Material' => $data['Material']]);
+            return null;
+        }
+        return [
+            'interneArtikelnummer' => $interneArtikelNummer,
+            'Material' => $data['Material'],
+        ];
     }
 
     //MM_34_01 Umlagerungsreservierung
