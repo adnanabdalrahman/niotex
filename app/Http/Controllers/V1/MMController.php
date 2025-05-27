@@ -5,8 +5,7 @@ namespace App\Http\Controllers\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MM_2201_SAPStockRequest;
 use App\Http\Requests\MM_3101_materialStammdatenRequest;
-use App\OpenApi\Requests\MaterialstammdatenRequest;
-use App\OpenApi\Responses\Success202;
+use App\Models\Artikel;
 use App\Services\MMServices;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
@@ -24,10 +23,6 @@ class MMController extends Controller
         $this->mmServices = $mmServices;
     }
 
-
-    #[OpenApi\Operation(tags: ['MM'], method: 'POST')]
-    #[OpenApi\RequestBody(factory: MaterialstammdatenRequest::class)]
-    #[OpenApi\Response(factory: Success202::class)]
     /**
      * MM-31-1 Materialstammdaten
      * Receive material data from SAP.
@@ -40,17 +35,32 @@ class MMController extends Controller
     {
         try {
             $validated = $request->validated();
+            $artikelNummer = ltrim($validated['Material'], '0');
+            $currentArtikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
+            $status = $currentArtikel !== null ? 'aktualisiert' : 'gespeichert';
 
             Log::info('Received SAP Material Data:', $validated);
-            $result = $this->mmServices->mm_31_01_materialstammdaten($validated);
+            $data = $this->mmServices->mm_31_01_materialstammdaten($validated);
 
-            return response()->json(['message' => $result['message'], 'InterneArtikelnummer' => $result['interneArtikelnummer']], 202);
+            if ($data !== null) {
+                $message = "Material {$data['Material']} erfolgreich " . $status;
+                Log::info($message);
+                return response()->json([
+                    'status' => 'success',
+                    'message' => $message,
+                    'data' => $data
+                ], 202);
+            } else {
+                return response()->json([
+                    'status' => 'Error',
+                    'message' => 'Material speichern fehlgeschlagen',
+                ], 400);
+            }
         } catch (ValidationException $e) {
             Log::error('Validation error:', ['errors' => $e->errors()]);
             return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
         }
     }
-
 
     /**
      * MM_34_01 Umlagerungsreservierung

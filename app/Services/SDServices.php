@@ -334,7 +334,7 @@ class SDServices
                 if ($interneArtikelnummer === null) {
                     Log::error("Material für Vorgang nicht gefunden",
                         [
-                            'Materila' => $position['matnr'],
+                            'Material' => $position['matnr'],
                             'Vorgangnummer' => $vorNummer
                         ]
                     );
