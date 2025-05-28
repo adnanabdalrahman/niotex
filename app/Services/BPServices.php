@@ -2,43 +2,16 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\DB;
+use App\Models\Adresse;
+use App\Models\Ansprechpartner;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 
 class BPServices
 {
     protected string $baseUrl;
-    /*
-            Geschaeftspartnernummer INT     => INT          AdrFibunummer
-            Debitoren_Kreditorennummer      => INT          AdressNummer
-            Anrede                          => INT Code (zb:0001) Anrede.AnredeBezeichnung (n:1) (0001 Frau, 0002 Herr, 0003 Firma, 0005, 0006 Eheleute)
-            Titel => TitelBezeichnung       => INT Code (zb:0002)INT Titel.NRTitel (n:1) (0001 DR - 0002 Prof. - 0003 ))
-            Vorname (im Debitor Name 1)     => Varchar(40)   AdrFirmenbezeichnung1
-            Nachname (im Debitor Name 1)    => Varchar(40)   AdrFirmenbezeichnung1
-            Name1                           => Varchar(40)   AdrFirmenbezeichnung2
-            Name2                           => Varchar(40)   AdrFirmenbezeichnung3
-            Name3                           => Varchar(40)   AdrFirmenbezeichnung4
-            Suchbegriff1                    => Varchar(10)   AdrMatchcode
-            Suchbegriff2                    => Varchar(10)   ??
-            Strasse                         => Varchar(40)   AdrStrasse
-            Postleitzahl                    => Varchar(10)   AdrPLZ
-            Ort                             => Varchar(40)   AdrOrt
-            Land                            => Varchar(3)    Länderschlüssel ZB(DE) KZLand (n:1)
-            Postfach                        => Varchar(10)   AdrPostfach
-            Postleitzahl_Postfach           => Varchar(10)   AdrPLZPostfach
-            Ort_Postfach                    => Varchar(40)   AdrOrtPostfach
-            Telefon                         => Varchar(40)   AdrTelefon
-            Mobiltelefon                    => Varchar(40)   AdrMobiltelefon
-            Fax                             => Varchar(40)   AdrFax
-            Email                           => Varchar(80)   AdrEmail
-            AutoWEAbr                       => Boolean      AdrGutschriftsverfahrenJN
-            Sperrkennzeichen                => Boolean      AdrLiefersperreJN
-            Kundengruppe                    => Varchar(2)    ?????????????
-            Kundengruppe12                  => Varchar(3)    ?????????????
-            UVI_Mailadresse                 => Varchar(80)
-            PDF_Mailadresse                 => Varchar(80)
-        */
+
 
     protected array $auth;
 
@@ -62,27 +35,57 @@ class BPServices
 
         // if not exist, create new Material
 
+        /*
+        Geschaeftspartnernummer INT     => INT  AdrFibunummer
+        Debitoren_Kreditorennummer      => INT  AdressNummer
+        Anrede                          => INT Code (zb:0001) Anrede.AnredeBezeichnung (n:1) (0001 Frau, 0002 Herr, 0003 Firma, 0005, 0006 Eheleute)
+        Titel => TitelBezeichnung       => INT Code (zb:0002)INT Titel.NRTitel (n:1) (0001 DR - 0002 Prof. - 0003 ))
+        Vorname (im Debitor Name 1)     => Varchar(40)   AdrFirmenbezeichnung1
+        Nachname (im Debitor Name 1)    => Varchar(40)   AdrFirmenbezeichnung1
+        Name1                           => Varchar(40)   AdrFirmenbezeichnung2
+        Name2                           => Varchar(40)   AdrFirmenbezeichnung3
+        Name3                           => Varchar(40)   AdrFirmenbezeichnung4
+        Suchbegriff1                    => Varchar(10)   AdrMatchcode
+        Suchbegriff2                    => Varchar(10)   ??
+        Strasse                         => Varchar(40)   AdrStrasse
+        Postleitzahl                    => Varchar(10)   AdrPLZ
+        Ort                             => Varchar(40)   AdrOrt
+        Land                            => Varchar(3)    Länderschlüssel ZB(DE) KZLand (n:1)
+        Postfach                        => Varchar(10)   AdrPostfach
+        Postleitzahl_Postfach           => Varchar(10)   AdrPLZPostfach
+        Ort_Postfach                    => Varchar(40)   AdrOrtPostfach
+        Telefon                         => Varchar(40)   AdrTelefon
+        Mobiltelefon                    => Varchar(40)   AdrMobiltelefon
+        Fax                             => Varchar(40)   AdrFax
+        Email                           => Varchar(80)   AdrEmail
+        AutoWEAbr                       => Boolean      AdrGutschriftsverfahrenJN
+        Sperrkennzeichen                => Boolean      AdrLiefersperreJN
+        Kundengruppe                    => Varchar(2)    ?????????????  //todo
+        Kundengruppe12                  => Varchar(3)    ????????????? //todo
+        UVI_Mailadresse                 => Varchar(80)
+        PDF_Mailadresse                 => Varchar(80)
+    */
         try {
-            DB::transaction(function () use ($data) {
-                //todo
-                //Vorname + Nachname
-                $AdrFirmenbezeichnung1 = $data['Vorname'] . " " . $data['Nachname'];
+            //Vorname + Nachname
+            $AdrFirmenbezeichnung1 = $data['Vorname'] . " " . $data['Nachname'];
 
-                $streetArray = $this->splitStreet($data['Strasse']);
-                //todo
-                /*
-                     if ($data['LVorm'] === 1) {
-                     //todo delete (as ALT)
-                 }
-                */
+            $streetArray = $this->splitStreet($data['Strasse']);
 
-                //todo
-                //       =>  $data['Kundengruppe'],    /// N:N
-                //                                  =>  $data['Kundengruppe12'],    /// N:N
+            if ($data['LVorm'] === null) {
+                $data['LVorm'] = 0;
+            } else {
+                $data['LVorm'] = 1;
+            }
 
 
-                // Insert into users' table
-                return DB::connection('sqlsrv2')->table('cis.Adresse')->updateOrInsert([
+            //todo
+            //       =>  $data['Kundengruppe'],    /// N:N
+            //       =>  $data['Kundengruppe12'],    /// N:N
+
+            // Insert into users' table
+            $adresse = Adresse::updateOrCreate(
+                ['AdressNummer' => $data['Debitoren_Kreditorennummer']],
+                [
                     'AdrFibunummer' => $data['Geschaeftspartnernummer'], // Primary
                     'AdressNummer' => $data['Debitoren_Kreditorennummer'],
                     'KZAdresstyp' => "KUN", // ???????
@@ -117,14 +120,20 @@ class BPServices
                     'AdrLiefersperreJN' => $data['Sperrkennzeichen'],
                     //''                =>  $data['Kundengruppe'],    // N:N
                     // ''               =>  $data['Kundengruppe12'],  // N:N
+                    'AdrAltJN' => $data['LVorm'],
                     'ADRindividualC2' => $data['UVI_Mailadresse'],
                     'ADRindividualC3' => $data['PDF_Mailadresse'],
                 ]);
-            });
+            $interneAdressnummer = $adresse['InterneAdressnummer'];
         } catch (Throwable $e) {
-            return $e->getMessage();
+            Log::error('mm_31_01_materialstammdaten Lieferschein Error ' . $e->getMessage(),
+                ['Adresse' => $data['Debitoren_Kreditorennummer']]);
+            return null;
         }
-        return $data;
+        return [
+            'interneArtikelnummer' => $interneAdressnummer,
+            'Adresse' => $data['Debitoren_Kreditorennummer'],
+        ];
     }
 
     public function splitStreet($receivedStreet): array
@@ -151,24 +160,19 @@ class BPServices
     /**
      * BP-01-03 Geschäftspartner (GP-Rolle "Verwalter")
      */
-    public function bp_0103_verwalter($data)
+    public function bp_0103_verwalter($data, $interneAdressnummer): ?array
     {
-        // check if Adresse exist in CEOS
-        // check Lov => 1/0
-
-        // if not exist, create new Material
-
         try {
-            DB::transaction(function () use ($data) {
-                // Insert into users' table
-                $data = DB::connection('sqlsrv2')->table('cis.Ansprechpartner')->insertGetId([
-                    'InterneAdressnummer' => $data['Adressnummer'], // todo to clarify
-                    'NRTitel' => $data['Titel'],// todo
-                    'NRAnrede' => $data['Anrede'],// todo
+            $ansprechpartner = Ansprechpartner::updateOrCreate(
+                ['InterneAdressnummer' => $interneAdressnummer],
+                [
+                    'InterneAdressnummer' => $interneAdressnummer,
+                    'NRTitel' => $data['Titel'],
+                    'NRAnrede' => $data['Anrede'],
                     'AnsVorname' => $data['Vorname'],
                     'AnsNachname' => $data['Nachname'],
                     'AnsPrivatStrasse' => $data['Strasse'],//todo split Hnr
-                    'AnsPrivatOrt' => $data['Postleitzahl'] . " " . $data['Ort'],//todo same filed with ORT
+                    'AnsPrivatOrt' => $data['Postleitzahl'] . " " . $data['Ort'],
                     'AnsPrivatTelefon' => $data['Telefon'],
                     'AnsMobiltelefon' => $data['Mobiltelefon'],
                     'AnsFax' => $data['Fax'],
@@ -178,11 +182,15 @@ class BPServices
                     'AnsIndividualC1' => $data['Ansprechpartner1'],
                     'AnsIndividualC2' => $data['Ansprechpartner2'],
                 ]);
-                dd($data);
-            });
+            $ansprechpartnerId = $ansprechpartner['AnsprechpartnerID'];
         } catch (Throwable $e) {
-            return $e->getMessage();
+            Log::error('mm_31_01_materialstammdaten Lieferschein Error ' . $e->getMessage(),
+                ['Adresse' => $interneAdressnummer]);
+            return null;
         }
-        return $data;
+        return [
+            'interneAnsprechpartnerId' => $ansprechpartnerId,
+            'Adresse' => $interneAdressnummer
+        ];
     }
 }

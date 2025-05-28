@@ -11,7 +11,6 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use Vyuldashev\LaravelOpenApi\Attributes as OpenApi;
 
 ;
@@ -36,38 +35,32 @@ class MMController extends Controller
 
     public function materialstammdaten(MM_3101_materialStammdatenRequest $request): JsonResponse
     {
-        try {
+        $validated = $request->validated();
+        Log::info('Received SAP Material Data:', $validated);
+        $artikelNummer = ltrim($validated['Material'], '0');
 
-            Log::info('Received SAP Material Data:', $request);
+        $currentArtikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
+        $status = $currentArtikel !== null ? 'aktualisiert' : 'gespeichert';
+        if ($request['LVorm'] !== null) {
+            $status = 'gelöscht';
+        }
 
-            $validated = $request->validated();
-            $artikelNummer = ltrim($validated['Material'], '0');
-            $currentArtikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
-            $status = $currentArtikel !== null ? 'aktualisiert' : 'gespeichert';
-            if ($request['LVorm'] !== "") {
-                $status = 'gelöscht';
-            }
+        Log::info('Received SAP Material Data:', $validated);
+        $data = $this->mmServices->mm_31_01_materialstammdaten($validated);
 
-            Log::info('Received SAP Material Data:', $validated);
-            $data = $this->mmServices->mm_31_01_materialstammdaten($validated);
-
-            if ($data !== null) {
-                $message = "Material {$data['Material']} erfolgreich " . $status;
-                Log::info($message);
-                return response()->json([
-                    'status' => 'success',
-                    'message' => $message,
-                    'data' => $data
-                ], 202);
-            } else {
-                return response()->json([
-                    'status' => 'Error',
-                    'message' => 'Material speichern fehlgeschlagen',
-                ], 400);
-            }
-        } catch (ValidationException $e) {
-            Log::error('Validation error:', ['errors' => $e->errors()]);
-            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
+        if ($data !== null) {
+            $message = "Material {$data['Material']} erfolgreich " . $status;
+            Log::info($message);
+            return response()->json([
+                'status' => 'success',
+                'message' => $message,
+                'data' => $data
+            ], 202);
+        } else {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'Material speichern fehlgeschlagen',
+            ], 400);
         }
     }
 
@@ -84,20 +77,11 @@ class MMController extends Controller
             'Vorgangnummer' => 'required',
         ]);
 
-
-        try {
-            $response = $this->mmServices->mm_34_01_umlagerungsreservierung($request);
-            
-            $data = json_decode($response, true); // decode JSON to array
-            $tourId = $data['d']['TourId'] ?? null;
-            if ($tourId !== null) {
-                Log::info('Received SAP Material Data:', $request);
-            }
-            return response()->json(['data' => $data], 202);
-        } catch (\Exception $e) {
-            Log::error('Internal error:', ['errors' => $e->getMessage()]);
-            return response()->json(['message' => 'Internal error', 'errors' => $e->getMessage()], 500);
+        $response = $this->mmServices->mm_34_01_umlagerungsreservierung($request);
+        if ($response) {
+            return response()->json(['message' => 'Done'], 202);
         }
+        return response()->json(['message' => 'Failed'], 400);
 
     }
 

@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class BP_0101_geschaeftspartnerRequest extends FormRequest
@@ -15,18 +14,13 @@ class BP_0101_geschaeftspartnerRequest extends FormRequest
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, ValidationRule|array|string>
-     */
     public function rules(): array
     {
         return [
             'Geschaeftspartnernummer' => 'required',
             'Debitoren_Kreditorennummer' => 'required',
-            'Anrede' => 'required|integer',
-            'Titel' => 'required|integer',
+            'Anrede' => 'required|string',
+            'Titel' => 'required|string',
             'Vorname' => 'required|string|max:40',
             'Nachname' => 'required|string|max:40',
             'Name1' => 'required|string|max:40',
@@ -51,6 +45,7 @@ class BP_0101_geschaeftspartnerRequest extends FormRequest
             'Kundengruppe12' => 'nullable|string|max:3',
             'UVI_Mailadresse' => 'nullable|email|max:80',
             'PDF_Mailadresse' => 'nullable|email|max:80',
+            'LVorm' => 'nullable|string',
         ];
     }
 

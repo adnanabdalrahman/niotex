@@ -5,10 +5,11 @@ namespace App\Http\Controllers\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BP_0101_geschaeftspartnerRequest;
 use App\Http\Requests\BP_0103_verwalterRequest;
+use App\Models\Adresse;
+use App\Models\Ansprechpartner;
 use App\Services\BPServices;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 
 class BPController extends Controller
 {
@@ -26,16 +27,34 @@ class BPController extends Controller
      */
     public function geschaeftspartner(BP_0101_geschaeftspartnerRequest $request): JsonResponse
     {
-        try {
-            $validated = $request->validated();
-            Log::info('Received SAP Geschäftspartner Data:', $validated);
+        $validated = $request->validated();
+        Log::info('Received SAP Geschäftspartner Data:', $validated);
 
-            $data = $this->bpServices->bp_0101_geschaeftspartner($validated);
-            return response()->json(['message' => 'Geschäftspartner erfolgreich gespeichert.', 'data' => $data], 202);
-        } catch (ValidationException $e) {
-            Log::error('Validation error:', ['errors' => $e->errors()]);
-            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
+        $adressnummer = ltrim($validated['Debitoren_Kreditorennummer'], '0');
+
+        $currentAdresse = Adresse::where('AdressNummer', $adressnummer)->first();
+
+        $status = $currentAdresse !== null ? 'aktualisiert' : 'gespeichert';
+        if ($request['LVorm'] !== null) {
+            $status = 'gelöscht';
         }
+
+        $data = $this->bpServices->bp_0101_geschaeftspartner($validated);
+        if ($data !== null) {
+            $message = "Geschäftspartner {$data['Adresse']} erfolgreich " . $status;
+            Log::info($message);
+            return response()->json([
+                'status' => 'success',
+                'message' => $message,
+                'data' => $data
+            ], 202);
+        } else {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'Geschäftspartner speichern fehlgeschlagen',
+            ], 400);
+        }
+
     }
 
     /*
@@ -44,14 +63,41 @@ class BPController extends Controller
      * */
     public function verwalter(BP_0103_verwalterRequest $request): JsonResponse
     {
-        try {
-            $validated = $request->validated();
-            Log::info('Received Geschaeftspartner Verwalter Data:', $validated);
-            $data = $this->bpServices->bp_0103_verwalter($validated);
-            return response()->json(['message' => 'Verwalter erfolgreich gespeichert.', 'data' => $data], 202);
-        } catch (ValidationException $e) {
-            Log::error('Validation error:', ['errors' => $e->errors()]);
-            return response()->json(['message' => 'Validation error', 'errors' => $e->errors()], 400);
+        $validated = $request->validated();
+        Log::info('Received SAP Verwalter Data:', $validated);
+
+        $adressnummer = ltrim($validated['Adressnummer'], '0');
+        $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
+        if ($adresse === null) {
+            Log::error('bp_0103_verwalter Kein Adresse für Verwalter gefunden',
+                ['AdressNummer' => $adressnummer]);
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'Ansprechpartner speichern fehlgeschlagen',
+            ], 400);
+        }
+
+        $currentAnsprechpartner = Ansprechpartner::where('InterneAdressnummer', $adresse->InterneAdressnummer)->first();
+
+        $status = $currentAnsprechpartner !== null ? 'aktualisiert' : 'gespeichert';
+        if ($request['LVorm'] !== null) {
+            $status = 'gelöscht';
+        }
+
+        $data = $this->bpServices->bp_0103_verwalter($validated, $adresse->InterneAdressnummer);
+        if ($data !== null) {
+            $message = "Ansprechpartner {$data['Adresse']} erfolgreich " . $status;
+            Log::info($message);
+            return response()->json([
+                'status' => 'success',
+                'message' => $message,
+                'data' => $data
+            ], 202);
+        } else {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'Ansprechpartner speichern fehlgeschlagen',
+            ], 400);
         }
     }
 }

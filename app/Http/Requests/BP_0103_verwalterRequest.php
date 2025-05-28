@@ -24,6 +24,7 @@ class BP_0103_verwalterRequest extends FormRequest
     {
         return [
             'Adressnummer' => 'required|max:30',
+            'LVorm' => 'nullable|string',
             'Titel' => 'required|integer',
             'Anrede' => 'required|integer',
             'Vorname' => 'required|string|max:40',
