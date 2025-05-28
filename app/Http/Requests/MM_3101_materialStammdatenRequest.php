@@ -20,7 +20,7 @@ class MM_3101_materialStammdatenRequest extends FormRequest
             'Bezeichnung1' => 'required|string|max:100',
             'Bezeichnung2' => 'nullable|string|max:50',
             'Basismengeneinheit' => 'required|string|max:3',
-            'LVorm' => 'nullable',
+            'LVorm' => 'nullable|string',
             'BKSchluessel' => 'nullable|string|max:3',
             'CEOSWarengruppe' => 'required|string|max:4',
             'CEOSArtikelgruppe' => 'required|string|max:10',

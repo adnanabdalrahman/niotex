@@ -116,7 +116,7 @@ class MMServices
         $data['ArtVerkaufsfaehigJN'] = 0;
         $data['ArtSkontofaehigJN'] = 0;
 
-        if ($data['LVorm'] == "") {
+        if ($data['LVorm'] === null) {
             $data['LVorm'] = 0;
         } else {
             $data['LVorm'] = 1;
@@ -209,7 +209,8 @@ class MMServices
                     ]
                 );
             } catch (\Exception $e) {
-                Log::error('mm_31_01_materialstammdaten Lieferschein Error', ['Material' => $data['Material']]);
+                Log::error("mm_31_01_materialstammdaten Lieferschein Error: " . $e->getMessage(),
+                    ['Material' => $data['Material']]);
                 return null;
             }
         }
@@ -322,8 +323,8 @@ class MMServices
         $tourDate = "/Date({$milliseconds})/";
 
 
-        $tourId = $vorgang->VorIndividualC5;
-        $reservNo = $vorgang->VorIndividualC6;
+        $tourId = $vorgang->VorIndividualD5;
+        $reservNo = $vorgang->VorIndividualD6;
 
         // get all Positions
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
@@ -358,19 +359,34 @@ class MMServices
                 ->first();
             $to_Items[] = [
                 'Material' => $artikel->Artikelnummer,
-                "EntryQnt" => $position3Menge->PosMenge1,
-                "EntryUom" => $position3Menge->PosKZMengeneinheit1,
+                "EntryQnt" => (string)(int)$position3Menge->PosMenge1,
+                "EntryUom" => 'ST',//todo should from DB but not Stck , ST
                 "ReqDate" => $tourDate,
             ];
         }
 
         $data = [
-            "TourId" => $tourId,
+            "TourId" => (string)(int)$tourId,
+            "Remark" => "Test Remark", //todo later from Florian MAX 50 also in Florian page Max 50
             "MoveStloc" => "H001",
             "to_Items" => $to_Items
         ];
+        Log::info("mm_34_01_umlagerungsreservierung sent Data", $data);
 
-        return app(SapApiClient::class)->post($this->mm341_path, $data);
+        $response = app(SapApiClient::class)->post($this->mm341_path, $data);
+
+        $reservNo = $response['d']['ReservNo'] ?? null;
+
+        if ($reservNo !== null) {
+            $vorgang->VorStatus = '100100';
+            $vorgang->save();
+            Log::info("mm_34_01_umlagerungsreservierung Status erfolgreich geändert ", [
+                'Vorgangnummer' => $vorgang->VorIndividualD5,
+                'reservNo' => $reservNo,
+            ]);
+            return true;
+        }
+        return false;
     }
 
     /**
