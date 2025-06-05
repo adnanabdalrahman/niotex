@@ -112,7 +112,7 @@ class MMServices
         $data['ArtSeriennummernfaehigJN'] = 0;
         $data['ArtStuecklisteJN'] = 0;
         $data['ArtProvisionsfaehigJN'] = 0;
-        $data['ArtLieferantenfaehigJN'] = 0;
+        $data['ArtLieferantenfaehigJN'] = 1;
         $data['ArtVerkaufsfaehigJN'] = 0;
         $data['ArtSkontofaehigJN'] = 0;
 
@@ -122,7 +122,6 @@ class MMServices
             $data['LVorm'] = 1;
         }
 
-
         try {
             $artikel = Artikel::updateOrCreate(
                 ['Artikelnummer' => $data['Material']],
@@ -130,9 +129,9 @@ class MMServices
                     'Artikelnummer' => $data['Material'],
                     'ArtBezeichnung1' => $data['Materialkurztext'], // ArtMatchcode
                     'ArtBezeichnung2' => $data['Bezeichnung1'] . "|" . $data['Bezeichnung2'],
-                    'Artikel.KZArtMengeneinheit1 ' => $data['Basismengeneinheit'],
+                    'KZArtMengeneinheit1' => $data['Basismengeneinheit'],
                     'ArtAltJN' => $data['LVorm'],
-                    'Artikel.ArtIndividualC5' => $data['BKSchluessel'],
+                    'ArtIndividualC5' => $data['BKSchluessel'],
                     'KZWarengruppe' => $data['CEOSWarengruppe'],
                     'KZArtikelgruppe' => $data['CEOSArtikelgruppe'],
                     'ArtikelUntergruppeID' => Null, //todo should later be built
@@ -158,8 +157,10 @@ class MMServices
             );
             $interneArtikelNummer = $artikel['InterneArtikelnummer'];
         } catch (\Throwable $e) {
-            Log::error('mm_31_01_materialstammdaten Save Artikel Error:' . $e->getMessage(),
-                ['Material' => $data['Material']]);
+            Log::error(
+                'mm_31_01_materialstammdaten Save Artikel Error:' . $e->getMessage(),
+                ['Material' => $data['Material']]
+            );
             return null;
         }
 
@@ -173,17 +174,23 @@ class MMServices
                 ]
             );
         } catch (\Throwable $e) {
-            Log::error('mm_31_01_materialstammdaten Save Basisempfindlichkeit Error' . $e->getMessage(),
-                ['Material' => $data['Material']]);
+            Log::error(
+                'mm_31_01_materialstammdaten Save Basisempfindlichkeit Error' . $e->getMessage(),
+                ['Material' => $data['Material']]
+            );
             return null;
         }
 
         //  Lieferschein (Hersteller)
-        if ($data['Hersteller'] !== "") {
-            $adresse = Adresse::where('AdressNummer', $data['Hersteller'])->first();
+        if ($data['Hersteller'] !== null) {
+            $adressnummer = ltrim($data['Hersteller'], '0');
+
+            $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
             if ($adresse === null) {
-                Log::error('mm_31_01_materialstammdaten Kein Adresse für Lieferschein gefunden',
-                    ['AdressNummer' => $data['Hersteller']]);
+                Log::error(
+                    'mm_31_01_materialstammdaten Kein Adresse für Lieferschein gefunden',
+                    ['AdressNummer' => $adressnummer]
+                );
                 return null;
             }
             $interneAdressnummer = $adresse->InterneAdressnummer;
@@ -209,8 +216,10 @@ class MMServices
                     ]
                 );
             } catch (\Exception $e) {
-                Log::error("mm_31_01_materialstammdaten Lieferschein Error: " . $e->getMessage(),
-                    ['Material' => $data['Material']]);
+                Log::error(
+                    "mm_31_01_materialstammdaten Lieferschein Error: " . $e->getMessage(),
+                    ['Material' => $data['Material']]
+                );
                 return null;
             }
         }
@@ -312,8 +321,10 @@ class MMServices
         $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])->first();
 
         if ($vorgang === null) {
-            Log::error('mm_34_01_umlagerungsreservierung Kein Vorgang vorhanden',
-                ['Vorgangnummer' => $data['Vorgangnummer']]);
+            Log::error(
+                'mm_34_01_umlagerungsreservierung Kein Vorgang vorhanden',
+                ['Vorgangnummer' => $data['Vorgangnummer']]
+            );
             return null;
         }
 
@@ -332,11 +343,13 @@ class MMServices
         $to_Items = [];
         foreach ($positions as $position) {
             if ($position->InterneArtikelnummer === null) {
-                Log::error('mm_34_01_umlagerungsreservierung Kein InterneArtikelnummer in Position gefunden',
+                Log::error(
+                    'mm_34_01_umlagerungsreservierung Kein InterneArtikelnummer in Position gefunden',
                     [
                         'InterneVorgangsnummer' => $data['Vorgangnummer'],
                         'Position' => $position->InternePositionsnummer
-                    ]);
+                    ]
+                );
                 //todo Clarify if continue or Out
                 continue;
             }
@@ -344,12 +357,14 @@ class MMServices
             $artikel = Artikel::find($position->InterneArtikelnummer);
 
             if ($artikel === null) {
-                Log::error('mm_34_01_umlagerungsreservierung Kein Artikel für Position gefunden',
+                Log::error(
+                    'mm_34_01_umlagerungsreservierung Kein Artikel für Position gefunden',
                     [
                         'InterneVorgangsnummer' => $data['Vorgangnummer'],
                         'Position' => $position->InternePositionsnummer,
                         'InterneArtikelnummer' => $position->InterneArtikelnummer
-                    ]);
+                    ]
+                );
                 //todo Clarify if continue or Out
                 continue;
             }
@@ -360,7 +375,7 @@ class MMServices
             $to_Items[] = [
                 'Material' => $artikel->Artikelnummer,
                 "EntryQnt" => (string)(int)$position3Menge->PosMenge1,
-                "EntryUom" => 'ST',//todo should from DB but not Stck , ST
+                "EntryUom" => 'ST', //todo should from DB but not Stck , ST
                 "ReqDate" => $tourDate,
             ];
         }
@@ -402,7 +417,7 @@ class MMServices
         try {
             $response = app(SapApiClient::class)->get($this->mm221_path, $data);
             return response()->json($response, 200);
-        } catch (Exception|NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+        } catch (Exception | NotFoundExceptionInterface | ContainerExceptionInterface $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -446,6 +461,4 @@ class MMServices
         ];
         return app(SapApiClient::class)->post($this->mm341_path, $data);
     }
-
-
 }

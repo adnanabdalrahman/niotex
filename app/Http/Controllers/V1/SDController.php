@@ -59,7 +59,7 @@ class SDController extends Controller
     // SD-01-02: CEOS-->SAP, beauftragung Rückmeldung
     public function beauftragungRueckmeldung(Request $request)
     {
-        $vorgangDataArray = $this->sdServices->sd_0101_beauftragung_rueckmeldung($request);
+        $vorgangDataArray = $this->sdServices->sd_0102_beauftragung_rueckmeldung($request);
         if ($vorgangDataArray !== null) {
             Log::info('Sent Vorgang: ', $vorgangDataArray);
             return response()->json([
@@ -98,7 +98,6 @@ class SDController extends Controller
             'message' => 'Faktura erfolgreich übernommen',
             'vorNummer' => $data['vorNummer'],
         ], 202);
-
     }
 
     /*
@@ -117,6 +116,5 @@ class SDController extends Controller
             'message' => 'Fakturierte Dienstleistungsabrechnung erfolgreich übernommen',
             'vorNummer' => $data['vorNummer'],
         ], 202);
-
     }
 }

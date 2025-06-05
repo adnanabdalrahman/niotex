@@ -28,9 +28,10 @@ class BPController extends Controller
     public function geschaeftspartner(BP_0101_geschaeftspartnerRequest $request): JsonResponse
     {
         $validated = $request->validated();
+        //todo save Request before validation.
         Log::info('Received SAP Geschäftspartner Data:', $validated);
 
-        $adressnummer = ltrim($validated['Debitoren_Kreditorennummer'], '0');
+        $adressnummer = ltrim($validated['DebitorenKreditorennummer'], '0');
 
         $currentAdresse = Adresse::where('AdressNummer', $adressnummer)->first();
 
@@ -54,7 +55,6 @@ class BPController extends Controller
                 'message' => 'Geschäftspartner speichern fehlgeschlagen',
             ], 400);
         }
-
     }
 
     /*
@@ -69,8 +69,10 @@ class BPController extends Controller
         $adressnummer = ltrim($validated['Adressnummer'], '0');
         $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
         if ($adresse === null) {
-            Log::error('bp_0103_verwalter Kein Adresse für Verwalter gefunden',
-                ['AdressNummer' => $adressnummer]);
+            Log::error(
+                'bp_0103_verwalter Kein Adresse für Verwalter gefunden',
+                ['AdressNummer' => $adressnummer]
+            );
             return response()->json([
                 'status' => 'Error',
                 'message' => 'Ansprechpartner speichern fehlgeschlagen',

@@ -23,7 +23,7 @@ class BP_0103_verwalterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'Adressnummer' => 'required|max:30',
+            'Adressnummer' => 'required|string|max:30',
             'LVorm' => 'nullable|string',
             'Titel' => 'required|integer',
             'Anrede' => 'required|integer',

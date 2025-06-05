@@ -18,33 +18,35 @@ class BP_0101_geschaeftspartnerRequest extends FormRequest
     {
         return [
             'Geschaeftspartnernummer' => 'required',
-            'Debitoren_Kreditorennummer' => 'required',
-            'Anrede' => 'required|string',
-            'Titel' => 'required|string',
-            'Vorname' => 'required|string|max:40',
-            'Nachname' => 'required|string|max:40',
-            'Name1' => 'required|string|max:40',
+            'DebitorenKreditorennummer' => 'required',
+            'Anrede' => 'nullable|string',
+            'Titel' => 'nullable|string',
+            'Vorname' => 'nullable|string|max:40',
+            'Nachname' => 'nullable|string|max:40',
+            'Name1' => 'nullable|string|max:40',
             'Name2' => 'nullable|string|max:40',
             'Name3' => 'nullable|string|max:40',
             'Suchbegriff1' => 'nullable|string|max:10',
             'Suchbegriff2' => 'nullable|string|max:10',
-            'Strasse' => 'required|string|max:60', // handled in PHP to split if over 40
-            'Postleitzahl' => 'required|string|max:10',
-            'Ort' => 'required|string|max:40',
-            'Land' => 'required|string|size:2',
+            'Strasse' => 'nullable|string|max:60', // handled in PHP to split if over 40
+            'Postleitzahl' => 'nullable|string|max:10',
+            'Adresstyp' => 'required|string|max:3',
+            'Ort' => 'nullable|string|max:40',
+            'Land' => 'nullable|string|size:2',
             'Postfach' => 'nullable|string|max:10',
-            'Postleitzahl_Postfach' => 'nullable|string|max:10',
-            'Ort_Postfach' => 'nullable|string|max:40',
+            'PostleitzahlPostfach' => 'nullable|string|max:10',
+            'OrtPostfach' => 'nullable|string|max:40',
+            'Telefon' => 'nullable|string|max:40',
             'Telefon' => 'nullable|string|max:40',
             'Mobiltelefon' => 'nullable|string|max:40',
             'Fax' => 'nullable|string|max:40',
-            'Email' => 'nullable|email|max:80',
-            'AutoWEAbr' => 'required|boolean',
-            'Sperrkennzeichen' => 'required|boolean',
-            'Kundengruppe' => 'required|string|max:2',
+            'EMail' => 'nullable',
+            'AutoWEAbr' => 'nullable|boolean',
+            'Sperrkennzeichen' => 'nullable',
+            'Kundengruppe' => 'nullable|string|max:2',
             'Kundengruppe12' => 'nullable|string|max:3',
-            'UVI_Mailadresse' => 'nullable|email|max:80',
-            'PDF_Mailadresse' => 'nullable|email|max:80',
+            'UVIMailadresse' => 'nullable',
+            'PDFMailadresse' => 'nullable',
             'LVorm' => 'nullable|string',
         ];
     }
@@ -52,41 +54,74 @@ class BP_0101_geschaeftspartnerRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'Geschaeftspartnernummer.required' => 'Partner number is required.',
-            'Geschaeftspartnernummer.integer' => 'Partner number must be an integer.',
+            'Geschaeftspartnernummer.required' => 'Die Geschäftspartnernummer ist erforderlich.',
+            'DebitorenKreditorennummer.required' => 'Adressnummer (DebitorenKreditorennummer) ist erforderlich.',
 
-            'Debitoren_Kreditorennummer.required' => 'Customer number is required.',
-            'Debitoren_Kreditorennummer.integer' => 'Customer number must be an integer.',
+            'Anrede.string' => 'Die Anrede muss ein Text sein.',
+            'Titel.string' => 'Der Titel muss ein Text sein.',
 
-            'Anrede.required' => 'Salutation code is required.',
-            'Titel.required' => 'Title code is required.',
+            'Vorname.string' => 'Der Vorname muss ein Text sein.',
+            'Vorname.max' => 'Der Vorname darf maximal 40 Zeichen lang sein.',
 
-            'Vorname.required' => 'First name is required.',
-            'Vorname.max' => 'First name may not be greater than 40 characters.',
+            'Nachname.string' => 'Der Nachname muss ein Text sein.',
+            'Nachname.max' => 'Der Nachname darf maximal 40 Zeichen lang sein.',
 
-            'Nachname.required' => 'Last name is required.',
-            'Nachname.max' => 'Last name may not be greater than 40 characters.',
+            'Name1.string' => 'Name1 muss ein Text sein.',
+            'Name1.max' => 'Name1 darf maximal 40 Zeichen lang sein.',
 
-            'Name1.required' => 'Name1 is required.',
-            'Name1.max' => 'Name1 may not be greater than 40 characters.',
+            'Name2.string' => 'Name2 muss ein Text sein.',
+            'Name2.max' => 'Name2 darf maximal 40 Zeichen lang sein.',
 
-            'Strasse.required' => 'Street is required.',
-            'Strasse.max' => 'Street may not be greater than 60 characters.',
+            'Name3.string' => 'Name3 muss ein Text sein.',
+            'Name3.max' => 'Name3 darf maximal 40 Zeichen lang sein.',
 
-            'Postleitzahl.required' => 'Postal code is required.',
-            'Ort.required' => 'City is required.',
-            'Land.required' => 'Country code is required.',
-            'Land.size' => 'Country code must be exactly 2 characters.',
+            'Suchbegriff1.string' => 'Suchbegriff 1 muss ein Text sein.',
+            'Suchbegriff1.max' => 'Suchbegriff 1 darf maximal 10 Zeichen lang sein.',
 
-            'Email.email' => 'Email must be a valid address.',
-            'UVI_Mailadresse.email' => 'UVI email must be valid.',
-            'PDF_Mailadresse.email' => 'PDF email must be valid.',
+            'Suchbegriff2.string' => 'Suchbegriff 2 muss ein Text sein.',
+            'Suchbegriff2.max' => 'Suchbegriff 2 darf maximal 10 Zeichen lang sein.',
 
-            'AutoWEAbr.boolean' => 'AutoWEAbr must be true or false.',
-            'Sperrkennzeichen.boolean' => 'Sperrkennzeichen must be true or false.',
+            'Strasse.string' => 'Die Straße muss ein Text sein.',
+            'Strasse.max' => 'Die Straße darf maximal 60 Zeichen lang sein.',
 
-            'Kundengruppe.max' => 'Kundengruppe may not be greater than 2 characters.',
-            'Kundengruppe12.max' => 'Kundengruppe12 may not be greater than 3 characters.',
+            'Postleitzahl.string' => 'Die Postleitzahl muss ein Text sein.',
+            'Postleitzahl.max' => 'Die Postleitzahl darf maximal 10 Zeichen lang sein.',
+
+            'Ort.string' => 'Der Ort muss ein Text sein.',
+            'Ort.max' => 'Der Ort darf maximal 40 Zeichen lang sein.',
+
+            'Land.string' => 'Das Land muss ein Text sein.',
+            'Land.size' => 'Der Ländercode muss genau 2 Zeichen lang sein.',
+
+            'Postfach.string' => 'Das Postfach muss ein Text sein.',
+            'Postfach.max' => 'Das Postfach darf maximal 10 Zeichen lang sein.',
+
+            'PostleitzahlPostfach.string' => 'Die Postleitzahl zum Postfach muss ein Text sein.',
+            'PostleitzahlPostfach.max' => 'Die Postleitzahl zum Postfach darf maximal 10 Zeichen lang sein.',
+
+            'OrtPostfach.string' => 'Der Ort zum Postfach muss ein Text sein.',
+            'OrtPostfach.max' => 'Der Ort zum Postfach darf maximal 40 Zeichen lang sein.',
+
+            'Telefon.string' => 'Die Telefonnummer muss ein Text sein.',
+            'Telefon.max' => 'Die Telefonnummer darf maximal 40 Zeichen lang sein.',
+
+            'Mobiltelefon.string' => 'Die Mobiltelefonnummer muss ein Text sein.',
+            'Mobiltelefon.max' => 'Die Mobiltelefonnummer darf maximal 40 Zeichen lang sein.',
+
+            'Fax.string' => 'Die Faxnummer muss ein Text sein.',
+            'Fax.max' => 'Die Faxnummer darf maximal 40 Zeichen lang sein.',
+
+            'EMail.email' => 'Die E-Mail-Adresse muss gültig sein.',
+
+            'AutoWEAbr.boolean' => 'Das Feld "Automatische WE-Abrechnung" muss ein Wahrheitswert (true/false) sein.',
+
+            'Kundengruppe.string' => 'Die Kundengruppe muss ein Text sein.',
+            'Kundengruppe.max' => 'Die Kundengruppe darf maximal 2 Zeichen lang sein.',
+
+            'Kundengruppe12.string' => 'Die Kundengruppe12 muss ein Text sein.',
+            'Kundengruppe12.max' => 'Die Kundengruppe12 darf maximal 3 Zeichen lang sein.',
+
+            'LVorm.string' => 'Das Feld "Lieferform" muss ein Text sein.',
         ];
     }
 }
