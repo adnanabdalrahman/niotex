@@ -37,7 +37,7 @@ class BPServices
 
         /*
         Geschaeftspartnernummer INT     => INT  AdrFibunummer
-        Debitoren_Kreditorennummer      => INT  AdressNummer
+        DebitorenKreditorennummer      => INT  AdressNummer
         Anrede                          => INT Code (zb:0001) Anrede.AnredeBezeichnung (n:1) (0001 Frau, 0002 Herr, 0003 Firma, 0005, 0006 Eheleute)
         Titel => TitelBezeichnung       => INT Code (zb:0002)INT Titel.NRTitel (n:1) (0001 DR - 0002 Prof. - 0003 ))
         Vorname (im Debitor Name 1)     => Varchar(40)   AdrFirmenbezeichnung1
@@ -67,42 +67,57 @@ class BPServices
     */
         try {
             //Vorname + Nachname
-            $AdrFirmenbezeichnung1 = $data['Vorname'] . " " . $data['Nachname'];
+            //$AdrFirmenbezeichnung1 = mb_substr($data['Vorname'] . " " . $data['Nachname'], 0, 40);
+
+
 
             $streetArray = $this->splitStreet($data['Strasse']);
 
+            /*
             if ($data['LVorm'] === null) {
                 $data['LVorm'] = 0;
             } else {
                 $data['LVorm'] = 1;
             }
+			*/
 
+            if ($data['Sperrkennzeichen'] === null) {
+                $data['Sperrkennzeichen'] = 0;
+            } else {
+                $data['Sperrkennzeichen'] = 1;
+            }
 
+            $data['LVorm'] = 0; //todo later
+            //$data['Sperrkennzeichen'] = 0; //todo later
+
+            if ($data['AutoWEAbr'] === null) {
+                $data['AutoWEAbr'] = 0;
+            } else {
+                $data['AutoWEAbr'] = 1;
+            }
             //todo
             //       =>  $data['Kundengruppe'],    /// N:N
             //       =>  $data['Kundengruppe12'],    /// N:N
 
             // Insert into users' table
             $adresse = Adresse::updateOrCreate(
-                ['AdressNummer' => $data['Debitoren_Kreditorennummer']],
+                ['AdressNummer' => $data['DebitorenKreditorennummer']],
                 [
-                    'AdrFibunummer' => $data['Geschaeftspartnernummer'], // Primary
-                    'AdressNummer' => $data['Debitoren_Kreditorennummer'],
-                    'KZAdresstyp' => "KUN", // ???????
+                    'AdrFremdnummer' => $data['Geschaeftspartnernummer'], // Primary
+                    'AdressNummer' => $data['DebitorenKreditorennummer'],
                     'KZWaehrung' => "EUR", // ???????
+                    'KZAdresstyp' => $data['Adresstyp'],
                     'MwstTypID' => 3, // ???????
                     'AdrKarenztage' => 0, // ???????
                     'KZSprache' => "DE", // ???????
                     'AdrFactoringJN' => 0, // ???????
                     'AdrMahnSperreJN' => 0, // ???????
                     'NRAnrede' => $data['Anrede'],
-                    'NRTitel' => $data['Titel'],// todo
-                    'AdrFirmenbezeichnung1' => $AdrFirmenbezeichnung1,
-                    'AdrFirmenbezeichnung2' => $data['Name1'],
-                    'AdrFirmenbezeichnung3' => $data['Name2'],
-                    'AdrFirmenbezeichnung4' => $data['Name3'],
+                    'NRTitel' => $data['Titel'], // todo
+                    'AdrFirmenbezeichnung1' => mb_substr($data['Name1'], 0, 40),
+                    'AdrFirmenbezeichnung2' =>  mb_substr($data['Name2'], 0, 40),
+                    'AdrFirmenbezeichnung3' => mb_substr($data['Name3'], 0, 40),
                     'AdrMatchcode' => $data['Suchbegriff1'],
-                    //'AdrMatchcode'                =>  $data['Suchbegriff2'], //?? es gibt nur 1 Matchcode-Feld
                     'AdrStrasse' => $streetArray['strasse'],
                     'AdrStrasse2' => $streetArray['strasse2'],
                     'AdrStrasse3' => $streetArray['hausnummer'],
@@ -110,29 +125,33 @@ class BPServices
                     'AdrOrt' => $data['Ort'],
                     'KZLand' => $data['Land'],
                     'AdrPostfach' => $data['Postfach'],
-                    'AdrPLZPostfach' => $data['Postleitzahl_Postfach'],
-                    'AdrOrtPostfach' => $data['Ort_Postfach'],
+                    'AdrPLZPostfach' => $data['PostleitzahlPostfach'],
+                    'AdrOrtPostfach' => $data['OrtPostfach'],
                     'AdrTelefon' => $data['Telefon'],
                     'AdrMobiltelefon' => $data['Mobiltelefon'],
                     'AdrFax' => $data['Fax'],
-                    'AdrEmail' => $data['Email'],
+                    'AdrEmail' => $data['EMail'],
                     'AdrGutschriftsverfahrenJN' => $data['AutoWEAbr'],
                     'AdrLiefersperreJN' => $data['Sperrkennzeichen'],
                     //''                =>  $data['Kundengruppe'],    // N:N
                     // ''               =>  $data['Kundengruppe12'],  // N:N
                     'AdrAltJN' => $data['LVorm'],
-                    'ADRindividualC2' => $data['UVI_Mailadresse'],
-                    'ADRindividualC3' => $data['PDF_Mailadresse'],
-                ]);
+                    'ADRindividualC2' => $data['UVIMailadresse'],
+                    'ADRindividualC1' => $data['Suchbegriff2'],
+                    'ADRindividualC3' => $data['PDFMailadresse'],
+                ]
+            );
             $interneAdressnummer = $adresse['InterneAdressnummer'];
         } catch (Throwable $e) {
-            Log::error('mm_31_01_materialstammdaten Lieferschein Error ' . $e->getMessage(),
-                ['Adresse' => $data['Debitoren_Kreditorennummer']]);
+            Log::error(
+                ' Error ' . $e->getMessage(),
+                ['Adresse' => $data['DebitorenKreditorennummer']]
+            );
             return null;
         }
         return [
             'interneArtikelnummer' => $interneAdressnummer,
-            'Adresse' => $data['Debitoren_Kreditorennummer'],
+            'Adresse' => $data['DebitorenKreditorennummer'],
         ];
     }
 
@@ -171,7 +190,7 @@ class BPServices
                     'NRAnrede' => $data['Anrede'],
                     'AnsVorname' => $data['Vorname'],
                     'AnsNachname' => $data['Nachname'],
-                    'AnsPrivatStrasse' => $data['Strasse'],//todo split Hnr
+                    'AnsPrivatStrasse' => $data['Strasse'], //todo split Hnr
                     'AnsPrivatOrt' => $data['Postleitzahl'] . " " . $data['Ort'],
                     'AnsPrivatTelefon' => $data['Telefon'],
                     'AnsMobiltelefon' => $data['Mobiltelefon'],
@@ -181,11 +200,14 @@ class BPServices
                     'AnsIndividualD2' => $data['DatumBis'],
                     'AnsIndividualC1' => $data['Ansprechpartner1'],
                     'AnsIndividualC2' => $data['Ansprechpartner2'],
-                ]);
+                ]
+            );
             $ansprechpartnerId = $ansprechpartner['AnsprechpartnerID'];
         } catch (Throwable $e) {
-            Log::error('mm_31_01_materialstammdaten Lieferschein Error ' . $e->getMessage(),
-                ['Adresse' => $interneAdressnummer]);
+            Log::error(
+                'bp_0103_verwalter Error ' . $e->getMessage(),
+                ['Adresse' => $interneAdressnummer]
+            );
             return null;
         }
         return [

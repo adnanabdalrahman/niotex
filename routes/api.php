@@ -22,7 +22,6 @@ Route::middleware([VerifySapToken::class])->group(function () {
                 Route::post('/3101/materialstammdaten', [MMController::class, 'materialstammdaten']);
             });
 
-
             Route::prefix('bp')->group(function () {
                 //bp-01-01: SAP-->CEOS, Geschäftspartner
                 Route::post('/0101/geschaeftspartner', [BPController::class, 'geschaeftspartner']);
@@ -67,13 +66,9 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
 
 
             Route::prefix('sd')->group(function () {
-                //SD-01-01: SAP-->CEOS, Beauftragung
+                //SD-01-02: SAP-->CEOS, beauftragungRueckmeldung
                 Route::post('/0102/beauftragungRueckmeldung', [SDController::class, 'beauftragungRueckmeldung']);
-
-
             });
-
-
         });
 });
 
