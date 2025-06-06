@@ -36,7 +36,7 @@ class SDServices
     public function sd_0101_beauftragung_vorgang($header): ?array
     {
 
-        // todo Important Adresse.Sperrkennzeichen is 1 (gesperrt) darf keinen Auftrag anlegen.  
+        // todo Important Adresse.Sperrkennzeichen is 1 (gesperrt) darf keinen Auftrag anlegen.
         // create Vorgang for beleg
         // create positionen für this Vorgang
         // MaterialGruppen in positionen   => Vorgang.VorGruppe
@@ -82,9 +82,17 @@ class SDServices
                     ->lockForUpdate()
                     ->first();
 
-
                 if ($nummernkreisVorgang) {
-                    $header['VorNummer'] = $nummernkreisVorgang->VNkAktuellerWert;
+                    $vorgang = Vorgang::
+                    where('VorArt', 'A')
+                        ->where('VorGruppe', 'RE')
+                        ->where('VorNummer', $nummernkreisVorgang->VNkAktuellerWert)
+                        ->first();
+                    if ($vorgang) {
+                        $header['VorNummer'] = $nummernkreisVorgang->VNkAktuellerWert + 1;
+                    } else {
+                        $header['VorNummer'] = $nummernkreisVorgang->VNkAktuellerWert;
+                    }
                 } else {
                     Log::error("Kein nummernkreisVorgang für Vorgang gefunden");
                     return null;
@@ -191,7 +199,7 @@ class SDServices
                 NummernkreisVorgang::where('VorArt', 'A')
                     ->where('VorGruppe', 'RE')
                     ->where('VNkArt', '100000')
-                    ->update(['VNkAktuellerWert' => $nummernkreisVorgang->VNkAktuellerWert + 1]);
+                    ->update(['VNkAktuellerWert' => $header['VorNummer'] + 1]);
 
                 DB::connection('sqlsrv2')->table('cis.Vorgang2Text')->insertGetId([
                     'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
@@ -322,7 +330,7 @@ class SDServices
         txtZ010 Info zur Montage CEOS => Position2Text.PosNotiz   (FK):Position2Text.InterneVorgangsnumer&InternePositionsnummer→Position.InterneVorgangsnumer&InternePositionsnummer
 
 
-        kwmengO Menge offen => //todo clarify later with Jahnnes ignore
+        kwmengO Menge offen => //todo clarify later with Johannes ignore
         aufnr Kontierungsobjekt =>  Ignorieren
         vorgn Vorgangsnummer CEOS => Vorgang.VorNummer (FK):Position.InterneVorgangsnummer→Vorgang.InterneVorgangsnummer // todo clarify in header
         VBELN => From Header
@@ -344,6 +352,7 @@ class SDServices
                     return null;
                 }
                 $preisbasis = Preisbasis::where('NRPreisbasis', $interneArtikelnummer->NRPreisbasis)->first();
+
                 //todo convert to model
                 $internePositionsnummer = DB::connection('sqlsrv2')->table('cis.Position')->insertGetId([
                     'InterneVorgangsnummer' => $interneVorgangsnummer,
@@ -573,8 +582,6 @@ class SDServices
     }
 
 
-
-
     /**
      * SD-01-02 Beauftragung Rueckmeldung
      */
@@ -597,18 +604,21 @@ class SDServices
                 );
                 return null;
             }
-            $header['Vbeln'] = $vorgang->VorIndividualC1;
-            $header['Auart'] = $vorgang->VorIndividualC2;
+            $header['Vbeln'] = (string)$vorgang->VorIndividualC1;
+            $header['Auart'] = (string)$vorgang->VorIndividualC2;
             $header['Vdatu'] = Carbon::parse($vorgang->VorLieferungWunschDatum)->format('Y-m-d');
-            $header['Zzlgsnr'] = $vorgang->VorIndividualC3;
-            $header['GenrCeos'] = $vorgang->VorIndividualD4;
-            $header['TxtZ013'] = $vorgang->VorStichwort;
+            $header['Zzlgsnr'] = (string)$vorgang->VorIndividualC3 ?? '';
+            $header['GenrCeos'] = (string)(int)$vorgang->VorIndividualD4;
+            $header['TxtZ013'] = (string)$vorgang->VorStichwort ?? '';
+
+            $vorNotiz = '';
             $vorgang2Text = DB::connection('sqlsrv2')->table('cis.Vorgang2Text')
                 ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->first();
 
             if ($vorgang2Text !== null) {
-                $header['TxtZ012'] = ''; //$vorgang2Text->VorNotiz;
+                $vorNotiz = (string)$vorgang2Text->VorNotiz;
             }
+            $header['TxtZ012'] = $vorNotiz;
 
             //---------------------------------------------------------------------------------------------
             $positions = DB::connection('sqlsrv2')->table('cis.Position')
@@ -672,20 +682,20 @@ class SDServices
                     return null;
                 }
 
-                $header['to_Items'] = [
+                $header['to_Items'][] = [
                     'Matnr' => $artikel->Artikelnummer,
-                    'PosErl' => 1,
-                    'KwmengO' => 0,
-                    'Vorgn' => $vorgang->VorNummer,
-                    'Vbeln' => $vorgang->VorIndividualC1,
-                    'VorgnInt' => $vorgang->InterneVorgangsnummer,
-                    'Kondm' => $position5Individual->PosIndividualC3,
-                    'Posnr' => $position5Individual->PosIndividualD1,
-                    'Kwmeng' => $position3Menge->PosMenge1,
-                    'Vrkme' => $position3Menge->PosKZMengeneinheit1,
-                    'TxtZ002' => $position2Text->PosZusatztextLieferschein,
-                    'TxtZ009' => $position2Text->PosZusatztext,
-                    'TxtZ010' => $position2Text->PosNotiz,
+                    'PosErl' => (string)1, // todo later
+                    'KwmengO' => (string)0,  //todo later
+                    'Vorgn' => (string)$vorgang->VorNummer,
+                    'Vbeln' => (string)$vorgang->VorIndividualC1,
+                    'VorgnInt' => (string)$vorgang->InterneVorgangsnummer ?? '',
+                    'Kondm' => (string)$position5Individual->PosIndividualC3,
+                    'Posnr' => (string)(int)$position5Individual->PosIndividualD1,
+                    'Kwmeng' => (string)$position3Menge->PosMenge1,
+                    'Vrkme' => (string)$position3Menge->PosKZMengeneinheit1,
+                    'TxtZ002' => (string)$position2Text->PosZusatztextLieferschein ?? '',
+                    'TxtZ009' => (string)$position2Text->PosZusatztext ?? '',
+                    'TxtZ010' => (string)$position2Text->PosNotiz ?? '',
                 ];
             }
             Log::error('sd -01 -02 Sent data', $header);

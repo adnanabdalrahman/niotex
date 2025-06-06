@@ -23,14 +23,13 @@ class BPController extends Controller
 
     /*
      * BP_01_01 Geschaeftspartner
-     * SAP -> CEOS
+     * SAP → CEOS
      */
-    public function geschaeftspartner(BP_0101_geschaeftspartnerRequest $request): JsonResponse
+    public function bp_01_01_Geschaeftspartner(BP_0101_geschaeftspartnerRequest $request): JsonResponse
     {
-        $validated = $request->validated();
-        //todo save Request before validation.
-        Log::info('Received SAP Geschäftspartner Data:', $validated);
+        Log::info('Received Payload for bp_01_01_Geschaeftspartner:', $request->all());
 
+        $validated = $request->validated();
         $adressnummer = ltrim($validated['DebitorenKreditorennummer'], '0');
 
         $currentAdresse = Adresse::where('AdressNummer', $adressnummer)->first();
@@ -59,13 +58,12 @@ class BPController extends Controller
 
     /*
      * BP_0103 Geschaeftspartner Verwalter
-     * SAP -> CEOS
+     * SAP → CEOS
      * */
-    public function verwalter(BP_0103_verwalterRequest $request): JsonResponse
+    public function bp_01_03_Verwalter(BP_0103_verwalterRequest $request): JsonResponse
     {
+        Log::info('Received Payload for bp_01_03_Verwalter:', $request->all());
         $validated = $request->validated();
-        Log::info('Received SAP Verwalter Data:', $validated);
-
         $adressnummer = ltrim($validated['Adressnummer'], '0');
         $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
         if ($adresse === null) {

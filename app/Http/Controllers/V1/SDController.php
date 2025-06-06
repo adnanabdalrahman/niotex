@@ -33,11 +33,10 @@ class SDController extends Controller
      * @param SD_0101_beauftragungRequest $request
      * @return JsonResponse
      */
-    public function beauftragung(SD_0101_beauftragungRequest $request)
+    public function sd_0101_beauftragung(SD_0101_beauftragungRequest $request)
     {
+        Log::info('Received Payload for sd_0101_beauftragung:', $request->all());
         $validated = $request->validated();
-
-        Log::info('Received Vorgang: ', $validated);
         $vorgangDataArray = $this->sdServices->sd_0101_beauftragung_vorgang($validated['header']);
         if ($vorgangDataArray !== null) {
             $positionsNrArray = $this->sdServices->sd_0101_beauftragung_positions($validated['positions'], $vorgangDataArray);
@@ -57,7 +56,7 @@ class SDController extends Controller
 
 
     // SD-01-02: CEOS-->SAP, beauftragung Rückmeldung
-    public function beauftragungRueckmeldung(Request $request)
+    public function sd_01_02_beauftragungRueckmeldung(Request $request)
     {
         $vorgangDataArray = $this->sdServices->sd_0102_beauftragung_rueckmeldung($request);
         if ($vorgangDataArray !== null) {
@@ -90,7 +89,6 @@ class SDController extends Controller
     public function mietvertragsrechnungen(SD_0201_mietvertragsrechnungenRequest $request)
     {
         $validated = $request->validated();
-
         $data = $this->sdServices->sd_0201_mietvertragsrechnungen();
 
         return response()->json([
@@ -106,7 +104,7 @@ class SDController extends Controller
      *
      *
      */
-    public function dienstleistungsabrechnung(SD_0301_dienstleistungsabrechnungRequest $request)
+    public function sd_03_01_dienstleistungsabrechnung(SD_0301_dienstleistungsabrechnungRequest $request)
     {
         $validated = $request->validated();
         $data = $this->sdServices->sd_0301_dienstleistungsabrechnung($validated);

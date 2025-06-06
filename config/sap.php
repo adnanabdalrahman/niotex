@@ -6,6 +6,7 @@ return [
     'api_token' => env('SAP_API_TOKEN'),
     'mm221_path' => '/Z1ERP_MM_CEOS_STOCK_SRV/ZCEOSStockSet',
     'mm341_path' => '/Z1ERP_MM_CEOS_STOCK_SRV/CEOSReservationHeaderSet',
+    'mm331a_path' => '',
     'mm352_path' => '/Z1ERP_MM_CEOS_STOCK_SRV/CEOSGoodsmovementHeaderSet',
     'sd0102_path' => '/Z1ERP_SD_CEOS_ORDER_SRV/CEOSOrderHeaderSet/'
 ];

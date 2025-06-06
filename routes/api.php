@@ -19,27 +19,32 @@ Route::middleware([VerifySapToken::class])->group(function () {
 
             Route::prefix('mm')->group(function () {
                 //mm-31-1: SAP-->CEOS, Materialstammdaten
-                Route::post('/3101/materialstammdaten', [MMController::class, 'materialstammdaten']);
+                Route::post('/3101/materialstammdaten', [MMController::class, 'mm_31_1_materialstammdaten']);
             });
+            Route::prefix('mm')->group(function () {
+                //mm-37-1: SAP-->CEOS, NU zugelassene Leistungspositionen
+                Route::post('/3701/nuleistungspositionen', [MMController::class, 'mm_37_1_NuLeistungspositionen']);
+            });
+
 
             Route::prefix('bp')->group(function () {
                 //bp-01-01: SAP-->CEOS, Geschäftspartner
-                Route::post('/0101/geschaeftspartner', [BPController::class, 'geschaeftspartner']);
+                Route::post('/0101/geschaeftspartner', [BPController::class, 'bp_01_01_Geschaeftspartner']);
 
                 //bp-01-03: Kundenstamm SAP –> CEOS Verwalter
-                Route::post('/0103/verwalter', [BPController::class, 'verwalter']);
+                Route::post('/0103/verwalter', [BPController::class, 'bp_01_03_Verwalter']);
             });
 
 
             Route::prefix('sd')->group(function () {
                 //SD-01-01: SAP-->CEOS, Beauftragung
-                Route::post('/0101/beauftragung', [SDController::class, 'beauftragung']);
+                Route::post('/0101/beauftragung', [SDController::class, 'sd_0101_beauftragung']);
 
                 //SD-02-01: SAP-->CEOS, Mietvertragsrechnungen
                 Route::post('/0201/mietvertragsrechnungen', [SDController::class, 'mietvertragsrechnungen']);
 
                 //SD-03-01: SAP-->CEOS, Dienstleistungsabrechnung
-                Route::post('/0301/dienstleistungsabrechnung ', [SDController::class, 'dienstleistungsabrechnung']);
+                Route::post('/0301/dienstleistungsabrechnung ', [SDController::class, 'sd_03_01_dienstleistungsabrechnung']);
             });
         });
 });
@@ -53,21 +58,24 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
         ->group(function () {
             Route::prefix('mm')->group(function () {
                 //mm-22-01: CEOSWEB-->CEOS-->SAP, Abfrage Lagerbestände Hauptlager
-                Route::post('/2201/lagerbestaende', [MMController::class, 'lagerbestaende']);
+                Route::post('/2201/lagerbestaende', [MMController::class, 'mm_22_1_lagerbestaende']);
+
+                //mm-35-01: CEOSWEB-->CEOS-->SAP, Abfrage Lagerbestände Hauptlager
+                Route::post('/3301a/leistungsbestaetigung', [MMController::class, 'mm_33_01_a_Leistungsbestaetigung']);
 
 
                 //mm-34-1: CEOSWEB-->CEOS-->SAP, Umlagerungsreservierung
-                Route::post('/3401/umlagerungsreservierung', [MMController::class, 'umlagerungsreservierung']);
+                Route::post('/3401/umlagerungsreservierung', [MMController::class, 'mm_34_01_umlagerungsreservierung']);
 
 
                 //mm-35-02: CEOSWEB-->CEOS-->SAP, Materialverbrauch des Monteurs / NU
-                Route::post('/3502/materialverbrauch', [MMController::class, 'materialverbrauch']);
+                Route::post('/3502/materialverbrauch', [MMController::class, 'mm_35_02_materialverbrauch']);
             });
 
 
             Route::prefix('sd')->group(function () {
                 //SD-01-02: SAP-->CEOS, beauftragungRueckmeldung
-                Route::post('/0102/beauftragungRueckmeldung', [SDController::class, 'beauftragungRueckmeldung']);
+                Route::post('/0102/beauftragungRueckmeldung', [SDController::class, 'sd_01_02_beauftragungRueckmeldung']);
             });
         });
 });

@@ -70,16 +70,15 @@ class BPServices
             //$AdrFirmenbezeichnung1 = mb_substr($data['Vorname'] . " " . $data['Nachname'], 0, 40);
 
 
-
             $streetArray = $this->splitStreet($data['Strasse']);
 
-            /*
+
             if ($data['LVorm'] === null) {
                 $data['LVorm'] = 0;
             } else {
                 $data['LVorm'] = 1;
             }
-			*/
+
 
             if ($data['Sperrkennzeichen'] === null) {
                 $data['Sperrkennzeichen'] = 0;
@@ -87,7 +86,7 @@ class BPServices
                 $data['Sperrkennzeichen'] = 1;
             }
 
-            $data['LVorm'] = 0; //todo later
+            //$data['LVorm'] = 0; //todo later
             //$data['Sperrkennzeichen'] = 0; //todo later
 
             if ($data['AutoWEAbr'] === null) {
@@ -115,7 +114,7 @@ class BPServices
                     'NRAnrede' => $data['Anrede'],
                     'NRTitel' => $data['Titel'], // todo
                     'AdrFirmenbezeichnung1' => mb_substr($data['Name1'], 0, 40),
-                    'AdrFirmenbezeichnung2' =>  mb_substr($data['Name2'], 0, 40),
+                    'AdrFirmenbezeichnung2' => mb_substr($data['Name2'], 0, 40),
                     'AdrFirmenbezeichnung3' => mb_substr($data['Name3'], 0, 40),
                     'AdrMatchcode' => $data['Suchbegriff1'],
                     'AdrStrasse' => $streetArray['strasse'],
@@ -181,7 +180,9 @@ class BPServices
      */
     public function bp_0103_verwalter($data, $interneAdressnummer): ?array
     {
+
         try {
+
             $ansprechpartner = Ansprechpartner::updateOrCreate(
                 ['InterneAdressnummer' => $interneAdressnummer],
                 [
@@ -195,9 +196,9 @@ class BPServices
                     'AnsPrivatTelefon' => $data['Telefon'],
                     'AnsMobiltelefon' => $data['Mobiltelefon'],
                     'AnsFax' => $data['Fax'],
-                    'AnsEMail' => $data['Email'],
-                    'AnsIndividualD1' => $data['DatumVon'],
-                    'AnsIndividualD2' => $data['DatumBis'],
+                    'AnsEMail' => $data['EMail'],
+                    'AnsIndividualD1' => $data['GueltigVon'], //todo todo later format date
+                    'AnsIndividualD2' => $data['GueltigBis'], //todo later format date
                     'AnsIndividualC1' => $data['Ansprechpartner1'],
                     'AnsIndividualC2' => $data['Ansprechpartner2'],
                 ]

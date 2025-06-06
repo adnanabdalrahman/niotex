@@ -5,17 +5,15 @@ namespace App\Http\Controllers\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MM_2201_SAPStockRequest;
 use App\Http\Requests\MM_3101_materialStammdatenRequest;
+use App\Http\Requests\MM_3701_nuLeistungspositionenRequest;
 use App\Models\Artikel;
 use App\Services\MMServices;
-use Illuminate\Http\Client\ConnectionException;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Vyuldashev\LaravelOpenApi\Attributes as OpenApi;
 
-;
 
-#[OpenApi\PathItem]
 class MMController extends Controller
 {
     protected MMServices $mmServices;
@@ -33,10 +31,10 @@ class MMController extends Controller
      * @return JsonResponse
      */
 
-    public function materialstammdaten(MM_3101_materialStammdatenRequest $request): JsonResponse
+    public function mm_31_1_Materialstammdaten(MM_3101_materialStammdatenRequest $request): JsonResponse
     {
+        Log::info('Received Payload for mm_31_1_Materialstammdaten:', $request->all());
         $validated = $request->validated();
-        Log::info('Received SAP Material Data:', $validated);
         $artikelNummer = ltrim($validated['Material'], '0');
 
         $currentArtikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
@@ -44,8 +42,6 @@ class MMController extends Controller
         if ($request['LVorm'] !== null) {
             $status = 'gelöscht';
         }
-
-        Log::info('Received SAP Material Data:', $validated);
         $data = $this->mmServices->mm_31_01_materialstammdaten($validated);
 
         if ($data !== null) {
@@ -64,14 +60,42 @@ class MMController extends Controller
         }
     }
 
+    /*
+    Übertragung für den NU zugelassene Leistungspositionen von SAP an CEOS
+    */
+    public function mm_37_1_NuLeistungspositionen(MM_3701_nuLeistungspositionenRequest $request): JsonResponse
+    {
+        Log::info('Received Payload for mm_37_1_NuLeistungspositionen:', $request->all());
+        $validated = $request->validated();
+
+        $data = $this->mmServices->mm_37_1_NuLeistungspositionen($validated);
+
+        if ($data !== null) {
+            $message = "Leistungspositionen erfolgreich gespeichert";
+            Log::info($message);
+            return response()->json([
+                'status' => 'success',
+                'message' => $message,
+                'data' => $data
+            ], 202);
+        } else {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'Material speichern fehlgeschlagen',
+            ], 400);
+        }
+    }
+
     /**
      * MM_34_01 Umlagerungsreservierung
      * CEOSWEB-->CEOS-->SAP
      *
+     * @param Request $request
      * @return JsonResponse
+     * @throws Exception
      */
 
-    public function umlagerungsreservierung(Request $request): JsonResponse
+    public function mm_34_01_umlagerungsreservierung(Request $request): JsonResponse
     {
         $data = $request->validate([
             'Vorgangnummer' => 'required',
@@ -86,11 +110,20 @@ class MMController extends Controller
     }
 
 
-    public function materialverbrauch(): JsonResponse
+    /**
+     * MM_35_02 materialverbrauch
+     * CEOSWEB-->CEOS-->SAP
+     *
+     * @param Request $request
+     * @return JsonResponse
+     * @throws Exception
+     */
+
+    public function mm_35_02_materialverbrauch(Request $request): JsonResponse
     {
         try {
             return $this->mmServices->mm_35_02_materialverbrauch();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Internal error:', ['errors' => $e->getMessage()]);
             return response()->json(['message' => 'Internal error', 'errors' => $e->getMessage()], 500);
         }
@@ -103,9 +136,8 @@ class MMController extends Controller
      *
      * @param MM_2201_SAPStockRequest $request
      * @return JsonResponse
-     * @throws ConnectionException
      */
-    public function lagerbestaende(MM_2201_SAPStockRequest $request): JsonResponse
+    public function mm_22_1_lagerbestaende(MM_2201_SAPStockRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
@@ -116,4 +148,26 @@ class MMController extends Controller
 
         return response()->json($data);
     }
+
+
+    /**
+     * MM_35_02 materialverbrauch
+     * CEOSWEB-->CEOS-->SAP
+     *
+     * @param Request $request
+     * @return JsonResponse
+     * @throws Exception
+     */
+
+    public function mm_33_01_a_Leistungsbestaetigung(Request $request): JsonResponse
+    {
+        try {
+            return $this->mmServices->mm_33_01_a_Leistungsbestaetigung();
+        } catch (Exception $e) {
+            Log::error('Internal error:', ['errors' => $e->getMessage()]);
+            return response()->json(['message' => 'Internal error', 'errors' => $e->getMessage()], 500);
+        }
+    }
+
+
 }
