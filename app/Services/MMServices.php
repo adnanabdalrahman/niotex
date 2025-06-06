@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Adresse;
 use App\Models\Artikel;
 use App\Models\Artikelgruppe;
+use App\Models\ArtikelKunde;
 use App\Models\ArtikelLieferant;
 use App\Models\Basisempfindlichkeit;
 use App\Models\Position;
@@ -12,6 +13,7 @@ use App\Models\Position3Menge;
 use App\Models\Produktgruppe;
 use App\Models\Vorgang;
 use App\Models\Warengruppe;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
@@ -24,6 +26,9 @@ class MMServices
     protected string $mm221_path;
     protected string $mm341_path;
     protected string $mm352_path;
+
+
+    protected string $mm331a_path;
 
 
     protected array $auth;
@@ -39,6 +44,7 @@ class MMServices
         $this->mm221_path = config('sap.mm221_path');
         $this->mm341_path = config('sap.mm341_path');
         $this->mm352_path = config('sap.mm341_path');
+        $this->mm331a_path = config('sap.mm341_path');
     }
 
 
@@ -239,7 +245,7 @@ class MMServices
      * @throws Exception
      */
 
-    public function mm_34_01_umlagerungsreservierung($data)
+    public function mm_34_01_umlagerungsreservierung($data): ?bool
     {
         //Todo where comes the trigger from Blau exist anpassungen
         // source data from CEOS mapping
@@ -417,7 +423,7 @@ class MMServices
         try {
             $response = app(SapApiClient::class)->get($this->mm221_path, $data);
             return response()->json($response, 200);
-        } catch (Exception | NotFoundExceptionInterface | ContainerExceptionInterface $e) {
+        } catch (Exception|NotFoundExceptionInterface|ContainerExceptionInterface $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
@@ -461,4 +467,169 @@ class MMServices
         ];
         return app(SapApiClient::class)->post($this->mm341_path, $data);
     }
+
+
+    /**
+     * @throws Exception
+     */
+    public function mm_33_01_a_Leistungsbestaetigung()
+    {
+        // todo data mapping
+        /*
+        TourID
+        Lifnr
+        Nachunternehmer Kreditor
+        Slgnr
+        Liegenschaft
+        Kvtyp
+        Kontierungstyp
+        Vbeln
+        SD-Vertriebsbeleg
+        Posnr
+        SD-Vertriebsbelegsposition
+        Material
+        Materialnummer
+        ShortText
+        Materialkurztext / Leistungskurztetxt
+        Quantity
+        Leistungsmenge
+        PoUnit
+        Mengeneinheit
+        Interface
+        KZ MM-33-1a oder b
+        PoNumber
+        Bestellnummer
+        PoItem
+        Bestellposition
+        Netpr
+        Aktueller Preis in SAP
+        Peinh
+        Preiseinheit in SAP
+        CeosData
+        Kennzeichen Datensatz aus CEOS
+        Goodsmovement
+        Materialbeleg
+        GoodsmvmtLine
+        Materialbelegpos.
+        */
+
+
+        $data = [
+            "Belegdatum" => "123456",
+            "Materialnummer" => "",
+            "Bewegungsart" => "H001",
+            "Suchbegriff1" => "",
+            "Menge" => "",
+            "Mengeneinheit" => "",
+            "TourID" => "",
+            "Liegenschaft" => "",
+            "SD-Verkaufsbeleg/Auftrag" => "",  //muss gebaut werden
+            "SD-Verkaufs-belegsposition/Auftragsposition" => "",
+            "Materialbeleg" => "",
+            "Fehlertext" => "",
+
+        ];
+        return app(SapApiClient::class)->post($this->mm341_path, $data);
+    }
+
+
+    public function mm_37_1_NuLeistungspositionen($data): ?array
+    {
+
+        try {
+
+            $adressnummer = $data['header']['kreditor'];
+            $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
+            if ($adresse === null) {
+                Log::error('mm_37_1_NuLeistungspositionen Adresse nicht gefunden: ' . $adressnummer);
+                return null;
+            }
+
+            $gueltigVon = Carbon::parse($data['header']['gueltigVon'])->format('Ymd');
+            $gueltigBis = Carbon::parse($data['header']['gueltigBis'])->format('Ymd');
+            $artikelKundeIds = [];
+            foreach ($data['positions'] as $position) {
+                //getInterneArtikelnummer
+
+                $artikel = Artikel::where('ArtikelNummer', $position['materialnummer'])->first();
+                if ($artikel === null) {
+                    Log::error('mm_37_1_NuLeistungspositionen Artikel nicht gefunden: ' . $position['materialnummer']);
+                    return null;
+                }
+
+                //set artikel as Inactive
+                if ($position['loeschkennzeichen'] !== null) {
+                    $artikel->ArtAltJN = 1;
+                    $artikel->save();
+                }
+
+                $dataArtikel = [
+                    'AkuBestellnummer' => $position['kontraktnummer'],
+                    'AkuArtikelBezeichnung2' => $position['kontraktposition'],
+                    'InterneArtikelnummer' => $artikel->InterneArtikelnummer,
+                    'InterneAdressnummer' => $adresse->InterneAdressnummer,
+                    'AkuArtikelBezeichnung1' => $position['materialkurztext'],
+                    'NRPreisbasis' => $position['preismengeneinheit'],
+                    'AkuLetzterVK' => $position['preis'],
+                    'AkuIndividualT1' => $gueltigVon,
+                    'AkuIndividualT2' => $gueltigBis,
+
+                    //-----------------------------------------------------
+                    'AkuLetzterRabattWert1' => 0,
+                    'AkuLetzterRabattWert2' => 0,
+                    'AkuLetzteMenge1' => 0,
+                    'AkuLetzteMenge2' => 0,
+                    'AkuLetzterRabatt1' => 0,
+                    'AkuLetzterRabatt2' => 0,
+                    'AkuLetzterRabatt3' => 0,
+                ];
+
+
+                $artikelKunde = ArtikelKunde::where('InterneArtikelnummer', $artikel->InterneArtikelnummer)
+                    ->where('InterneAdressnummer', $adresse->InterneAdressnummer)
+                    ->first();
+                //check if exist before or not :
+                if ($artikelKunde === null) {
+                    //No => create new one .
+                    $artikelKunde = ArtikelKunde::create($dataArtikel);
+                } else {
+                    //yes =>  check if Gültigab(AkuIndividualT1) tha same or not
+                    $akuIndividualT1 = Carbon::parse($artikelKunde->AkuIndividualT1)->format('Ymd');
+
+                    if ($gueltigVon == $akuIndividualT1) {
+                        // if same we should change only the Preis
+                        $artikelKunde->AkuLetzterVK = $position['preis'];
+                        $artikelKunde->save();
+                    } else {
+                        // if not, check if AkuVKNeuDatum,AkuVKNeu Empty or not
+                        if ($artikelKunde->AkuVKNeu === null) {
+                            // if Empty => add Gültigab in AkuVKNeuDatum and New Preis(Preis) in AkuVKNeu
+                            $artikelKunde->AkuVKNeu = $position['preis'];
+                            $artikelKunde->AkuVKNeuDatum = $gueltigVon;
+                            $artikelKunde->save();
+                        } else {
+                            // if not Empty => Move current AkuVKNeu To AkuLetzterVK and save new one in AkuVKNeu the update Gültig ab
+                            $artikelKunde->AkuLetzterVK = $artikelKunde->AkuVKNeu;
+                            $artikelKunde->AkuIndividualT1 = $artikelKunde->AkuVKNeuDatum;
+                            $artikelKunde->AkuVKNeu = $position['preis'];
+                            $artikelKunde->AkuVKNeuDatum = $gueltigVon;
+                            $artikelKunde->save();
+                        }
+
+                    }
+                }
+                $artikelKundeIds[] = $artikelKunde->ArtikelKundeID;
+            }
+        } catch (\Throwable $e) {
+            Log::error(
+                'mm_37_1_NuLeistungspositionen Save  Error' . $e->getMessage(),
+            );
+            return null;
+        }
+        return [
+            'artikelKundeIds' => $artikelKundeIds,
+        ];
+    }
+
+
 }
