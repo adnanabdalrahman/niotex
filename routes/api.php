@@ -3,15 +3,13 @@
 use App\Http\Controllers\V1\BPController;
 use App\Http\Controllers\V1\MMController;
 use App\Http\Controllers\V1\SDController;
+use App\Http\Controllers\V1\SEController;
 use App\Http\Middleware\VerifyCeosWebToken;
 use App\Http\Middleware\VerifySapToken;
 use Illuminate\Support\Facades\Route;
 
 
 Route::middleware([VerifySapToken::class])->group(function () {
-
-    // Route::post('/sap/stock', [SAPStockController::class, 'getStock']);
-    // Route::get('/ceos/db', [MssqlController::class, 'getProducts']);
 
     Route::prefix('v1')
         ->namespace('App\Http\Controllers\V1')
@@ -74,9 +72,15 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
 
 
             Route::prefix('sd')->group(function () {
-                //SD-01-02: SAP-->CEOS, beauftragungRueckmeldung
+                //SD-01-02: CEOSWEB-->CEOS-->SAP, beauftragungRueckmeldung
                 Route::post('/0102/beauftragungRueckmeldung', [SDController::class, 'sd_01_02_beauftragungRueckmeldung']);
             });
+            
+            Route::prefix('se')->group(function () {
+                //SE-26-01: CEOSWEB-->CEOS-->SAP , reparaturauftrag
+                Route::post('/2601/reparaturauftrag', [SEController::class, 'se_26_01_Reparaturauftrag']);
+            });
+
         });
 });
 
