@@ -589,14 +589,14 @@ class SDServices
     public function sd_0102_beauftragung_rueckmeldung($request)
     {
         try {
-            $header = [];
+            $data = [];
             $vorgang = Vorgang::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->first();
             if (is_null($vorgang)) {
                 return null;
             }
             $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
             if ($adresse) {
-                $header['Kunnr'] = $adresse->AdressNummer;
+                $data['Kunnr'] = $adresse->AdressNummer;
             } else {
                 Log::error(
                     "Kein Adresse für Vorgang gefunden",
@@ -604,12 +604,12 @@ class SDServices
                 );
                 return null;
             }
-            $header['Vbeln'] = (string)$vorgang->VorIndividualC1;
-            $header['Auart'] = (string)$vorgang->VorIndividualC2;
-            $header['Vdatu'] = Carbon::parse($vorgang->VorLieferungWunschDatum)->format('Y-m-d');
-            $header['Zzlgsnr'] = (string)$vorgang->VorIndividualC3 ?? '';
-            $header['GenrCeos'] = (string)(int)$vorgang->VorIndividualD4;
-            $header['TxtZ013'] = (string)$vorgang->VorStichwort ?? '';
+            $data['Vbeln'] = (string)$vorgang->VorIndividualC1;
+            $data['Auart'] = (string)$vorgang->VorIndividualC2;
+            $data['Vdatu'] = Carbon::parse($vorgang->VorLieferungWunschDatum)->format('Y-m-d');
+            $data['Zzlgsnr'] = (string)$vorgang->VorIndividualC3 ?? '';
+            $data['GenrCeos'] = (string)(int)$vorgang->VorIndividualD4;
+            $data['TxtZ013'] = (string)$vorgang->VorStichwort ?? '';
 
             $vorNotiz = '';
             $vorgang2Text = DB::connection('sqlsrv2')->table('cis.Vorgang2Text')
@@ -618,7 +618,7 @@ class SDServices
             if ($vorgang2Text !== null) {
                 $vorNotiz = (string)$vorgang2Text->VorNotiz;
             }
-            $header['TxtZ012'] = $vorNotiz;
+            $data['TxtZ012'] = $vorNotiz;
 
             //---------------------------------------------------------------------------------------------
             $positions = DB::connection('sqlsrv2')->table('cis.Position')
@@ -682,7 +682,7 @@ class SDServices
                     return null;
                 }
 
-                $header['to_Items'][] = [
+                $data['to_Items'][] = [
                     'Matnr' => $artikel->Artikelnummer,
                     'PosErl' => (string)1, // todo later
                     'KwmengO' => (string)0,  //todo later
@@ -698,9 +698,10 @@ class SDServices
                     'TxtZ010' => (string)$position2Text->PosNotiz ?? '',
                 ];
             }
-            Log::error('sd -01 -02 Sent data', $header);
-            $result = app(SapApiClient::class)->post($this->sd0102_path, $header);
+            Log::info('sd-01-02 Sent data', $data);
+            $result = app(SapApiClient::class)->post($this->sd0102_path, $data);
             if ($result === null) {
+                Log::error('sd-01-02 Error received');
                 return null;
             }
         } catch (Throwable $e) {
