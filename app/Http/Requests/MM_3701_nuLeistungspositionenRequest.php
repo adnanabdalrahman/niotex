@@ -35,71 +35,55 @@ class MM_3701_nuLeistungspositionenRequest extends FormRequest
     public function messages(): array
     {
         return [
-            [
-                'Material.required' => 'Das Feld "Material" ist erforderlich.',
-                'Material.numeric' => 'Das Feld "Material" muss eine Zahl sein.',
-                'Material.digits' => 'Das Feld "Material" muss genau 18 Stellen haben.',
+            'header.required' => 'Der Header ist erforderlich.',
+            'header.array' => 'Der Header muss ein Array sein.',
 
-                'Materialkurztext.required' => 'Das Feld "Materialkurztext" ist erforderlich.',
-                'Materialkurztext.string' => 'Das Feld "Materialkurztext" muss eine Zeichenkette sein.',
-                'Materialkurztext.max' => 'Das Feld "Materialkurztext" darf maximal 40 Zeichen lang sein.',
+            'header.kontraktnummer.required' => 'Die Kontraktnummer im Header ist erforderlich.',
+            'header.kontraktnummer.string' => 'Die Kontraktnummer im Header muss eine Zeichenkette sein.',
+            'header.kontraktnummer.max' => 'Die Kontraktnummer im Header darf maximal :max Zeichen lang sein.',
 
-                'Warengruppe.required' => 'Das Feld "Warengruppe" ist erforderlich.',
-                'Warengruppe.string' => 'Das Feld "Warengruppe" muss eine Zeichenkette sein.',
-                'Warengruppe.max' => 'Das Feld "Warengruppe" darf maximal 9 Zeichen lang sein.',
+            'header.kreditor.required' => 'Der Kreditor im Header ist erforderlich.',
+            'header.kreditor.string' => 'Der Kreditor im Header muss eine Zeichenkette sein.',
+            'header.kreditor.max' => 'Der Kreditor im Header darf maximal :max Zeichen lang sein.',
 
-                'Bezeichnung1.required' => 'Das Feld "Bezeichnung1" ist erforderlich.',
-                'Bezeichnung1.string' => 'Das Feld "Bezeichnung1" muss eine Zeichenkette sein.',
-                'Bezeichnung1.max' => 'Das Feld "Bezeichnung1" darf maximal 100 Zeichen lang sein.',
+            'header.gueltigVon.required' => 'Das Gültig-von-Datum im Header ist erforderlich.',
+            'header.gueltigVon.date_format' => 'Das Gültig-von-Datum im Header muss im Format JJJJ-MM-TT vorliegen.',
 
-                'Bezeichnung2.string' => 'Das Feld "Bezeichnung2" muss eine Zeichenkette sein.',
-                'Bezeichnung2.max' => 'Das Feld "Bezeichnung2" darf maximal 50 Zeichen lang sein.',
+            'header.gueltigBis.required' => 'Das Gültig-bis-Datum im Header ist erforderlich.',
+            'header.gueltigBis.date_format' => 'Das Gültig-bis-Datum im Header muss im Format JJJJ-MM-TT vorliegen.',
+            'header.gueltigBis.after_or_equal' => 'Das Gültig-bis-Datum muss gleich oder später als das Gültig-von-Datum sein.',
 
-                'Basismengeneinheit.required' => 'Das Feld "Basismengeneinheit" ist erforderlich.',
-                'Basismengeneinheit.string' => 'Das Feld "Basismengeneinheit" muss eine Zeichenkette sein.',
-                'Basismengeneinheit.max' => 'Das Feld "Basismengeneinheit" darf maximal 3 Zeichen lang sein.',
+            'positions.required' => 'Mindestens eine Position ist erforderlich.',
+            'positions.array' => 'Die Positionen müssen ein Array sein.',
+            'positions.min' => 'Mindestens eine Position ist erforderlich.',
 
-                'LVorm.boolean' => 'Das Feld "LVorm" muss true oder false sein.',
+            'positions.*.kontraktnummer.required' => 'Die Kontraktnummer der Position ist erforderlich.',
+            'positions.*.kontraktnummer.string' => 'Die Kontraktnummer der Position muss eine Zeichenkette sein.',
+            'positions.*.kontraktnummer.max' => 'Die Kontraktnummer der Position darf maximal :max Zeichen lang sein.',
 
-                'BKSchluessel.required' => 'Das Feld "BKSchluessel" ist erforderlich.',
-                'BKSchluessel.string' => 'Das Feld "BKSchluessel" muss eine Zeichenkette sein.',
-                'BKSchluessel.max' => 'Das Feld "BKSchluessel" darf maximal 3 Zeichen lang sein.',
+            'positions.*.kontraktposition.required' => 'Die Positionsnummer ist erforderlich.',
+            'positions.*.kontraktposition.integer' => 'Die Positionsnummer muss eine Ganzzahl sein.',
 
-                'CEOSWarengruppe.required' => 'Das Feld "CEOSWarengruppe" ist erforderlich.',
-                'CEOSWarengruppe.string' => 'Das Feld "CEOSWarengruppe" muss eine Zeichenkette sein.',
-                'CEOSWarengruppe.max' => 'Das Feld "CEOSWarengruppe" darf maximal 4 Zeichen lang sein.',
+            'positions.*.materialnummer.required' => 'Die Materialnummer ist erforderlich.',
+            'positions.*.materialnummer.string' => 'Die Materialnummer muss eine Zeichenkette sein.',
+            'positions.*.materialnummer.max' => 'Die Materialnummer darf maximal :max Zeichen lang sein.',
 
-                'CEOSArtikelgruppe.required' => 'Das Feld "CEOSArtikelgruppe" ist erforderlich.',
-                'CEOSArtikelgruppe.string' => 'Das Feld "CEOSArtikelgruppe" muss eine Zeichenkette sein.',
-                'CEOSArtikelgruppe.max' => 'Das Feld "CEOSArtikelgruppe" darf maximal 10 Zeichen lang sein.',
+            'positions.*.materialkurztext.string' => 'Der Materialkurztext muss eine Zeichenkette sein.',
+            'positions.*.materialkurztext.max' => 'Der Materialkurztext darf maximal :max Zeichen lang sein.',
 
-                'CEOSArtikeluntergruppe.string' => 'Das Feld "CEOSArtikeluntergruppe" muss eine Zeichenkette sein.',
-                'CEOSArtikeluntergruppe.max' => 'Das Feld "CEOSArtikeluntergruppe" darf maximal 10 Zeichen lang sein.',
+            'positions.*.mengeneinheit.string' => 'Die Mengeneinheit muss eine Zeichenkette sein.',
+            'positions.*.mengeneinheit.max' => 'Die Mengeneinheit darf maximal :max Zeichen lang sein.',
 
-                'MappingHIBE_HAWA1.string' => 'Das Feld "MappingHIBE_HAWA1" muss eine Zeichenkette sein.',
-                'MappingHIBE_HAWA1.max' => 'Das Feld "MappingHIBE_HAWA1" darf maximal 18 Zeichen lang sein.',
+            'positions.*.preis.required' => 'Der Preis ist erforderlich.',
+            'positions.*.preis.numeric' => 'Der Preis muss eine Zahl sein.',
+            'positions.*.preis.min' => 'Der Preis darf nicht negativ sein.',
 
-                'MappingHIBE_HAWA2.string' => 'Das Feld "MappingHIBE_HAWA2" muss eine Zeichenkette sein.',
-                'MappingHIBE_HAWA2.max' => 'Das Feld "MappingHIBE_HAWA2" darf maximal 18 Zeichen lang sein.',
+            'positions.*.preismengeneinheit.required' => 'Die Preismengeneinheit ist erforderlich.',
+            'positions.*.preismengeneinheit.numeric' => 'Die Preismengeneinheit muss eine Zahl sein.',
+            'positions.*.preismengeneinheit.min' => 'Die Preismengeneinheit muss mindestens :min betragen.',
 
-                'MappingHIBE_HAWA3.string' => 'Das Feld "MappingHIBE_HAWA3" muss eine Zeichenkette sein.',
-                'MappingHIBE_HAWA3.max' => 'Das Feld "MappingHIBE_HAWA3" darf maximal 18 Zeichen lang sein.',
-
-                'Produktgruppe.string' => 'Das Feld "Produktgruppe" muss eine Zeichenkette sein.',
-                'Produktgruppe.max' => 'Das Feld "Produktgruppe" darf maximal 4 Zeichen lang sein.',
-
-                'Basisempfindlichkeit.required' => 'Das Feld "Basisempfindlichkeit" ist erforderlich.',
-                'Basisempfindlichkeit.numeric' => 'Das Feld "Basisempfindlichkeit" muss eine Zahl sein.',
-
-                'Hersteller.string' => 'Das Feld "Hersteller" muss eine Zeichenkette sein.',
-                'Hersteller.max' => 'Das Feld "Hersteller" darf maximal 10 Zeichen lang sein.',
-
-                'Herstellerteilenummer.string' => 'Das Feld "Herstellerteilenummer" muss eine Zeichenkette sein.',
-                'Herstellerteilenummer.max' => 'Das Feld "Herstellerteilenummer" darf maximal 40 Zeichen lang sein.',
-
-                'EANNummerSAP.string' => 'Das Feld "EANNummerSAP" muss eine Zeichenkette sein.',
-                'EANNummerSAP.max' => 'Das Feld "EANNummerSAP" darf maximal 16 Zeichen lang sein.',
-            ]
+            'positions.*.loeschkennzeichen.string' => 'Das Löschkennzeichen muss eine Zeichenkette sein.',
+            'positions.*.loeschkennzeichen.in' => 'Das Löschkennzeichen muss entweder "L" oder leer sein.',
         ];
     }
 }

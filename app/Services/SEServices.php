@@ -40,7 +40,7 @@ class SEServices
             if ($vorgang === null) {
                 Log::error(
                     "se_26_01_Reparaturauftrag Kein Vorgang gefunden",
-                    ['Vorgangnummer' => $request->InterneVorgangsnummer]
+                    ['InterneVorgangsnummer' => $request->InterneVorgangsnummer]
                 );
                 return null;
             }
@@ -57,12 +57,13 @@ class SEServices
             $data['Auart'] = (string)$vorgang->VorIndividualC2;
             $data['Zzlgsnr'] = (string)$vorgang->VorIndividualC3 ?? '';
             $data['Vorgn'] = (string)$vorgang->VorNummer;
-            $data['Vorgn_int'] = (string)$vorgang->InterneVorgangsnummer;
+            $data['VorgnInt'] = (string)$vorgang->InterneVorgangsnummer;
 
             //---------------------------------------------------------------------------------------------
             $positions = DB::connection('sqlsrv2')->table('cis.Position')
                 ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->get();
             $positionArray = [];
+
             foreach ($positions as $position) {
 
                 $artikel = Artikel::where('InterneArtikelnummer', $position->InterneArtikelnummer)->first();
@@ -95,19 +96,17 @@ class SEServices
 
                 $positionArray[] = [
                     'Matnr' => $artikel->Artikelnummer,
+                    'TxtZ009' => (string)$position->PosZusatztext,
                     'Kwmeng' => (string)$position3Menge->PosMenge1,
                     'Vrkme' => (string)$position3Menge->PosKZMengeneinheit1,
                     'Vorgn' => (string)$vorgang->VorNummer,
                     'VorgnInt' => (string)$vorgang->InterneVorgangsnummer ?? '',
-                    'Abgru' => '', //todo clarify what is this Absagegrund  ?
+                    'Abgru' => '',
                 ];
             }
             $data['to_Items'] = $positionArray;
-            dd($data);
             Log::info('se-26-01 Sent data', $data);
             $result = app(SapApiClient::class)->post($this->se2601_path, $data);
-
-            dd($result);
             if ($result === null) {
                 return null;
             }
@@ -117,6 +116,4 @@ class SEServices
         }
         return $result;
     }
-
-
 }
