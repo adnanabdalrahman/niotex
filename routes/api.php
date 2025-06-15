@@ -18,8 +18,8 @@ Route::middleware([VerifySapToken::class])->group(function () {
             Route::prefix('mm')->group(function () {
                 //mm-31-1: SAP-->CEOS, Materialstammdaten
                 Route::post('/3101/materialstammdaten', [MMController::class, 'mm_31_1_materialstammdaten']);
-            });
-            Route::prefix('mm')->group(function () {
+
+
                 //mm-37-1: SAP-->CEOS, NU zugelassene Leistungspositionen
                 Route::post('/3701/nuleistungspositionen', [MMController::class, 'mm_37_1_NuLeistungspositionen']);
             });
@@ -29,7 +29,7 @@ Route::middleware([VerifySapToken::class])->group(function () {
                 //bp-01-01: SAP-->CEOS, Geschäftspartner
                 Route::post('/0101/geschaeftspartner', [BPController::class, 'bp_01_01_Geschaeftspartner']);
 
-                //bp-01-03: Kundenstamm SAP –> CEOS Verwalter
+                //bp-01-03: SAP –> CEOS Kundenstammdaten Verwalter
                 Route::post('/0103/verwalter', [BPController::class, 'bp_01_03_Verwalter']);
             });
 
@@ -39,10 +39,12 @@ Route::middleware([VerifySapToken::class])->group(function () {
                 Route::post('/0101/beauftragung', [SDController::class, 'sd_0101_beauftragung']);
 
                 //SD-02-01: SAP-->CEOS, Mietvertragsrechnungen
-                Route::post('/0201/mietvertragsrechnungen', [SDController::class, 'mietvertragsrechnungen']);
+                Route::post('/0201/mietvertragsrechnungen', [SDController::class, 'sd_02_01_mietvertragsrechnungen']);
 
-                //SD-03-01: SAP-->CEOS, Dienstleistungsabrechnung
-                Route::post('/0301/dienstleistungsabrechnung ', [SDController::class, 'sd_03_01_dienstleistungsabrechnung']);
+                //SD-03-02: SAP-->CEOS, fakturierte Dienstleistungsrechnung
+                Route::post('/0302/fakturiertedienstleistungsrechnung', [SDController::class,
+                    'sd_03_02_fakturiertedienstleistungsrechnung']);
+
             });
         });
 });
@@ -74,8 +76,12 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
             Route::prefix('sd')->group(function () {
                 //SD-01-02: CEOSWEB-->CEOS-->SAP, beauftragungRueckmeldung
                 Route::post('/0102/beauftragungRueckmeldung', [SDController::class, 'sd_01_02_beauftragungRueckmeldung']);
+
+                //SD-03-01: CEOSWEB->CEOS->Sap, Dienstleistungsabrechnung
+                Route::post('/0301/dienstleistungsrechnung ', [SDController::class, 'sd_03_01_dienstleistungsrechnung']);
+
             });
-            
+
             Route::prefix('se')->group(function () {
                 //SE-26-01: CEOSWEB-->CEOS-->SAP , reparaturauftrag
                 Route::post('/2601/reparaturauftrag', [SEController::class, 'se_26_01_Reparaturauftrag']);

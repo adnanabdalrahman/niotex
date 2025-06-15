@@ -11,50 +11,6 @@ class SD_0101_beauftragungRequest extends FormRequest
         return true;
     }
 
-
-    /*
-        VorArt nvarchar(1);		default Value A
-        VorUnterArt default Value R
-
-
-    "positions":
-    [
-        {
-            "posnr":100,
-            "matnr":"000000000982400000",
-            "kondm":"D3",
-            "kwmeng":5.0,
-            "vrkme":"ST",
-            "aufnr":"A141601099",
-            "txtZ002":null,
-            "txtZ009":null,
-            "txtZ010":null,
-            "vorgn":null,
-            "posErl":0,
-            "kwmengO":0,
-            "vbeln":null
-        }
-    ]
-    }
-
-
-[2025-04-29 15:23:14] local.INFO: Received beauftragung Data: {"header":{"vbeln":"6000000003","auart":"ZSB1","kunnr":"0004000130","vdatu":"2025-05-05","zzlgsnr":null,"genrCeos":0,"txtZ012":"@* Bitte das 3.OG rechts nichts ausstatten","txtZ013":null},"positions":[{"posnr":300,"matnr":"000000000731200034","kondm":"M0","kwmeng":7.0,"vrkme":"ST","aufnr":"A141601099","txtZ002":null,"txtZ009":null,"txtZ010":null,"vorgn":null,"posErl":0,"kwmengO":0,"vbeln":null}]}
-
-
-[2025-04-29 15:23:42] local.INFO: Received beauftragung Data: {"header":{"vbeln":"6000000003","auart":"ZSB1","kunnr":"0004000130","vdatu":"2025-05-05","zzlgsnr":null,"genrCeos":0,"txtZ012":"@* Bitte das 3.OG rechts nichts ausstatten","txtZ013":null},"positions":[{"posnr":200,"matnr":"000000000731320012","kondm":"M2","kwmeng":6.0,"vrkme":"ST","aufnr":"A141601099","txtZ002":null,"txtZ009":null,"txtZ010":null,"vorgn":null,"posErl":0,"kwmengO":0,"vbeln":null}]}
-    */
-    /*{"header":{
-    "vbeln":"6000000003",
-    "auart":"ZSB1",
-    "kunnr":"0004000130",
-    "vdatu":"2025-05-05",
-    "zzlgsnr":null,
-    "genrCeos":0,
-    "txtZ012":"@* Bitte das 3.OG rechts nichts ausstatten",
-    "txtZ013":null
-    },*/
-
-
     public function rules(): array
     {
         return [
@@ -68,20 +24,6 @@ class SD_0101_beauftragungRequest extends FormRequest
             'header.txtZ012' => 'nullable|string', //Bemerkung zur Liegenschaft Vorgang2Text.VorNotiz
             'header.txtZ013' => 'nullable|string',// Vorgang.VorStichwort  Für Reparaturaufträge Ausstattung / Austauschgrund
 
-            /*
-            // "aufnr": "A141601099",
-            "kondm": "W3", Materialgruppe
-            "kwmeng": 5.0,
-            "kwmengO": 0,
-            "matnr": "000000000000000432",
-            "posErl": 0,
-            "posnr": 700,
-            "txtZ002": "",
-            "txtZ009": "",
-            "txtZ010": "",
-            "vorgn": 0,
-            "vrkme": "LE"
-            */
             'positions' => 'required|array|min:1',
             'positions.*.kondm' => 'required|string|max:2',
             'positions.*.kwmeng' => 'required|numeric',

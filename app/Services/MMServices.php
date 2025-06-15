@@ -535,9 +535,8 @@ class MMServices
 
     public function mm_37_1_NuLeistungspositionen($data): ?array
     {
-
+        //todo with pantie DatumBis muss auch gespeichert
         try {
-
             $adressnummer = $data['header']['kreditor'];
             $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
             if ($adresse === null) {
@@ -550,10 +549,10 @@ class MMServices
             $artikelKundeIds = [];
             foreach ($data['positions'] as $position) {
                 //getInterneArtikelnummer
-
-                $artikel = Artikel::where('ArtikelNummer', $position['materialnummer'])->first();
+                $artikelNummer = ltrim($position['materialnummer'], '0');
+                $artikel = Artikel::where('ArtikelNummer', $artikelNummer)->first();
                 if ($artikel === null) {
-                    Log::error('mm_37_1_NuLeistungspositionen Artikel nicht gefunden: ' . $position['materialnummer']);
+                    Log::error('mm_37_1_NuLeistungspositionen Artikel nicht gefunden: ' . $artikelNummer);
                     return null;
                 }
 
@@ -590,7 +589,7 @@ class MMServices
                     ->first();
                 //check if exist before or not :
                 if ($artikelKunde === null) {
-                    //No => create new one .
+                    //No => create new one.
                     $artikelKunde = ArtikelKunde::create($dataArtikel);
                 } else {
                     //yes =>  check if Gültigab(AkuIndividualT1) tha same or not
