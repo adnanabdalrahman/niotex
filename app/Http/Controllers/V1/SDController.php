@@ -61,6 +61,7 @@ class SDController extends Controller
     // SD-01-02: CEOS-->SAP, beauftragung Rückmeldung
     public function sd_01_02_beauftragungRueckmeldung(Request $request)
     {
+        Log::info('Received Payload for sd_01_02_beauftragungRueckmeldung:', $request->all());
         $vorgangDataArray = $this->sdServices->sd_0102_beauftragung_rueckmeldung($request);
         if ($vorgangDataArray !== null) {
             Log::info('Sent Vorgang: ', $vorgangDataArray);
@@ -88,7 +89,7 @@ class SDController extends Controller
      */
     public function sd_02_01_mietvertragsrechnungen(SD_0201_mietvertragsrechnungenRequest $request)
     {
-
+        Log::info('Received Payload for sd_02_01_mietvertragsrechnungen:', $request->all());
         $validated = $request->validated();
         $resultDataArray = $this->sdServices->sd_0201_mietvertragsrechnungen($validated);
 
@@ -127,9 +128,7 @@ class SDController extends Controller
             'status' => 'Error',
             'message' => 'Beauftragung fehlgeschlagen',
         ], 400);
-
     }
-
 
     /**
      * SD-03-02 Fakturierte Dienstleistungsrechnung
@@ -140,6 +139,7 @@ class SDController extends Controller
      */
     public function sd_03_02_fakturiertedienstleistungsrechnung(SD_0302_fakturiertedienstleistungsrechnungRequest $request)
     {
+        Log::info('Received Payload for sd_03_02_fakturiertedienstleistungsrechnung:', $request->all());
         $validated = $request->validated();
         $resultDataArray = $this->sdServices->sd_03_02_fakturiertedienstleistungsrechnung($validated);
 

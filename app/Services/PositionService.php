@@ -217,8 +217,7 @@ class PositionService
                 'PosGesamteinzelpreisBrutto' => $data['PosGesamteinzelpreisBrutto'] ?? 0,
                 'PosGesamtpreisBrutto' => $data['PosGesamtpreisBrutto'] ?? 0,
             ]);
-
-
+            
             DB::connection('sqlsrv2')->table('cis.PositionWert')->insertGetId([
                 'InterneVorgangsnummer' => $data['InterneVorgangsnummer'],
                 'InternePositionsnummer' => $internePositionsnummer,
