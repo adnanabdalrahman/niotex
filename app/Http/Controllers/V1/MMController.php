@@ -121,14 +121,36 @@ class MMController extends Controller
 
     public function mm_35_02_materialverbrauch(Request $request): JsonResponse
     {
-        try {
-            return $this->mmServices->mm_35_02_materialverbrauch();
-        } catch (Exception $e) {
-            Log::error('Internal error:', ['errors' => $e->getMessage()]);
-            return response()->json(['message' => 'Internal error', 'errors' => $e->getMessage()], 500);
+        $data = $request->validate([
+            'Vorgangnummer' => 'required',
+        ]);
+        $response = $this->mmServices->mm_35_02_materialverbrauch($data);
+        if ($response !== null) {
+            return response()->json(['message' => 'mm_35_02_materialverbrauch erfolgreich gesendet'], 202);
         }
+        return response()->json(['message' => 'mm_35_02_materialverbrauch fehlgeschlagen'], 400);
     }
 
+    /**
+     * MM_33_01a Leistungsbestaetigung
+     * CEOSWEB-->CEOS-->SAP
+     *
+     * @param Request $request
+     * @return JsonResponse
+     * @throws Exception
+     */
+
+    public function mm_33_01_a_Leistungsbestaetigung(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'Vorgangnummer' => 'required',
+        ]);
+        $response = $this->mmServices->mm_33_01_a_Leistungsbestaetigung($data);
+        if ($response !== null) {
+            return response()->json(['message' => 'mm_33_01_a_Leistungsbestaetigung erfolgreich gesendet'], 202);
+        }
+        return response()->json(['message' => 'mm_33_01_a_Leistungsbestaetigung fehlgeschlagen'], 400);
+    }
 
     /**
      * MM-22-1 Abfrage nach Lagerbestände
@@ -149,9 +171,8 @@ class MMController extends Controller
         return response()->json($data);
     }
 
-
     /**
-     * MM_35_02 materialverbrauch
+     * MM_33_01b NU-Auftragspaket
      * CEOSWEB-->CEOS-->SAP
      *
      * @param Request $request
@@ -159,14 +180,16 @@ class MMController extends Controller
      * @throws Exception
      */
 
-    public function mm_33_01_a_Leistungsbestaetigung(Request $request): JsonResponse
+    public function mm_33_01_b_NuAuftragspaket(Request $request): JsonResponse
     {
-        try {
-            return $this->mmServices->mm_33_01_a_Leistungsbestaetigung();
-        } catch (Exception $e) {
-            Log::error('Internal error:', ['errors' => $e->getMessage()]);
-            return response()->json(['message' => 'Internal error', 'errors' => $e->getMessage()], 500);
+        $data = $request->validate([
+            'Vorgangnummer' => 'required',
+        ]);
+        $response = $this->mmServices->mm_33_01_b_NuAuftragspaket($data);
+        if ($response !== null) {
+            return response()->json(['message' => 'mm_33_01_b_NuAuftragspaket erfolgreich gesendet'], 202);
         }
+        return response()->json(['message' => 'mm_33_01_b_NuAuftragspaket fehlgeschlagen'], 400);
     }
 
 

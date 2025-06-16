@@ -25,11 +25,8 @@ class MMServices
     protected string $baseUrl;
     protected string $mm221_path;
     protected string $mm341_path;
+    protected string $mm331_path;
     protected string $mm352_path;
-
-
-    protected string $mm331a_path;
-
 
     protected array $auth;
 
@@ -43,8 +40,8 @@ class MMServices
 
         $this->mm221_path = config('sap.mm221_path');
         $this->mm341_path = config('sap.mm341_path');
-        $this->mm352_path = config('sap.mm341_path');
-        $this->mm331a_path = config('sap.mm341_path');
+        $this->mm352_path = config('sap.mm352_path');
+        $this->mm331_path = config('sap.mm331_path');
     }
 
 
@@ -247,8 +244,7 @@ class MMServices
 
     public function mm_34_01_umlagerungsreservierung($data): ?bool
     {
-        //Todo where comes the trigger from Blau exist anpassungen
-        // source data from CEOS mapping
+        // todo source data from CEOS mapping
         // what to do with the received data??
 
         /*
@@ -324,7 +320,9 @@ class MMServices
         }
 
 */
-        $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])->first();
+        $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])
+            ->where('VorGruppe', 'LA')
+            ->first();
 
         if ($vorgang === null) {
             Log::error(
@@ -338,7 +336,6 @@ class MMServices
         //todo later get date from Blau (now Fake + 10 days)
         $milliseconds = now()->addDays(10)->timestamp * 1000;
         $tourDate = "/Date({$milliseconds})/";
-
 
         $tourId = $vorgang->VorIndividualD5;
         $reservNo = $vorgang->VorIndividualD6;
@@ -356,8 +353,7 @@ class MMServices
                         'Position' => $position->InternePositionsnummer
                     ]
                 );
-                //todo Clarify if continue or Out
-                continue;
+                return null;
             }
             //get Artikelnummer by $position->InterneArtikelnummer.
             $artikel = Artikel::find($position->InterneArtikelnummer);
@@ -432,104 +428,259 @@ class MMServices
     /**
      * @throws Exception
      */
-    public function mm_35_02_materialverbrauch()
+    public function mm_35_02_materialverbrauch($data)
     {
-        // todo data mapping
-        /*
-            Belegdatum = date vorgangsTable (lieferscheindatum)
-            Materialnummer = varchar(18)
-            Bewegungsart = varchar(3) 261  vorgangsart
-            Lager = varchar(4)  muss gebaut werden
-            monturNR (Suchbegriff1) = varchar(20)
-            Menge = position
-            Mengeneinheit = Artikel
-            TourID  =  Benötigte Menge
-            Liegenschaft = varchar(9)
-            SD-Verkaufsbeleg/Auftrag
-            SD-Verkaufs-belegsposition/Auftragsposition
-            Materialbeleg
-            Fehlertext
-        */
-        $data = [
-            "Belegdatum" => "123456",
-            "Materialnummer" => "",
-            "Bewegungsart" => "H001",
-            "Suchbegriff1" => "",
-            "Menge" => "",
-            "Mengeneinheit" => "",
-            "TourID" => "",
-            "Liegenschaft" => "",
-            "SD-Verkaufsbeleg/Auftrag" => "",  //muss gebaut werden
-            "SD-Verkaufs-belegsposition/Auftragsposition" => "",
-            "Materialbeleg" => "",
-            "Fehlertext" => "",
+        $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])
+            ->where('VorGruppe', 'LA')
+            ->first();
 
+        if ($vorgang === null) {
+            Log::error(
+                'mm_35_02_materialverbrauch Kein Vorgang vorhanden',
+                ['Vorgangnummer' => $data['Vorgangnummer']]
+            );
+            return null;
+        }
+        $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
+        if ($adresse === null) {
+            Log::error("mm_35_02_materialverbrauch Kein Adresse für Vorgang gefunden");
+            return null;
+        }
+
+        $tourId = $vorgang->VorIndividualD5;
+        //todo later get date from Blau (now Fake + 10 days)
+        $milliseconds = now()->addDays(10)->timestamp * 1000;
+        $tourDate = "/Date({$milliseconds})/";
+
+        // get all Positions
+        $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
+        if ($positions->isEmpty()) {
+            Log::error('Keine Positionen vorhanden');
+            return null;
+        }
+        $to_Items = [];
+        foreach ($positions as $position) {
+            //get Artikelnummer by $position->InterneArtikelnummer.
+            $artikel = Artikel::find($position->InterneArtikelnummer);
+
+            if ($artikel === null) {
+                Log::error(
+                    'mm_35_02_materialverbrauch Kein Artikel für Position gefunden',
+                    [
+                        'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
+                        'Position' => $position->InternePositionsnummer,
+                        'InterneArtikelnummer' => $position->InterneArtikelnummer
+                    ]
+                );
+                return null;
+            }
+
+            $position3Menge = Position3Menge::where('InternePositionsnummer', $position->InternePositionsnummer)
+                ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
+                ->first();
+            $to_Items[] = [
+                'Material' => (string)(int)$artikel->Artikelnummer,
+                "MoveType" => "261",
+                "Storage" => "KM01",
+                "DynamicStorage" => "", //todo clarify
+                "EntryQnt" => (string)(int)$position3Menge->PosMenge1,
+                "EntryUom" => "ST",
+                'Vbeln' => '',
+                'Posnr' => $position->PosNummer,
+                "TourId" => $tourId,
+            ];
+        }
+
+        $data = [
+            "TourId" => (string)(int)$tourId,
+            "MoveDate" => $tourDate,
+            "to_Items" => $to_Items
         ];
-        return app(SapApiClient::class)->post($this->mm341_path, $data);
+        Log::info("mm_35_02_materialverbrauch sent Data", $data);
+        return app(SapApiClient::class)->post($this->mm352_path, $data);
+    }
+    
+    /**
+     * @throws Exception
+     */
+    public function mm_33_01_a_Leistungsbestaetigung($data)
+    {
+        $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])
+            ->where('VorGruppe', 'NU')
+            ->first();
+
+        if ($vorgang === null) {
+            Log::error(
+                'mm_33_01_a_Leistungsbestaetigung Kein Vorgang vorhanden',
+                ['Vorgangnummer' => $data['Vorgangnummer']]
+            );
+            return null;
+        }
+        $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
+        if ($adresse === null) {
+            Log::error("mm_33_01_a_Leistungsbestaetigung Kein Adresse für Vorgang gefunden");
+            return null;
+        }
+
+        $tourId = $vorgang->VorIndividualD5;
+
+        // get all Positions
+        $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
+        if ($positions->isEmpty()) {
+            Log::error('Keine Positionen vorhanden');
+            return null;
+        }
+        $to_Items = [];
+        foreach ($positions as $position) {
+            //get Artikelnummer by $position->InterneArtikelnummer.
+            $artikel = Artikel::find($position->InterneArtikelnummer);
+
+            $artikelKunde = ArtikelKunde::where('InterneArtikelnummer', $artikel->InterneArtikelnummer)
+                ->where('InterneAdressnummer', $adresse->InterneAdressnummer)
+                ->first();
+            if ($artikelKunde === null) {
+                Log::error(
+                    'mm_33_01_a_Leistungsbestaetigung Kein ArtikelKunde gefunden',
+                    ['InterneArtikelnummer' => $artikel->InterneArtikelnummer]
+                );
+                return null;
+            }
+
+            if ($artikel === null) {
+                Log::error(
+                    'mm_33_01_a_Leistungsbestaetigung Kein Artikel für Position gefunden',
+                    [
+                        'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
+                        'Position' => $position->InternePositionsnummer,
+                        'InterneArtikelnummer' => $position->InterneArtikelnummer
+                    ]
+                );
+                return null;
+            }
+            $position3Menge = Position3Menge::where('InternePositionsnummer', $position->InternePositionsnummer)
+                ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
+                ->first();
+            $to_Items[] = [
+                'TourId' => 'TourId',
+                'Lifnr' => $adresse->AdressNummer,
+                'Slgnr' => $vorgang->VorIndividualC3,
+                'Kvtyp' => 'M',//todo clarify with VIVAWEST $vorgang->VorGruppe,
+                'Vbeln' => '',
+                'Posnr' => $position->PosNummer,
+                'Material' => (string)(int)$artikel->Artikelnummer,
+                'ShortText' => $artikel->ArtBezeichnung1 ?? "",
+                "Quantity" => (string)(int)$position3Menge->PosMenge1,
+                "Netpr" => $artikelKunde->AkuLetzterVK,
+                "Peinh" => '1',//always 1 //todo clarify from pante
+                "CeosData" => true,//todo clarify from pante
+                "Goodsmovement" => "",
+                "GoodsmvmtLine" => "",
+                "PoUnit" => "",
+                "PoNumber" => "",
+                "PoItem" => "",
+            ];
+        }
+
+        $data = [
+            "TourId" => (string)(int)$tourId,
+            "Interface" => 'A',
+            "Lifnr" => $adresse->AdressNummer,
+            "to_items" => $to_Items
+        ];
+        Log::info("mm_33_01_a_Leistungsbestaetigung sent Data", $data);
+        return app(SapApiClient::class)->post($this->mm331_path, $data);
     }
 
 
     /**
      * @throws Exception
      */
-    public function mm_33_01_a_Leistungsbestaetigung()
+    public function mm_33_01_b_NuAuftragspaket($data): ?array
     {
-        // todo data mapping
-        /*
-        TourID
-        Lifnr
-        Nachunternehmer Kreditor
-        Slgnr
-        Liegenschaft
-        Kvtyp
-        Kontierungstyp
-        Vbeln
-        SD-Vertriebsbeleg
-        Posnr
-        SD-Vertriebsbelegsposition
-        Material
-        Materialnummer
-        ShortText
-        Materialkurztext / Leistungskurztetxt
-        Quantity
-        Leistungsmenge
-        PoUnit
-        Mengeneinheit
-        Interface
-        KZ MM-33-1a oder b
-        PoNumber
-        Bestellnummer
-        PoItem
-        Bestellposition
-        Netpr
-        Aktueller Preis in SAP
-        Peinh
-        Preiseinheit in SAP
-        CeosData
-        Kennzeichen Datensatz aus CEOS
-        Goodsmovement
-        Materialbeleg
-        GoodsmvmtLine
-        Materialbelegpos.
-        */
+        $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])
+            ->where('VorGruppe', 'NU')
+            ->first();
 
+        if ($vorgang === null) {
+            Log::error(
+                'mm_33_01_b_NuAuftragspaket Kein Vorgang vorhanden',
+                ['Vorgangnummer' => $data['Vorgangnummer']]
+            );
+            return null;
+        }
+        $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
+        if ($adresse === null) {
+            Log::error("mm_33_01_b_NuAuftragspaket Kein Adresse für Vorgang gefunden");
+            return null;
+        }
+
+        $tourId = $vorgang->VorIndividualD5;
+
+        // get all Positions
+        $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
+        if ($positions->isEmpty()) {
+            Log::error('Keine Positionen vorhanden');
+            return null;
+        }
+        $to_Items = [];
+        foreach ($positions as $position) {
+            //get Artikelnummer by $position->InterneArtikelnummer.
+            $artikel = Artikel::find($position->InterneArtikelnummer);
+
+            $artikelKunde = ArtikelKunde::where('InterneArtikelnummer', $artikel->InterneArtikelnummer)
+                ->where('InterneAdressnummer', $adresse->InterneAdressnummer)
+                ->first();
+            if ($artikelKunde === null) {
+                Log::error(
+                    'mm_33_01_b_NuAuftragspaket Kein ArtikelKunde gefunden',
+                    ['InterneArtikelnummer' => $artikel->InterneArtikelnummer]
+                );
+                return null;
+            }
+
+            if ($artikel === null) {
+                Log::error(
+                    'mm_33_01_b_NuAuftragspaket Kein Artikel für Position gefunden',
+                    [
+                        'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
+                        'Position' => $position->InternePositionsnummer,
+                        'InterneArtikelnummer' => $position->InterneArtikelnummer
+                    ]
+                );
+                return null;
+            }
+            $position3Menge = Position3Menge::where('InternePositionsnummer', $position->InternePositionsnummer)
+                ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
+                ->first();
+            $to_Items[] = [
+                'TourId' => 'TourId',
+                'Lifnr' => $adresse->AdressNummer,
+                'Slgnr' => $vorgang->VorIndividualC3,
+                'Kvtyp' => 'M',//todo clarify with VIVAWEST $vorgang->VorGruppe,
+                'Vbeln' => '',
+                'Posnr' => $position->PosNummer,
+                'Material' => (string)(int)$artikel->Artikelnummer,
+                'ShortText' => $artikel->ArtBezeichnung1 ?? "",
+                "Quantity" => (string)(int)$position3Menge->PosMenge1,
+                "Netpr" => $artikelKunde->AkuLetzterVK,
+                "Peinh" => '1',//always 1 //todo clarify from pante
+                "CeosData" => true,//todo clarify from pante
+                "Goodsmovement" => "",
+                "GoodsmvmtLine" => "",
+                "PoUnit" => "",
+                "PoNumber" => "",
+                "PoItem" => "",
+            ];
+        }
 
         $data = [
-            "Belegdatum" => "123456",
-            "Materialnummer" => "",
-            "Bewegungsart" => "H001",
-            "Suchbegriff1" => "",
-            "Menge" => "",
-            "Mengeneinheit" => "",
-            "TourID" => "",
-            "Liegenschaft" => "",
-            "SD-Verkaufsbeleg/Auftrag" => "",  //muss gebaut werden
-            "SD-Verkaufs-belegsposition/Auftragsposition" => "",
-            "Materialbeleg" => "",
-            "Fehlertext" => "",
-
+            "TourId" => (string)(int)$tourId,
+            "Interface" => 'B',
+            "Lifnr" => $adresse->AdressNummer,
+            "to_items" => $to_Items
         ];
-        return app(SapApiClient::class)->post($this->mm341_path, $data);
+        Log::info("mm_33_01_b_NuAuftragspaket sent Data", $data);
+        return app(SapApiClient::class)->post($this->mm331_path, $data);
     }
 
 
