@@ -60,9 +60,12 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
                 //mm-22-01: CEOSWEB-->CEOS-->SAP, Abfrage Lagerbestände Hauptlager
                 Route::post('/2201/lagerbestaende', [MMController::class, 'mm_22_1_lagerbestaende']);
 
-                //mm-35-01: CEOSWEB-->CEOS-->SAP, Abfrage Lagerbestände Hauptlager
+                //mm-33-01A: CEOSWEB-->CEOS-->SAP,  Liefer-/Leistungsbestätigung
                 Route::post('/3301a/leistungsbestaetigung', [MMController::class, 'mm_33_01_a_Leistungsbestaetigung']);
 
+
+                //mm-33-01B: CEOSWEB-->CEOS-->SAP, NU-Auftragspaket
+                Route::post('/3301b/nuauftragspaket', [MMController::class, 'mm_33_01_b_NuAuftragspaket']);
 
                 //mm-34-1: CEOSWEB-->CEOS-->SAP, Umlagerungsreservierung
                 Route::post('/3401/umlagerungsreservierung', [MMController::class, 'mm_34_01_umlagerungsreservierung']);
@@ -89,31 +92,3 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
 
         });
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-// MM-Requests //Material Management
-
-//MM-31-1: SAP-->CEOS, Materialstammdaten
-//MM-22-1: CEOS-->SAP, Abfrage Lagerbestände Hauptlager
-//MM-33-1a: CEOS-->SAP, Liefer-/Leistungsbestätigung mit Erstellung Gutschrift (NU-Abrechnung) (Im Rahmen von Wertkontrakt)
-//MM-34-1: CEOS-->SAP, Umlagerungsreservierung übergeben
-//MM-35-2: CEOS-->SAP, Materialverbrauch des Monteurs buchen [ausgewählt]
-//MM-36-01: Verknüpfung Monteur/NU zu Lagerort
-//MM-33-1b: NU-Auftragspaket CEOS zu SAP-Bestellung
-//MM-37-1: SAP Schnittstelle Übertragung Preise NU Leistungspositionen von SAP an CEOS
-
-
-//SD-Requests
-
-//SE-Requests
