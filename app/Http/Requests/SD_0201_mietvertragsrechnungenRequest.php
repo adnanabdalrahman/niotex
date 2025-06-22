@@ -21,6 +21,7 @@ class SD_0201_mietvertragsrechnungenRequest extends FormRequest
             'header.datumbis' => 'required|date|after_or_equal:header.datumvon',
             'header.vorgn' => 'required|integer',
             'header.vorgnInt' => 'required|integer',
+            'header.kunnr' => 'required|string',
 
             'header.zuonr' => 'required|string',
             'header.netwr' => 'required|numeric',
@@ -60,6 +61,7 @@ class SD_0201_mietvertragsrechnungenRequest extends FormRequest
             'header.vorgn.required' => 'Feld "vorgn" ist erforderlich.',
             'header.vorgn.integer' => '"vorgn" muss eine ganze Zahl sein.',
             'header.vorgnInt.required' => 'Feld "vorgnInt" ist erforderlich.',
+            'header.kunnr.required' => 'Feld "kunnr" ist erforderlich.',
 
             'positions.required' => 'Das Positionsfeld ist erforderlich und darf nicht leer sein.',
             'positions.array' => 'Positionsdaten müssen ein Array sein.',

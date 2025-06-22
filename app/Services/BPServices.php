@@ -95,8 +95,8 @@ class BPServices
                 $data['AutoWEAbr'] = 1;
             }
             //todo
-            //       =>  $data['Kundengruppe'],    /// N:N
-            //       =>  $data['Kundengruppe12'],    /// N:N
+            //       =>  $data['Kundengruppe'],    ///  Adresse.InternAdressnummer -> AdressBranche (table)->Branche (table)
+            //       =>  $data['Kundengruppe1+2'],    ///  KZAdressgruppe->AdressGruppe(Table)
 
             // Insert into users' table
             $adresse = Adresse::updateOrCreate(
@@ -109,8 +109,8 @@ class BPServices
                     'MwstTypID' => 3, // ???????
                     'AdrKarenztage' => 0, // ???????
                     'KZSprache' => "DE", // ???????
-                    'AdrFactoringJN' => 0, // ???????
-                    'AdrMahnSperreJN' => 0, // ???????
+                    'AdrFactoringJN' => 0,
+                    'AdrMahnSperreJN' => 0,
                     'NRAnrede' => $data['Anrede'],
                     'NRTitel' => $data['Titel'], // todo
                     'AdrFirmenbezeichnung1' => mb_substr($data['Name1'], 0, 40),

@@ -162,10 +162,9 @@ class MMController extends Controller
     public function mm_22_1_lagerbestaende(MM_2201_SAPStockRequest $request): JsonResponse
     {
         $validated = $request->validated();
-
         $data = $this->mmServices->mm_22_01_lagerbestaende(
-            $validated['materials'],
-            $validated['storage']
+            $validated['artikelnummer'],
+            $validated['lager']
         );
 
         return response()->json($data);

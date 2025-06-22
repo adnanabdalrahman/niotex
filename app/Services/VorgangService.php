@@ -57,6 +57,10 @@ class VorgangService
                     'VorLieferanschrift' => $data['VorLieferanschrift'] ?? null,
                     'VorRechnungsanschrift' => $data['VorRechnungsanschrift'] ?? null,
                     'VorSammelRechnungsanschrift' => $data['VorSammelRechnungsanschrift'] ?? null,
+                    'VorDatumRechnung' => $data['VorDatumRechnung'] ?? null,
+                    'VorIndividualT1' => $data['VorIndividualT1'] ?? null,
+                    'VorIndividualT2' => $data['VorIndividualT2'] ?? null,
+
 
                     // TODO clarify late with Pante (Important for miclas),
                     'VorRechnungsanschriftAnsprechpartnerID' => $data['VorRechnungsanschriftAnsprechpartnerID'] ?? null,
@@ -67,6 +71,8 @@ class VorgangService
                     'VorIndividualC1' => $data['VorIndividualC1'] ?? null,
                     'VorIndividualC2' => $data['VorIndividualC2'] ?? null,
                     'VorIndividualC3' => $data['VorIndividualC3'] ?? null,
+                    'VorIndividualC7' => $data['VorIndividualC7'] ?? null,
+
                     'VorStichwort' => $data['VorStichwort'] ?? null,
 
                     'VorTeillieferungsNummer' => $data['VorTeillieferungsNummer'] ?? '0',

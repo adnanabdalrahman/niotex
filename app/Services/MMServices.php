@@ -6,6 +6,7 @@ use App\Models\Adresse;
 use App\Models\Artikel;
 use App\Models\Artikelgruppe;
 use App\Models\ArtikelKunde;
+use App\Models\ArtikelLager;
 use App\Models\ArtikelLieferant;
 use App\Models\Basisempfindlichkeit;
 use App\Models\Position;
@@ -409,19 +410,32 @@ class MMServices
     /**
      * MM-22-1 Abfrage nach Lagerbestände
      * Get stock Level from SAP.
-     * @param string $materials
-     * @param string $storage
+     * @param string $interneArtikelnummer
+     * @param string $lager
      * @return JsonResponse
      */
-    public function mm_22_01_lagerbestaende(string $materials, string $storage): JsonResponse
+    public function mm_22_01_lagerbestaende(string $artikelnummer, string $lager): JsonResponse
     {
-        $data = "?\$filter=Material eq '{$materials}' and Storage eq '{$storage}'";
+        $data = "?\$filter=Material eq '{$artikelnummer}' and Storage eq '{$lager}'";
         try {
             $response = app(SapApiClient::class)->get($this->mm221_path, $data);
-            return response()->json($response, 200);
+            if ($response === null) {
+                Log::error('mm_22_01_lagerbestaende Error Response', $response);
+            }
+            if (isset($response['d']['results'][0]['Amount'])) {
+                $amount = ($response['d']['results'][0]['Amount']);
+                $artikel = Artikel::where('Artikelnummer', $artikelnummer)->first();
+
+                $artikelLager = ArtikelLager::where('interneArtikelnummer', $artikel->InterneArtikelnummer)->first();
+                $artikelLager->AlaPhysikalischeMenge1 = $amount;
+                $artikelLager->save();
+            } else {
+                Log::error('mm_22_01_lagerbestaende Kein Amount gefunden', $response);
+            }
         } catch (Exception|NotFoundExceptionInterface|ContainerExceptionInterface $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
+        return response()->json('Lagerbestand erfolgreich gespeichert', 200);
     }
 
 
@@ -499,7 +513,7 @@ class MMServices
         Log::info("mm_35_02_materialverbrauch sent Data", $data);
         return app(SapApiClient::class)->post($this->mm352_path, $data);
     }
-    
+
     /**
      * @throws Exception
      */

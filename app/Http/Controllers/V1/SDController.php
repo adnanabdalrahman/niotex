@@ -94,7 +94,7 @@ class SDController extends Controller
         $resultDataArray = $this->sdServices->sd_0201_mietvertragsrechnungen($validated);
 
         if ($resultDataArray !== null) {
-            Log::info('Sent Vorgang: ', $resultDataArray);
+            Log::info('Auftrag erfolgreich gespeichert: ', $resultDataArray);
             return response()->json([
                 'status' => 'success',
                 'message' => 'Auftrag erfolgreich gespeichert',
