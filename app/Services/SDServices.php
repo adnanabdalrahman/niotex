@@ -294,30 +294,31 @@ class SDServices
     public function sd_0201_mietvertragsrechnungen($requestData): ?array
     {
         $header = $requestData['header'];
-        $interneVorgangsnummer = $requestData['header']['vorgnInt'];
-        $vorgang = Vorgang::where('InterneVorgangsnummer', $interneVorgangsnummer)->first();
-        if ($vorgang === null) {
-            Log::error(
-                "sd_0201_mietvertragsrechnungen Kein Vorgang gefunden",
-                ['InterneVorgangsnummer' => $interneVorgangsnummer]
-            );
-            return null;
-        }
-
-        $adresse = Adresse::where('AdressNummer', $requestData['kunnr'])->first();
+        $kunnr = ltrim($header['kunnr'], '0');
+        $adresse = Adresse::where('AdressNummer', $kunnr)->first();
         if ($adresse === null) {
             Log::error(
                 "sd_0201_mietvertragsrechnungen Kein Adresse für Vorgang gefunden",
-                ['InterneVorgangsnummer' => $interneVorgangsnummer]
+                ['kunnr' => $requestData['kunnr']]
             );
             return null;
         }
-        $vorgangData['VorIndividualC1'] = $header['vbeln'];
-        $vorgangData['orDatumRechnung'] = $header['fkdat'];
-        $vorgangData['VorDatumAuftragseingang'] = $header['fkdat'];
+        $carbonFkdat = Carbon::parse((string)$header['fkdat']);
+        $carbonVorIndividualT1 = Carbon::parse((string)$header['datumvon']);
+        $carbonVorIndividualT2 = Carbon::parse((string)$header['datumbis']);
 
-        $vorgangData['VorIndividualT1'] = $header['datumvon'];
-        $vorgangData['VorIndividualT2'] = $header['datumbis'];
+        $fkdat = $carbonFkdat->format('Ymd');
+        $datumvon = $carbonVorIndividualT1->format('Ymd');
+        $datumbis = $carbonVorIndividualT2->format('Ymd');
+
+        $vorgangData['VorIndividualT1'] = $datumvon;
+        $vorgangData['VorIndividualT2'] = $datumbis;
+
+        $vorgangData['VorIndividualC1'] = $header['vbeln'];
+        $vorgangData['VorDatumRechnung'] = $fkdat;
+        $vorgangData['VorDatumAuftragseingang'] = $fkdat;
+
+
         $vorgangData['VorIndividualC7'] = $header['zuonr'];
         $vorgangData['VorIndividualC3'] = $header['zzlgsnr'];
         $vorgangData['VorAuftraggeber'] = $adresse->InterneAdressnummer;
@@ -410,10 +411,13 @@ class SDServices
             $positionData['PosWMengeVersand1'] = $position['fkimg'];
             $positionData['PosWMengeGut1'] = $position['fkimg'];
             $positionData['PosWMengeRechnung1'] = $position['fkimg'];
-            $positionData['PosGesamteinzelpreis'] = $position['netwr'];
-            $positionData['PosDBEinzel'] = $position['netwr'];
-            $positionData['PosPreisEinzel'] = $position['netwr'];
-            $positionData['PosWEinzelpreisMinusRabatt'] = $position['netwr'];
+
+            $einzelPreis = $position['netwr'] / $position['fkimg'];
+
+            $positionData['PosGesamteinzelpreis'] = $einzelPreis;
+            $positionData['PosDBEinzel'] = $einzelPreis;
+            $positionData['PosPreisEinzel'] = $einzelPreis;
+            $positionData['PosWEinzelpreisMinusRabatt'] = $einzelPreis;
 
             $positionData['key'] = $key;
 
@@ -556,7 +560,7 @@ class SDServices
      */
     public function sd_03_02_fakturiertedienstleistungsrechnung($requestData): ?array
     {
-        $interneVorgangsnummer = $requestData['header']['VorgnInt'];
+        $interneVorgangsnummer = $requestData['header']['vorgangsnummerInt'];
         $header = $requestData['header'];
         $vorgang = Vorgang::where('InterneVorgangsnummer', $interneVorgangsnummer)->first();
         if ($vorgang === null) {
@@ -578,8 +582,18 @@ class SDServices
         $vorgangData['VorRechnungsanschrift'] = $adresse->InterneAdressnummer;
         $vorgangData['VorSammelRechnungsanschrift'] = $adresse->InterneAdressnummer;
 
-        $vorgangData['VorIndividualC1'] = $header['fakturaNummer'];
-        $vorgangData['VorIndividualC7'] = $header['vorlageBeleg'];
+
+        $carbonVorIndividualT1 = Carbon::parse((string)$header['datumvon']);
+        $carbonVorIndividualT2 = Carbon::parse((string)$header['datumbis']);
+
+        $datumvon = $carbonVorIndividualT1->format('Ymd');
+        $datumbis = $carbonVorIndividualT2->format('Ymd');
+
+        $vorgangData['VorIndividualT1'] = $datumvon;
+        $vorgangData['VorIndividualT2'] = $datumbis;
+
+        $vorgangData['VorIndividualC1'] = $header['fakturanummer'];
+        $vorgangData['VorIndividualC7'] = $header['vorlagebeleg'];
         $vorgangData['VorIndividualC3'] = $header['liegenschaft'];
         $vorgangData['VorRechnungsNummer'] = $vorgang->VorRechnungsnummer ?? '';
 
@@ -589,15 +603,15 @@ class SDServices
         $vorgangData['VNkArt'] = '100000';
         $vorgangData['VorStatus'] = '100400'; //-- 100000 Nicht gedruckt / 100010 Angebot / 100100 Auftragsbestätigung
 
-        $vorgangData['VorNettowert'] = $header['nettoWert'];
-        $vorgangData['VorNettowertMwst1'] = $header['nettoWert'];
-        $vorgangData['VorNettoPlusZusatzkosten'] = $header['nettoWert'];
-        $vorgangData['VorNettoMinusRabatt'] = $header['nettoWert'];
-        $vorgangData['VorNettoMinusAKonto'] = $header['nettoWert'];
-        $vorgangData['VorNettowertRabattfaehig'] = $header['nettoWert'];
-        $vorgangData['VorRabattfaehigMwst1'] = $header['nettoWert'];
-        $vorgangData['VorSkontofaehigMwst1'] = $header['nettoWert'];
-        $brutto = $header['nettoWert'] + $header['gesamtSteuerbetrag'];
+        $vorgangData['VorNettowert'] = $header['nettowert'];
+        $vorgangData['VorNettowertMwst1'] = $header['nettowert'];
+        $vorgangData['VorNettoPlusZusatzkosten'] = $header['nettowert'];
+        $vorgangData['VorNettoMinusRabatt'] = $header['nettowert'];
+        $vorgangData['VorNettoMinusAKonto'] = $header['nettowert'];
+        $vorgangData['VorNettowertRabattfaehig'] = $header['nettowert'];
+        $vorgangData['VorRabattfaehigMwst1'] = $header['nettowert'];
+        $vorgangData['VorSkontofaehigMwst1'] = $header['nettowert'];
+        $brutto = $header['nettowert'] + $header['gesamtsteuerbetrag'];
         $vorgangData['VorMwstSatz1'] = 3;
         $vorgangData['VorMwstSatzProzent1'] = 19;
         $vorgangData['VorBruttowert'] = $brutto;
@@ -609,37 +623,37 @@ class SDServices
         $vorgangData['VorWBruttowertVersand'] = $brutto;
         $vorgangData['VorWBruttowertGut'] = $brutto;
         $vorgangData['VorWBruttowertRechnung'] = $brutto;
-        $vorgangData['VorWNettoPlusZusatzGesamt'] = $header['nettoWert'];
-        $vorgangData['VorWNettoPlusZusatzAuftrag'] = $header['nettoWert'];
-        $vorgangData['VorWNettoPlusZusatzAbrechnung'] = $header['nettoWert'];
-        $vorgangData['VorWNettoPlusZusatzLieferung'] = $header['nettoWert'];
-        $vorgangData['VorWNettoPlusZusatzVersand'] = $header['nettoWert'];
-        $vorgangData['VorWNettoPlusZusatzGut'] = $header['nettoWert'];
-        $vorgangData['VorWNettoPlusZusatzRechnung'] = $header['nettoWert'];
-        $vorgangData['VorWNettoMinusRabattGesamt'] = $header['nettoWert'];
-        $vorgangData['VorWNettoMinusRabattAuftrag'] = $header['nettoWert'];
-        $vorgangData['VorWNettoMinusRabattAbrechnung'] = $header['nettoWert'];
-        $vorgangData['VorWNettoMinusRabattLieferung'] = $header['nettoWert'];
-        $vorgangData['VorWNettoMinusRabattVersand'] = $header['nettoWert'];
-        $vorgangData['VorWNettoMinusRabattGut'] = $header['nettoWert'];
-        $vorgangData['VorWNettoMinusRabattRechnung'] = $header['nettoWert'];
-        $vorgangData['VorWNettoMinusAKontoAbrechnung'] = $header['nettoWert'];
-        $vorgangData['VorWNettoMinusAKontoLieferung'] = $header['nettoWert'];
-        $vorgangData['VorWNettoMinusAKontoRechnung'] = $header['nettoWert'];
-        $vorgangData['VorWNettowertGesamt'] = $header['nettoWert'];
-        $vorgangData['VorWNettowertAuftrag'] = $header['nettoWert'];
-        $vorgangData['VorWNettowertAbrechnung'] = $header['nettoWert'];
-        $vorgangData['VorWNettowertLieferung'] = $header['nettoWert'];
-        $vorgangData['VorWNettowertVersand'] = $header['nettoWert'];
-        $vorgangData['VorWNettowertGut'] = $header['nettoWert'];
-        $vorgangData['VorWNettowertRechnung'] = $header['nettoWert'];
-        $vorgangData['VorWNettowertMwst1Gesamt'] = $header['nettoWert'];
-        $vorgangData['VorWNettowertMwst1Auftrag'] = $header['nettoWert'];
-        $vorgangData['VorWNettowertMwst1Abrechnung'] = $header['nettoWert'];
-        $vorgangData['VorWNettowertMwst1Lieferung'] = $header['nettoWert'];
-        $vorgangData['VorWNettowertMwst1Versand'] = $header['nettoWert'];
-        $vorgangData['VorWNettowertMwst1Gut'] = $header['nettoWert'];
-        $vorgangData['VorWNettowertMwst1Rechnung'] = $header['nettoWert'];
+        $vorgangData['VorWNettoPlusZusatzGesamt'] = $header['nettowert'];
+        $vorgangData['VorWNettoPlusZusatzAuftrag'] = $header['nettowert'];
+        $vorgangData['VorWNettoPlusZusatzAbrechnung'] = $header['nettowert'];
+        $vorgangData['VorWNettoPlusZusatzLieferung'] = $header['nettowert'];
+        $vorgangData['VorWNettoPlusZusatzVersand'] = $header['nettowert'];
+        $vorgangData['VorWNettoPlusZusatzGut'] = $header['nettowert'];
+        $vorgangData['VorWNettoPlusZusatzRechnung'] = $header['nettowert'];
+        $vorgangData['VorWNettoMinusRabattGesamt'] = $header['nettowert'];
+        $vorgangData['VorWNettoMinusRabattAuftrag'] = $header['nettowert'];
+        $vorgangData['VorWNettoMinusRabattAbrechnung'] = $header['nettowert'];
+        $vorgangData['VorWNettoMinusRabattLieferung'] = $header['nettowert'];
+        $vorgangData['VorWNettoMinusRabattVersand'] = $header['nettowert'];
+        $vorgangData['VorWNettoMinusRabattGut'] = $header['nettowert'];
+        $vorgangData['VorWNettoMinusRabattRechnung'] = $header['nettowert'];
+        $vorgangData['VorWNettoMinusAKontoAbrechnung'] = $header['nettowert'];
+        $vorgangData['VorWNettoMinusAKontoLieferung'] = $header['nettowert'];
+        $vorgangData['VorWNettoMinusAKontoRechnung'] = $header['nettowert'];
+        $vorgangData['VorWNettowertGesamt'] = $header['nettowert'];
+        $vorgangData['VorWNettowertAuftrag'] = $header['nettowert'];
+        $vorgangData['VorWNettowertAbrechnung'] = $header['nettowert'];
+        $vorgangData['VorWNettowertLieferung'] = $header['nettowert'];
+        $vorgangData['VorWNettowertVersand'] = $header['nettowert'];
+        $vorgangData['VorWNettowertGut'] = $header['nettowert'];
+        $vorgangData['VorWNettowertRechnung'] = $header['nettowert'];
+        $vorgangData['VorWNettowertMwst1Gesamt'] = $header['nettowert'];
+        $vorgangData['VorWNettowertMwst1Auftrag'] = $header['nettowert'];
+        $vorgangData['VorWNettowertMwst1Abrechnung'] = $header['nettowert'];
+        $vorgangData['VorWNettowertMwst1Lieferung'] = $header['nettowert'];
+        $vorgangData['VorWNettowertMwst1Versand'] = $header['nettowert'];
+        $vorgangData['VorWNettowertMwst1Gut'] = $header['nettowert'];
+        $vorgangData['VorWNettowertMwst1Rechnung'] = $header['nettowert'];
 
         $vorgang = new VorgangService();
         $vorgang = $vorgang->createVorgang($vorgangData);
@@ -668,12 +682,14 @@ class SDServices
             $positionData['PosWMengeGut1'] = $position['menge'];
             $positionData['PosWMengeRechnung1'] = $position['menge'];
             $positionData['key'] = $key;
-            $positionData['PosIndividualD1'] = $position['positionsNummer'];
+            $positionData['PosIndividualD1'] = $position['positionsnummer'];
 
-            $positionData['PosGesamteinzelpreis'] = $position['nettoWertPosition'];
-            $positionData['PosDBEinzel'] = $position['nettoWertPosition'];
-            $positionData['PosPreisEinzel'] = $position['nettoWertPosition'];
-            $positionData['PosWEinzelpreisMinusRabatt'] = $position['nettoWertPosition'];
+
+            $einzelPreis = $position['nettowertposition'] / $position['menge'];
+            $positionData['PosGesamteinzelpreis'] = $einzelPreis;
+            $positionData['PosDBEinzel'] = $einzelPreis;
+            $positionData['PosPreisEinzel'] = $einzelPreis;
+            $positionData['PosWEinzelpreisMinusRabatt'] = $einzelPreis;
 
             $positions = new PositionService();
             $position = $positions->createPosition($positionData);
@@ -695,6 +711,4 @@ class SDServices
         Log::error('sd_0201_mietvertragsrechnungen Positions Creation Failed');
         return null;
     }
-
 }
-

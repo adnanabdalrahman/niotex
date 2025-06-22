@@ -14,16 +14,16 @@ class MM_2201_SAPStockRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'materials' => 'required',
-            'storage' => 'required|string|size:4|in:H001',
+            'artikelnummer' => 'required',
+            'lager' => 'required|string|size:4|in:H001',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'materials' => 'At least one material number is required.',
-            'storage' => 'Only "H001" (Hauptlager) is supported.',
+            'artikelnummer' => 'artikelnummer is required.',
+            'lager' => 'Only "H001" (Hauptlager) is supported.',
         ];
     }
 }
