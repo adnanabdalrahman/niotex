@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Adresse;
+use App\Models\AdresseBranche;
 use App\Models\Ansprechpartner;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -61,7 +63,7 @@ class BPServices
         AutoWEAbr                       => Boolean      AdrGutschriftsverfahrenJN
         Sperrkennzeichen                => Boolean      AdrLiefersperreJN
         Kundengruppe                    => Varchar(2)    ?????????????  //todo
-        Kundengruppe12                  => Varchar(3)    ????????????? //todo
+        Kundengruppe1                  => Varchar(3)    ????????????? //todo
         UVI_Mailadresse                 => Varchar(80)
         PDF_Mailadresse                 => Varchar(80)
     */
@@ -69,34 +71,35 @@ class BPServices
             //Vorname + Nachname
             //$AdrFirmenbezeichnung1 = mb_substr($data['Vorname'] . " " . $data['Nachname'], 0, 40);
 
-
             $streetArray = $this->splitStreet($data['Strasse']);
 
-
-            if ($data['LVorm'] === null) {
-                $data['LVorm'] = 0;
+            if ($data['Loeschvormerkung'] !== null && $data['Loeschvormerkung'] !== "0") {
+                $data['Loeschvormerkung'] = 1;
             } else {
-                $data['LVorm'] = 1;
+                $data['Loeschvormerkung'] = 0;
             }
 
-
-            if ($data['Sperrkennzeichen'] === null) {
-                $data['Sperrkennzeichen'] = 0;
-            } else {
-                $data['Sperrkennzeichen'] = 1;
-            }
-
-            //$data['LVorm'] = 0; //todo later
-            //$data['Sperrkennzeichen'] = 0; //todo later
-
-            if ($data['AutoWEAbr'] === null) {
-                $data['AutoWEAbr'] = 0;
-            } else {
+            if ($data['AutoWEAbr'] !== null && $data['AutoWEAbr'] !== "0") {
                 $data['AutoWEAbr'] = 1;
+            } else {
+                $data['AutoWEAbr'] = 0;
             }
-            //todo
-            //       =>  $data['Kundengruppe'],    ///  Adresse.InternAdressnummer -> AdressBranche (table)->Branche (table)
-            //       =>  $data['Kundengruppe1+2'],    ///  KZAdressgruppe->AdressGruppe(Table)
+
+            if ($data['Sperrkennzeichen'] !== null && $data['AutoWEAbr'] !== "0") {
+                $data['Sperrkennzeichen'] = 1;
+            } else {
+                $data['Sperrkennzeichen'] = 0;
+            }
+
+            $data['Suchbegriff1'] = substr($data['Suchbegriff1'], 0, 10);
+
+            if ($data['Anrede'] === null || $data['Anrede'] === "") {
+                $data['Anrede'] = 5;
+            }
+            $kundengruppe1 = null;
+            if ($data['Adresstyp'] === "KUN") {
+                $kundengruppe1 = $data['Kundengruppe1'];
+            }
 
             // Insert into users' table
             $adresse = Adresse::updateOrCreate(
@@ -132,15 +135,29 @@ class BPServices
                     'AdrEmail' => $data['EMail'],
                     'AdrGutschriftsverfahrenJN' => $data['AutoWEAbr'],
                     'AdrLiefersperreJN' => $data['Sperrkennzeichen'],
-                    //''                =>  $data['Kundengruppe'],    // N:N
-                    // ''               =>  $data['Kundengruppe12'],  // N:N
-                    'AdrAltJN' => $data['LVorm'],
-                    'ADRindividualC2' => $data['UVIMailadresse'],
+                    'KZAdressgruppe' => $kundengruppe1,
+                    'AdrAltJN' => $data['Loeschvormerkung'],
                     'ADRindividualC1' => $data['Suchbegriff2'],
+                    'ADRindividualC2' => $data['UVIMailadresse'],
                     'ADRindividualC3' => $data['PDFMailadresse'],
                 ]
             );
             $interneAdressnummer = $adresse['InterneAdressnummer'];
+            if ($data['Adresstyp'] === "KUN" && $interneAdressnummer !== null) {
+                if ($data['Kundengruppe'] === null) {
+                    Log::error(' bp_0101_geschaeftspartner Kundengruppe ist leer',
+                        ['interneAdressnummer' => $interneAdressnummer]);
+                    return null;
+                }
+                AdresseBranche::updateOrCreate(
+                    ['InterneAdressnummer' => $interneAdressnummer],
+                    [
+                        'KZBranche' => $data['Kundengruppe'],
+                        'AbrHauptJN' => 0,
+                    ]
+                );
+            }
+
         } catch (Throwable $e) {
             Log::error(
                 ' Error ' . $e->getMessage(),
@@ -180,8 +197,12 @@ class BPServices
      */
     public function bp_0103_verwalter($data, $interneAdressnummer): ?array
     {
-
         try {
+            $gueltigVon = Carbon::parse($data['GueltigVon'])->format('Ymd');
+            $gueltigBis = Carbon::parse($data['GueltigBis'])->format('Ymd');
+            if ($data['Anrede'] === null || $data['Anrede'] === "") {
+                $data['Anrede'] = 5;
+            }
 
             $ansprechpartner = Ansprechpartner::updateOrCreate(
                 ['InterneAdressnummer' => $interneAdressnummer],
@@ -191,14 +212,14 @@ class BPServices
                     'NRAnrede' => $data['Anrede'],
                     'AnsVorname' => $data['Vorname'],
                     'AnsNachname' => $data['Nachname'],
-                    'AnsPrivatStrasse' => $data['Strasse'], //todo split Hnr
+                    'AnsPrivatStrasse' => $data['Strasse'], // todo 40 CHAR in DB maybe split Hnr
                     'AnsPrivatOrt' => $data['Postleitzahl'] . " " . $data['Ort'],
                     'AnsPrivatTelefon' => $data['Telefon'],
                     'AnsMobiltelefon' => $data['Mobiltelefon'],
                     'AnsFax' => $data['Fax'],
                     'AnsEMail' => $data['EMail'],
-                    'AnsIndividualD1' => $data['GueltigVon'], //todo todo later format date
-                    'AnsIndividualD2' => $data['GueltigBis'], //todo later format date
+                    'AnsIndividualD1' => $gueltigVon,
+                    'AnsIndividualD2' => $gueltigBis,
                     'AnsIndividualC1' => $data['Ansprechpartner1'],
                     'AnsIndividualC2' => $data['Ansprechpartner2'],
                 ]

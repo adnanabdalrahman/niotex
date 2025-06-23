@@ -26,11 +26,11 @@ class BP_0101_geschaeftspartnerRequest extends FormRequest
             'Name1' => 'nullable|string|max:40',
             'Name2' => 'nullable|string|max:40',
             'Name3' => 'nullable|string|max:40',
-            'Suchbegriff1' => 'nullable|string|max:10',
-            'Suchbegriff2' => 'nullable|string|max:10',
+            'Suchbegriff1' => 'nullable|string',
+            'Suchbegriff2' => 'nullable|string',
             'Strasse' => 'nullable|string|max:60', // handled in PHP to split if over 40
             'Postleitzahl' => 'nullable|string|max:10',
-            'Adresstyp' => 'required|string|max:3',
+            'Adresstyp' => 'required|string|max:4',
             'Ort' => 'nullable|string|max:40',
             'Land' => 'nullable|string|size:2',
             'Postfach' => 'nullable|string|max:10',
@@ -44,7 +44,7 @@ class BP_0101_geschaeftspartnerRequest extends FormRequest
             'AutoWEAbr' => 'nullable|boolean',
             'Sperrkennzeichen' => 'nullable',
             'Kundengruppe' => 'nullable|string|max:2',
-            'Kundengruppe12' => 'nullable|string|max:3',
+            'Kundengruppe1' => 'nullable|string|max:3',
             'UVIMailadresse' => 'nullable',
             'PDFMailadresse' => 'nullable',
             'LVorm' => 'nullable|string',
@@ -118,10 +118,10 @@ class BP_0101_geschaeftspartnerRequest extends FormRequest
             'Kundengruppe.string' => 'Die Kundengruppe muss ein Text sein.',
             'Kundengruppe.max' => 'Die Kundengruppe darf maximal 2 Zeichen lang sein.',
 
-            'Kundengruppe12.string' => 'Die Kundengruppe12 muss ein Text sein.',
-            'Kundengruppe12.max' => 'Die Kundengruppe12 darf maximal 3 Zeichen lang sein.',
+            'Kundengruppe1.string' => 'Die Kundengruppe1 muss ein Text sein.',
+            'Kundengruppe1.max' => 'Die Kundengruppe1 darf maximal 3 Zeichen lang sein.',
 
-            'LVorm.string' => 'Das Feld "Lieferform" muss ein Text sein.',
+            'Loeschvormerkung.string' => 'Das Feld "Lieferform" muss ein Text sein.',
         ];
     }
 }

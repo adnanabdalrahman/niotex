@@ -41,6 +41,7 @@ class SDController extends Controller
         if ($vorgangDataArray !== null) {
             $positionsNrArray = $this->sdServices->sd_0101_beauftragung_positions($validated['positions'], $vorgangDataArray);
             if ($positionsNrArray !== null) {
+                Log::info('sd_0101_beauftragung Beauftragung erfolgreich empfangen');
                 return response()->json([
                     'status' => 'success',
                     'message' => 'Beauftragung erfolgreich empfangen',
@@ -61,7 +62,6 @@ class SDController extends Controller
     // SD-01-02: CEOS-->SAP, beauftragung Rückmeldung
     public function sd_01_02_beauftragungRueckmeldung(Request $request)
     {
-        Log::info('Received Payload for sd_01_02_beauftragungRueckmeldung:', $request->all());
         $vorgangDataArray = $this->sdServices->sd_0102_beauftragung_rueckmeldung($request);
         if ($vorgangDataArray !== null) {
             Log::info('Sent Vorgang: ', $vorgangDataArray);

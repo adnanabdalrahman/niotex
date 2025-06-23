@@ -26,7 +26,7 @@ class BP_0103_verwalterRequest extends FormRequest
             'Adressnummer' => 'required|string|max:30',
             'LVorm' => 'nullable|string',
             'Titel' => 'nullable|string',
-            'Anrede' => 'required|string',
+            'Anrede' => 'nullable|string',
             'Vorname' => 'required|string|max:40',
             'Nachname' => 'nullable|string|max:40',
             'Strasse' => 'required|string|max:40', //todo muss max 70

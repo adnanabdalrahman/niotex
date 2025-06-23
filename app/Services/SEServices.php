@@ -63,7 +63,6 @@ class SEServices
             $positions = DB::connection('sqlsrv2')->table('cis.Position')
                 ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->get();
             $positionArray = [];
-
             foreach ($positions as $position) {
 
                 $artikel = Artikel::where('InterneArtikelnummer', $position->InterneArtikelnummer)->first();
@@ -93,10 +92,25 @@ class SEServices
                     );
                     return null;
                 }
+                $position2Text = DB::connection('sqlsrv2')->table('cis.Position2Text')
+                    ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
+                    ->where('InternePositionsnummer', $position->InternePositionsnummer)
+                    ->first();
+                if (is_null($position2Text)) {
+                    Log::error(
+                        "position2Text nicht gefunden",
+                        [
+                            'Vorgangnummer' => $request->InterneVorgangsnummer,
+                            'InternePositionsnummer' => $position->InternePositionsnummer,
+                        ]
+                    );
+                    return null;
+                }
+
 
                 $positionArray[] = [
                     'Matnr' => $artikel->Artikelnummer,
-                    'TxtZ009' => (string)$position->PosZusatztext,
+                    'TxtZ009' => (string)$position2Text->PosZusatztext,
                     'Kwmeng' => (string)$position3Menge->PosMenge1,
                     'Vrkme' => (string)$position3Menge->PosKZMengeneinheit1,
                     'Vorgn' => (string)$vorgang->VorNummer,

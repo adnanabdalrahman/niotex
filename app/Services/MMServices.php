@@ -16,7 +16,6 @@ use App\Models\Vorgang;
 use App\Models\Warengruppe;
 use Carbon\Carbon;
 use Exception;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -322,7 +321,7 @@ class MMServices
 
 */
         $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])
-            ->where('VorGruppe', 'LA')
+            ->where('VorGruppe', 'M_LG')
             ->first();
 
         if ($vorgang === null) {
@@ -412,9 +411,9 @@ class MMServices
      * Get stock Level from SAP.
      * @param string $interneArtikelnummer
      * @param string $lager
-     * @return JsonResponse
+     * @return array|null
      */
-    public function mm_22_01_lagerbestaende(string $artikelnummer, string $lager): JsonResponse
+    public function mm_22_01_lagerbestaende(string $artikelnummer, string $lager): ?array
     {
         $data = "?\$filter=Material eq '{$artikelnummer}' and Storage eq '{$lager}'";
         try {
@@ -431,11 +430,16 @@ class MMServices
                 $artikelLager->save();
             } else {
                 Log::error('mm_22_01_lagerbestaende Kein Amount gefunden', $response);
+                return null;
             }
         } catch (Exception|NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            Log::error('mm_22_01_lagerbestaende' . $e->getMessage());
+            return null;
         }
-        return response()->json('Lagerbestand erfolgreich gespeichert', 200);
+        return [
+            'artikelnummer' => $artikelnummer,
+            'amount' => $amount
+        ];
     }
 
 
@@ -445,7 +449,7 @@ class MMServices
     public function mm_35_02_materialverbrauch($data)
     {
         $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])
-            ->where('VorGruppe', 'LA')
+            ->where('VorGruppe', 'M_LG')
             ->first();
 
         if ($vorgang === null) {
@@ -578,7 +582,7 @@ class MMServices
                 'TourId' => 'TourId',
                 'Lifnr' => $adresse->AdressNummer,
                 'Slgnr' => $vorgang->VorIndividualC3,
-                'Kvtyp' => 'M',//todo clarify with VIVAWEST $vorgang->VorGruppe,
+                'Kvtyp' => $vorgang->VorGruppe, // 'M',//todo clarify with VIVAWEST $vorgang->VorGruppe,
                 'Vbeln' => '',
                 'Posnr' => $position->PosNummer,
                 'Material' => (string)(int)$artikel->Artikelnummer,

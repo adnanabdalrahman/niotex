@@ -326,12 +326,11 @@ class SDServices
 
         $vorgangData['VorArt'] = 'A';
         $vorgangData['VorUnterArt'] = 'R';  // char 1
-        $vorgangData['VorGruppe'] = 'WH-'; //  -- Montage/Liefer/Rechnung: 'RE' / Vertr ge: 'WIE' ? / Rahmenauftr ge: 'AB'
+        $vorgangData['VorGruppe'] = 'WH'; //  -- Montage/Liefer/Rechnung: 'RE' / Vertr ge: 'WIE' ? / Rahmenauftr ge: 'AB'
         $vorgangData['VNkArt'] = '100000';
         $vorgangData['VorStatus'] = '100400'; //-- 100000 Nicht gedruckt / 100010 Angebot / 100100 Auftragsbestätigung
 
 
-        $brutto = $header['mwsbk'] + $header['netwr'];
         $vorgangData['VorNettowert'] = $header['netwr'];
         $vorgangData['VorNettowertMwst1'] = $header['netwr'];
         $vorgangData['VorNettoPlusZusatzkosten'] = $header['netwr'];
@@ -343,16 +342,16 @@ class SDServices
 
         $vorgangData['VorMwstSatz1'] = 3;
         $vorgangData['VorMwstSatzProzent1'] = 19;
-        $vorgangData['VorBruttowert'] = $brutto;
-        $vorgangData['VorSkontofaehigBrutto'] = $brutto;
+        $vorgangData['VorBruttowert'] = $header['mwsbk'];
+        $vorgangData['VorSkontofaehigBrutto'] = $header['mwsbk'];
 
-        $vorgangData['VorWBruttowertGesamt'] = $brutto;
-        $vorgangData['VorWBruttowertAuftrag'] = $brutto;
-        $vorgangData['VorWBruttowertAbrechnung'] = $brutto;
-        $vorgangData['VorWBruttowertLieferung'] = $brutto;
-        $vorgangData['VorWBruttowertVersand'] = $brutto;
-        $vorgangData['VorWBruttowertGut'] = $brutto;
-        $vorgangData['VorWBruttowertRechnung'] = $brutto;
+        $vorgangData['VorWBruttowertGesamt'] = $header['mwsbk'];
+        $vorgangData['VorWBruttowertAuftrag'] = $header['mwsbk'];
+        $vorgangData['VorWBruttowertAbrechnung'] = $header['mwsbk'];
+        $vorgangData['VorWBruttowertLieferung'] = $header['mwsbk'];
+        $vorgangData['VorWBruttowertVersand'] = $header['mwsbk'];
+        $vorgangData['VorWBruttowertGut'] = $header['mwsbk'];
+        $vorgangData['VorWBruttowertRechnung'] = $header['mwsbk'];
         $vorgangData['VorWNettoPlusZusatzGesamt'] = $header['netwr'];
         $vorgangData['VorWNettoPlusZusatzAuftrag'] = $header['netwr'];
         $vorgangData['VorWNettoPlusZusatzAbrechnung'] = $header['netwr'];
@@ -611,18 +610,17 @@ class SDServices
         $vorgangData['VorNettowertRabattfaehig'] = $header['nettowert'];
         $vorgangData['VorRabattfaehigMwst1'] = $header['nettowert'];
         $vorgangData['VorSkontofaehigMwst1'] = $header['nettowert'];
-        $brutto = $header['nettowert'] + $header['gesamtsteuerbetrag'];
         $vorgangData['VorMwstSatz1'] = 3;
-        $vorgangData['VorMwstSatzProzent1'] = 19;
-        $vorgangData['VorBruttowert'] = $brutto;
-        $vorgangData['VorSkontofaehigBrutto'] = $brutto;
-        $vorgangData['VorWBruttowertGesamt'] = $brutto;
-        $vorgangData['VorWBruttowertAuftrag'] = $brutto;
-        $vorgangData['VorWBruttowertAbrechnung'] = $brutto;
-        $vorgangData['VorWBruttowertLieferung'] = $brutto;
-        $vorgangData['VorWBruttowertVersand'] = $brutto;
-        $vorgangData['VorWBruttowertGut'] = $brutto;
-        $vorgangData['VorWBruttowertRechnung'] = $brutto;
+        $vorgangData['VorMwstSatzProzent1'] = 19; //todo nicht immer 19  -> gesamtsteuerbetrag = 0
+        $vorgangData['VorBruttowert'] = $header['gesamtsteuerbetrag'];
+        $vorgangData['VorSkontofaehigBrutto'] = $header['gesamtsteuerbetrag'];
+        $vorgangData['VorWBruttowertGesamt'] = $header['gesamtsteuerbetrag'];
+        $vorgangData['VorWBruttowertAuftrag'] = $header['gesamtsteuerbetrag'];
+        $vorgangData['VorWBruttowertAbrechnung'] = $header['gesamtsteuerbetrag'];
+        $vorgangData['VorWBruttowertLieferung'] = $header['gesamtsteuerbetrag'];
+        $vorgangData['VorWBruttowertVersand'] = $header['gesamtsteuerbetrag'];
+        $vorgangData['VorWBruttowertGut'] = $header['gesamtsteuerbetrag'];
+        $vorgangData['VorWBruttowertRechnung'] = $header['gesamtsteuerbetrag'];
         $vorgangData['VorWNettoPlusZusatzGesamt'] = $header['nettowert'];
         $vorgangData['VorWNettoPlusZusatzAuftrag'] = $header['nettowert'];
         $vorgangData['VorWNettoPlusZusatzAbrechnung'] = $header['nettowert'];
