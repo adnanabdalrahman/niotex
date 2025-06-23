@@ -217,7 +217,7 @@ class PositionService
                 'PosGesamteinzelpreisBrutto' => $data['PosGesamteinzelpreisBrutto'] ?? 0,
                 'PosGesamtpreisBrutto' => $data['PosGesamtpreisBrutto'] ?? 0,
             ]);
-            
+
             DB::connection('sqlsrv2')->table('cis.PositionWert')->insertGetId([
                 'InterneVorgangsnummer' => $data['InterneVorgangsnummer'],
                 'InternePositionsnummer' => $internePositionsnummer,
@@ -277,6 +277,7 @@ class PositionService
                 'InternePositionsnummer' => $internePositionsnummer,
                 'InterneVorgangsnummer' => $data['InterneVorgangsnummer'],
                 'vorgn' => $data['VorNummer'],
+                'posnr' => $data['PosIndividualD1'],
             ];
         } catch (Throwable $e) {
             Log::error('Create Vorgang' . $e->getMessage());
