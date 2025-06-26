@@ -4,12 +4,19 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 
 class BP_0103_verwalterRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+
+
+    public function prepareForValidation(): void
+    {
+        Log::info('BP_0103_verwalter Received Payload', [
+            'data' => $this->all()
+        ]);
+    }
+
     public function authorize(): bool
     {
         return true;

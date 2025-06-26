@@ -3,9 +3,17 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 
 class SD_0201_mietvertragsrechnungenRequest extends FormRequest
 {
+    public function prepareForValidation(): void
+    {
+        Log::info('SD_0201_mietvertragsrechnungen Received Payload', [
+            'data' => $this->all()
+        ]);
+    }
+
     public function authorize(): bool
     {
         return true;

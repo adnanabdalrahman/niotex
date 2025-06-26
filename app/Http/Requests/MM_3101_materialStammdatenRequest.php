@@ -3,9 +3,17 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 
 class MM_3101_materialStammdatenRequest extends FormRequest
 {
+    public function prepareForValidation(): void
+    {
+        Log::info('MM_3101_materialStammdaten Received Payload', [
+            'data' => $this->all()
+        ]);
+    }
+
     public function authorize(): bool
     {
         return true;

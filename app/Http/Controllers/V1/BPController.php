@@ -27,16 +27,17 @@ class BPController extends Controller
      */
     public function bp_01_01_Geschaeftspartner(BP_0101_geschaeftspartnerRequest $request): JsonResponse
     {
-        Log::info('Received Payload for bp_01_01_Geschaeftspartner:', $request->all());
-
         $validated = $request->validated();
         $adressnummer = ltrim($validated['DebitorenKreditorennummer'], '0');
 
         $currentAdresse = Adresse::where('AdressNummer', $adressnummer)->first();
 
         $status = $currentAdresse !== null ? 'aktualisiert' : 'gespeichert';
-        if ($request['LVorm'] !== null) {
+        if ($validated['Loeschvormerkung'] !== null) {
             $status = 'gelöscht';
+        }
+        if ($request['Sperrkennzeichen'] !== null) {
+            $status = 'gesperrt';
         }
 
         $data = $this->bpServices->bp_0101_geschaeftspartner($validated);

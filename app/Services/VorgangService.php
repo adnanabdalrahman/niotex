@@ -216,7 +216,7 @@ class VorgangService
                     'VorMwstSatz1' => $data['VorMwstSatz1'] ?? 0,
                     'VorMwstSatz2' => $data['VorMwstSatz2'] ?? null,
                     'VorMwstSatz3' => $data['VorMwstSatz3'] ?? null,
-                    'VorMwstSatzProzent1' => $data['VorMwstSatzProzent1'] ?? 19,
+                    'VorMwstSatzProzent1' => $data['VorMwstSatzProzent1'] ?? 3,
                     'VorMwstSatzProzent2' => $data['VorMwstSatzProzent2'] ?? null,
                     'VorMwstSatzProzent3' => $data['VorMwstSatzProzent3'] ?? null,
                     'VorNettoMinusRabatt' => $data['VorNettoMinusRabatt'] ?? 0,

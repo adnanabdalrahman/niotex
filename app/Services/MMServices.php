@@ -8,6 +8,7 @@ use App\Models\Artikelgruppe;
 use App\Models\ArtikelKunde;
 use App\Models\ArtikelLager;
 use App\Models\ArtikelLieferant;
+use App\Models\ArtikelUntergruppe;
 use App\Models\Basisempfindlichkeit;
 use App\Models\Position;
 use App\Models\Position3Menge;
@@ -19,6 +20,7 @@ use Exception;
 use Illuminate\Support\Facades\Log;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
+
 
 class MMServices
 {
@@ -53,14 +55,6 @@ class MMServices
     {
 
         /*
-        todo CEOSArtikeluntergruppe => Artikel.ArtikelUntergruppeID (int) → cis.ArtikelUntergruppe.KZUnterArtikelgruppe
-       - todo compare combination
-           KZWarengruppe => CEOSWarengruppe
-           KZArtikelgruppe => CEOSArtikelgruppe
-           KZUnterArtikelgruppe => CEOSArtikeluntergruppe
-           then get the ArtikelUntergruppeID
-       - NULL ACCEPTED
-
        Basismengeneinheit =>  Artikel.KZArtMengeneinheit1 (m:1)→cis.Mengeneinheit.KZMengeneinheit
        - saved as it is
        // todo mapping to our Mengeneinheit Skipatron = KG--> Coes = kg //LE fehlt: noch klären VE fehlt: hinzufügen
@@ -98,6 +92,15 @@ class MMServices
             Log::info('Kein Produktgruppe für diese Material ', $data);
         }
 
+        $artikelUntergruppe = ArtikelUntergruppe::where('KZUnterArtikelgruppe', $data['CEOSArtikeluntergruppe'])
+            ->where('KZWarengruppe', $data['CEOSWarengruppe'])
+            ->where('KZArtikelgruppe', $data['CEOSArtikelgruppe'])
+            ->first();
+
+        $data['ArtikelUntergruppeID'] = null;
+        if ($artikelUntergruppe !== null) {
+            $data['ArtikelUntergruppeID'] = $artikelUntergruppe->ArtikelUntergruppeID;
+        }
         //EAN Splitt
         $artEAN1 = substr($data['EANNummerSAP'], 0, 8); // first 8 characters
         $artEAN2 = substr($data['EANNummerSAP'], 8, 8);
@@ -116,7 +119,7 @@ class MMServices
         $data['ArtStuecklisteJN'] = 0;
         $data['ArtProvisionsfaehigJN'] = 0;
         $data['ArtLieferantenfaehigJN'] = 1;
-        $data['ArtVerkaufsfaehigJN'] = 0;
+        $data['ArtVerkaufsfaehigJN'] = 1;
         $data['ArtSkontofaehigJN'] = 0;
 
         if ($data['LVorm'] === null) {
@@ -130,6 +133,7 @@ class MMServices
                 ['Artikelnummer' => $data['Material']],
                 [
                     'Artikelnummer' => $data['Material'],
+                    'ArtMatchcode' => $data['Material'],
                     'ArtBezeichnung1' => $data['Materialkurztext'], // ArtMatchcode
                     'ArtBezeichnung2' => $data['Bezeichnung1'] . "|" . $data['Bezeichnung2'],
                     'KZArtMengeneinheit1' => $data['Basismengeneinheit'],
@@ -137,7 +141,7 @@ class MMServices
                     'ArtIndividualC5' => $data['BKSchluessel'],
                     'KZWarengruppe' => $data['CEOSWarengruppe'],
                     'KZArtikelgruppe' => $data['CEOSArtikelgruppe'],
-                    'ArtikelUntergruppeID' => Null, //todo should later be built
+                    'ArtikelUntergruppeID' => $data['ArtikelUntergruppeID'],
                     'KZProduktgruppe' => $data['Produktgruppe'],
                     'ArtEAN1' => $artEAN1,
                     'ArtEAN2' => $artEAN2,
@@ -159,7 +163,7 @@ class MMServices
                 ]
             );
             $interneArtikelNummer = $artikel['InterneArtikelnummer'];
-        } catch (\Throwable $e) {
+        } catch (Exception $e) {
             Log::error(
                 'mm_31_01_materialstammdaten Save Artikel Error:' . $e->getMessage(),
                 ['Material' => $data['Material']]
@@ -176,7 +180,7 @@ class MMServices
                     'BasisempfindlichkeitSkala' => $data['Basisempfindlichkeit'],
                 ]
             );
-        } catch (\Throwable $e) {
+        } catch (Exception $e) {
             Log::error(
                 'mm_31_01_materialstammdaten Save Basisempfindlichkeit Error' . $e->getMessage(),
                 ['Material' => $data['Material']]
@@ -198,7 +202,7 @@ class MMServices
             }
             $interneAdressnummer = $adresse->InterneAdressnummer;
             try {
-                $artikelLieferant = ArtikelLieferant::updateOrCreate(
+                ArtikelLieferant::updateOrCreate(
                     [
                         'InterneAdressnummer' => $interneAdressnummer,
                         'InterneArtikelnummer' => $interneArtikelNummer
@@ -218,7 +222,7 @@ class MMServices
                         'AliMindestbestellmenge' => 0,
                     ]
                 );
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 Log::error(
                     "mm_31_01_materialstammdaten Lieferschein Error: " . $e->getMessage(),
                     ['Material' => $data['Material']]
@@ -321,7 +325,7 @@ class MMServices
 
 */
         $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])
-            ->where('VorGruppe', 'M_LG')
+            ->where('VorGruppe', 'RE') // todo After Test return to M_LG
             ->first();
 
         if ($vorgang === null) {
@@ -332,14 +336,11 @@ class MMServices
             return null;
         }
 
-
         //todo later get date from Blau (now Fake + 10 days)
         $milliseconds = now()->addDays(10)->timestamp * 1000;
         $tourDate = "/Date({$milliseconds})/";
 
-        $tourId = $vorgang->VorIndividualD5;
-        $reservNo = $vorgang->VorIndividualD6;
-
+        $tourId = '1025'; // todo after test return to $vorgang->VorIndividualD5;
         // get all Positions
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
 
@@ -385,25 +386,25 @@ class MMServices
         $data = [
             "TourId" => (string)(int)$tourId,
             "Remark" => "Test Remark", //todo later from Florian MAX 50 also in Florian page Max 50
-            "MoveStloc" => "H001",
+            "MoveStloc" => "",
             "to_Items" => $to_Items
         ];
         Log::info("mm_34_01_umlagerungsreservierung sent Data", $data);
-
         $response = app(SapApiClient::class)->post($this->mm341_path, $data);
+        Log::info("mm_34_01_umlagerungsreservierung received Data", $response);
+
 
         $reservNo = $response['d']['ReservNo'] ?? null;
+        $reservNo = ltrim($reservNo, '0');
+        $lager = $response['d']['MoveStloc'] ?? null;
 
         if ($reservNo !== null) {
-            $vorgang->VorStatus = '100100';
+            $vorgang->VorStatus = 100100;
+            $vorgang->VorIndividualD6 = $reservNo;
             $vorgang->save();
-            Log::info("mm_34_01_umlagerungsreservierung Status erfolgreich geändert ", [
-                'Vorgangnummer' => $vorgang->VorIndividualD5,
-                'reservNo' => $reservNo,
-            ]);
-            return true;
+            return $response;
         }
-        return false;
+        return null;
     }
 
     /**
@@ -415,19 +416,24 @@ class MMServices
      */
     public function mm_22_01_lagerbestaende(string $artikelnummer, string $lager): ?array
     {
-        $data = "?\$filter=Material eq '{$artikelnummer}' and Storage eq '{$lager}'";
+        $data = "?\$filter=Material eq '{$artikelnummer}' and Storage eq '{$lager}'  and Plant eq '1270'";
         try {
             $response = app(SapApiClient::class)->get($this->mm221_path, $data);
             if ($response === null) {
                 Log::error('mm_22_01_lagerbestaende Error Response', $response);
             }
+
             if (isset($response['d']['results'][0]['Amount'])) {
                 $amount = ($response['d']['results'][0]['Amount']);
                 $artikel = Artikel::where('Artikelnummer', $artikelnummer)->first();
-
-                $artikelLager = ArtikelLager::where('interneArtikelnummer', $artikel->InterneArtikelnummer)->first();
-                $artikelLager->AlaPhysikalischeMenge1 = $amount;
-                $artikelLager->save();
+                ArtikelLager::updateOrCreate(
+                    [
+                        'interneArtikelnummer' => $artikel->InterneArtikelnummer
+                    ],
+                    [
+                        'AlaPhysikalischeMenge1' => $amount,
+                    ]
+                );
             } else {
                 Log::error('mm_22_01_lagerbestaende Kein Amount gefunden', $response);
                 return null;
@@ -449,7 +455,7 @@ class MMServices
     public function mm_35_02_materialverbrauch($data)
     {
         $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])
-            ->where('VorGruppe', 'M_LG')
+            ->where('VorGruppe', 'RE') //todo return to M_LG
             ->first();
 
         if ($vorgang === null) {
@@ -465,12 +471,11 @@ class MMServices
             return null;
         }
 
-        $tourId = $vorgang->VorIndividualD5;
+        $tourId = '1025';//todo later $vorgang->VorIndividualD5;
         //todo later get date from Blau (now Fake + 10 days)
         $milliseconds = now()->addDays(10)->timestamp * 1000;
         $tourDate = "/Date({$milliseconds})/";
 
-        // get all Positions
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
         if ($positions->isEmpty()) {
             Log::error('Keine Positionen vorhanden');
@@ -478,7 +483,6 @@ class MMServices
         }
         $to_Items = [];
         foreach ($positions as $position) {
-            //get Artikelnummer by $position->InterneArtikelnummer.
             $artikel = Artikel::find($position->InterneArtikelnummer);
 
             if ($artikel === null) {
@@ -497,14 +501,17 @@ class MMServices
                 ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
                 ->first();
             $to_Items[] = [
+                'MoveDate' => $tourDate, //todo clarify if correct (should from Ceos comes)
                 'Material' => (string)(int)$artikel->Artikelnummer,
                 "MoveType" => "261",
-                "Storage" => "KM01",
-                "DynamicStorage" => "", //todo clarify
+                "Storage" => '',// todo clarify later
+                "DynamicStorage" => $adresse->AdressNummer,
                 "EntryQnt" => (string)(int)$position3Menge->PosMenge1,
                 "EntryUom" => "ST",
                 'Vbeln' => '',
-                'Posnr' => $position->PosNummer,
+                'Posnr' => '',
+                'Slgnr' => $vorgang->VorIndividualC3,
+                'Vgart' => 'M_RM', // 'M',//todo clarify with VIVAWEST $vorgang->VorGruppe,
                 "TourId" => $tourId,
             ];
         }
@@ -515,7 +522,8 @@ class MMServices
             "to_Items" => $to_Items
         ];
         Log::info("mm_35_02_materialverbrauch sent Data", $data);
-        return app(SapApiClient::class)->post($this->mm352_path, $data);
+        $response = app(SapApiClient::class)->post($this->mm352_path, $data);
+        return $response;
     }
 
     /**
@@ -542,7 +550,6 @@ class MMServices
 
         $tourId = $vorgang->VorIndividualD5;
 
-        // get all Positions
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
         if ($positions->isEmpty()) {
             Log::error('Keine Positionen vorhanden');
@@ -550,20 +557,25 @@ class MMServices
         }
         $to_Items = [];
         foreach ($positions as $position) {
-            //get Artikelnummer by $position->InterneArtikelnummer.
-            $artikel = Artikel::find($position->InterneArtikelnummer);
-
-            $artikelKunde = ArtikelKunde::where('InterneArtikelnummer', $artikel->InterneArtikelnummer)
-                ->where('InterneAdressnummer', $adresse->InterneAdressnummer)
-                ->first();
-            if ($artikelKunde === null) {
-                Log::error(
-                    'mm_33_01_a_Leistungsbestaetigung Kein ArtikelKunde gefunden',
-                    ['InterneArtikelnummer' => $artikel->InterneArtikelnummer]
-                );
-                return null;
+            if ($position->PosTyp == 2) {
+                continue;
             }
 
+            $artikel = Artikel::find($position->InterneArtikelnummer);
+            /*
+             *              todo clarify
+
+                      $artikelKunde = ArtikelKunde::where('InterneArtikelnummer', $artikel->InterneArtikelnummer)
+                          ->where('InterneAdressnummer', $adresse->InterneAdressnummer)
+                          ->first();
+                      if ($artikelKunde === null) {
+                          Log::error(
+                              'mm_33_01_a_Leistungsbestaetigung Kein ArtikelKunde gefunden',
+                              ['InterneArtikelnummer' => $artikel->InterneArtikelnummer]
+                          );
+                          return null;
+                      }
+          */
             if ($artikel === null) {
                 Log::error(
                     'mm_33_01_a_Leistungsbestaetigung Kein Artikel für Position gefunden',
@@ -579,23 +591,23 @@ class MMServices
                 ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
                 ->first();
             $to_Items[] = [
-                'TourId' => 'TourId',
+                'TourId' => (string)(int)$tourId,
                 'Lifnr' => $adresse->AdressNummer,
                 'Slgnr' => $vorgang->VorIndividualC3,
-                'Kvtyp' => $vorgang->VorGruppe, // 'M',//todo clarify with VIVAWEST $vorgang->VorGruppe,
+                'Vgart' => 'M_RM', // 'M',//todo clarify with VIVAWEST $vorgang->VorGruppe,
                 'Vbeln' => '',
-                'Posnr' => $position->PosNummer,
+                'Posnr' => '',
                 'Material' => (string)(int)$artikel->Artikelnummer,
                 'ShortText' => $artikel->ArtBezeichnung1 ?? "",
                 "Quantity" => (string)(int)$position3Menge->PosMenge1,
-                "Netpr" => $artikelKunde->AkuLetzterVK,
+                //"Netpr" => $artikelKunde->AkuLetzterVK,
                 "Peinh" => '1',//always 1 //todo clarify from pante
-                "CeosData" => true,//todo clarify from pante
+                "CeosData" => "X",
                 "Goodsmovement" => "",
                 "GoodsmvmtLine" => "",
                 "PoUnit" => "",
                 "PoNumber" => "",
-                "PoItem" => "",
+                "PoItem" => '',
             ];
         }
 
@@ -603,6 +615,7 @@ class MMServices
             "TourId" => (string)(int)$tourId,
             "Interface" => 'A',
             "Lifnr" => $adresse->AdressNummer,
+            "PoNumber" => $vorgang->VorIndividualC6,
             "to_items" => $to_Items
         ];
         Log::info("mm_33_01_a_Leistungsbestaetigung sent Data", $data);
@@ -644,18 +657,19 @@ class MMServices
         foreach ($positions as $position) {
             //get Artikelnummer by $position->InterneArtikelnummer.
             $artikel = Artikel::find($position->InterneArtikelnummer);
-
-            $artikelKunde = ArtikelKunde::where('InterneArtikelnummer', $artikel->InterneArtikelnummer)
-                ->where('InterneAdressnummer', $adresse->InterneAdressnummer)
-                ->first();
-            if ($artikelKunde === null) {
-                Log::error(
-                    'mm_33_01_b_NuAuftragspaket Kein ArtikelKunde gefunden',
-                    ['InterneArtikelnummer' => $artikel->InterneArtikelnummer]
-                );
-                return null;
-            }
-
+            /*
+             todo clarify
+                        $artikelKunde = ArtikelKunde::where('InterneArtikelnummer', $artikel->InterneArtikelnummer)
+                            ->where('InterneAdressnummer', $adresse->InterneAdressnummer)
+                            ->first();
+                        if ($artikelKunde === null) {
+                            Log::error(
+                                'mm_33_01_b_NuAuftragspaket Kein ArtikelKunde gefunden',
+                                ['InterneArtikelnummer' => $artikel->InterneArtikelnummer]
+                            );
+                            return null;
+                        }
+            */
             if ($artikel === null) {
                 Log::error(
                     'mm_33_01_b_NuAuftragspaket Kein Artikel für Position gefunden',
@@ -671,18 +685,18 @@ class MMServices
                 ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
                 ->first();
             $to_Items[] = [
-                'TourId' => 'TourId',
+                "TourId" => (string)(int)$tourId,
                 'Lifnr' => $adresse->AdressNummer,
                 'Slgnr' => $vorgang->VorIndividualC3,
-                'Kvtyp' => 'M',//todo clarify with VIVAWEST $vorgang->VorGruppe,
+                'Vgart' => 'M_RM',//todo clarify with VIVAWEST $vorgang->VorGruppe,
                 'Vbeln' => '',
-                'Posnr' => $position->PosNummer,
+                'Posnr' => '',
                 'Material' => (string)(int)$artikel->Artikelnummer,
                 'ShortText' => $artikel->ArtBezeichnung1 ?? "",
                 "Quantity" => (string)(int)$position3Menge->PosMenge1,
-                "Netpr" => $artikelKunde->AkuLetzterVK,
+                //"Netpr" => $artikelKunde->AkuLetzterVK,
                 "Peinh" => '1',//always 1 //todo clarify from pante
-                "CeosData" => true,//todo clarify from pante
+                "CeosData" => "X",
                 "Goodsmovement" => "",
                 "GoodsmvmtLine" => "",
                 "PoUnit" => "",
@@ -798,6 +812,4 @@ class MMServices
             'artikelKundeIds' => $artikelKundeIds,
         ];
     }
-
-
 }

@@ -65,9 +65,7 @@ class MMController extends Controller
     */
     public function mm_37_1_NuLeistungspositionen(MM_3701_nuLeistungspositionenRequest $request): JsonResponse
     {
-        Log::info('Received Payload for mm_37_1_NuLeistungspositionen:', $request->all());
         $validated = $request->validated();
-
         $data = $this->mmServices->mm_37_1_NuLeistungspositionen($validated);
 
         if ($data !== null) {
@@ -101,11 +99,21 @@ class MMController extends Controller
             'Vorgangnummer' => 'required',
         ]);
 
-        $response = $this->mmServices->mm_34_01_umlagerungsreservierung($request);
-        if ($response) {
-            return response()->json(['message' => 'Done'], 202);
+        $response = $this->mmServices->mm_34_01_umlagerungsreservierung($data);
+        if ($response !== null) {
+            $message = "mm_34_01_umlagerungsreservierung erfolgreich gesendet";
+            Log::info($message);
+            return response()->json([
+                'status' => 'success',
+                'message' => $message,
+                'data' => $response
+            ], 202);
+        } else {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'mm_34_01_umlagerungsreservierung fehlgeschlagen',
+            ], 400);
         }
-        return response()->json(['message' => 'Failed'], 400);
 
     }
 
@@ -126,7 +134,11 @@ class MMController extends Controller
         ]);
         $response = $this->mmServices->mm_35_02_materialverbrauch($data);
         if ($response !== null) {
-            return response()->json(['message' => 'mm_35_02_materialverbrauch erfolgreich gesendet'], 202);
+            return response()->json(
+                [
+                    'message' => 'mm_35_02_materialverbrauch erfolgreich gesendet',
+                    'data' => $response
+                ], 202);
         }
         return response()->json(['message' => 'mm_35_02_materialverbrauch fehlgeschlagen'], 400);
     }
@@ -147,7 +159,10 @@ class MMController extends Controller
         ]);
         $response = $this->mmServices->mm_33_01_a_Leistungsbestaetigung($data);
         if ($response !== null) {
-            return response()->json(['message' => 'mm_33_01_a_Leistungsbestaetigung erfolgreich gesendet'], 202);
+            return response()->json([
+                'message' => 'mm_33_01_a_Leistungsbestaetigung erfolgreich gesendet',
+                'data' => $response
+            ], 202);
         }
         return response()->json(['message' => 'mm_33_01_a_Leistungsbestaetigung fehlgeschlagen'], 400);
     }
@@ -191,8 +206,12 @@ class MMController extends Controller
             'Vorgangnummer' => 'required',
         ]);
         $response = $this->mmServices->mm_33_01_b_NuAuftragspaket($data);
+
         if ($response !== null) {
-            return response()->json(['message' => 'mm_33_01_b_NuAuftragspaket erfolgreich gesendet'], 202);
+            return response()->json([
+                'message' => 'mm_33_01_b_NuAuftragspaket erfolgreich gesendet',
+                'data' => $response
+            ], 202);
         }
         return response()->json(['message' => 'mm_33_01_b_NuAuftragspaket fehlgeschlagen'], 400);
     }
