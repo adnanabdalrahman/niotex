@@ -3,9 +3,17 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 
 class SD_0101_beauftragungRequest extends FormRequest
 {
+    public function prepareForValidation(): void
+    {
+        Log::info('SD_0101_beauftragung Received Payload', [
+            'data' => $this->all()
+        ]);
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -17,7 +25,7 @@ class SD_0101_beauftragungRequest extends FormRequest
             'header' => 'required|array',
             'header.vbeln' => 'required|string|max:10', // Verkaufsbeleg Vorgang.VorIndividualC1
             'header.auart' => 'required|string|max:4', // Vorgang.VorIndividualC2
-            'header.kunnr' => 'required|string|max:10', // Adresse.AdressNummer(was empfangene nummer) -> Adresse.InterneAdressnummer(zu speichernde nummer in: Vorgang.VorAuftraggeber)
+            'header.kunnr' => ['required', 'numeric', 'integer', 'min:0', 'max:2147483647'],
             'header.vdatu' => 'required|date', // Wunschlieferdatum Vorgang.VorLieferung-WunschDatum
             'header.zzlgsnr' => 'nullable|string|max:9', // Liegenschaftsnummer Vorgang.VorIndividualC3
             'header.genrCeos' => 'nullable|integer',// Vorgang.VorIndividualD4
@@ -54,9 +62,11 @@ class SD_0101_beauftragungRequest extends FormRequest
             'header.auart.string' => 'Der Auftragstyp (auart) muss ein Text sein.',
             'header.auart.max' => 'Der Auftragstyp (auart) darf maximal 4 Zeichen lang sein.',
 
-            'header.kunnr.required' => 'Die Kundennummer (kunnr) ist erforderlich.',
-            'header.kunnr.string' => 'Die Kundennummer (kunnr) muss ein Text sein.',
-            'header.kunnr.max' => 'Die Kundennummer (kunnr) darf maximal 10 Zeichen lang sein.',
+            'header.kunnr.required' => 'Die Kundennummer ist erforderlich.',
+            'header.kunnr.numeric' => 'Die Kundennummer muss eine Zahl sein.',
+            'header.kunnr.integer' => 'Die Kundennummer darf keine Dezimalstelle haben.',
+            'header.kunnr.min' => 'Die Kundennummer darf nicht negativ sein.',
+            'header.kunnr.max' => 'Die Kundennummer darf maximal :max sein.',
 
             'header.vdatu.required' => 'Das gewünschte Lieferdatum (vdatu) ist erforderlich.',
             'header.vdatu.date' => 'Das gewünschte Lieferdatum (vdatu) muss ein gültiges Datum sein.',

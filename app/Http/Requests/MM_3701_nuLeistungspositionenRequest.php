@@ -3,9 +3,18 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 
 class MM_3701_nuLeistungspositionenRequest extends FormRequest
 {
+
+    public function prepareForValidation(): void
+    {
+        Log::info('MM_3701_nuLeistungspositionen Received Payload', [
+            'data' => $this->all()
+        ]);
+    }
+
     public function authorize(): bool
     {
         return true;

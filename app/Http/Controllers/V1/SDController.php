@@ -35,13 +35,15 @@ class SDController extends Controller
      */
     public function sd_0101_beauftragung(SD_0101_beauftragungRequest $request)
     {
-        Log::info('Received Payload for sd_0101_beauftragung:', $request->all());
         $validated = $request->validated();
         $vorgangDataArray = $this->sdServices->sd_0101_beauftragung_vorgang($validated['header']);
         if ($vorgangDataArray !== null) {
             $positionsNrArray = $this->sdServices->sd_0101_beauftragung_positions($validated['positions'], $vorgangDataArray);
             if ($positionsNrArray !== null) {
-                Log::info('sd_0101_beauftragung Beauftragung erfolgreich empfangen');
+                Log::info('sd_0101_beauftragung Beauftragung erfolgreich empfangen', [
+                    'header' => $vorgangDataArray,
+                    'positions' => $positionsNrArray
+                ]);
                 return response()->json([
                     'status' => 'success',
                     'message' => 'Beauftragung erfolgreich empfangen',
@@ -89,7 +91,6 @@ class SDController extends Controller
      */
     public function sd_02_01_mietvertragsrechnungen(SD_0201_mietvertragsrechnungenRequest $request)
     {
-        Log::info('Received Payload for sd_02_01_mietvertragsrechnungen:', $request->all());
         $validated = $request->validated();
         $resultDataArray = $this->sdServices->sd_0201_mietvertragsrechnungen($validated);
 

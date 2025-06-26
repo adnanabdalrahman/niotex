@@ -17,7 +17,7 @@ Route::middleware([VerifySapToken::class])->group(function () {
 
             Route::prefix('mm')->group(function () {
                 //mm-31-1: SAP-->CEOS, Materialstammdaten
-                Route::post('/3101/materialstammdaten', [MMController::class, 'mm_31_1_materialstammdaten']);
+                Route::post('/3101/materialstammdaten', [MMController::class, 'mm_31_1_Materialstammdaten']);
 
 
                 //mm-37-1: SAP-->CEOS, NU zugelassene Leistungspositionen

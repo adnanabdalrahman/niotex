@@ -22,10 +22,10 @@ class SEController extends Controller
     // SE-26-01: CEOS-->SAP, Reparaturauftrag
     public function se_26_01_Reparaturauftrag(Request $request)
     {
-        $vorgangDataArray = $this->seServices->se_26_01_Reparaturauftrag($request);
-        if ($vorgangDataArray !== null) {
-            Log::info('Sent Vorgang: ', $vorgangDataArray);
-            return response()->json($vorgangDataArray, 202);
+        $response = $this->seServices->se_26_01_Reparaturauftrag($request);
+        if ($response !== null) {
+            Log::info('se_26_01_Reparaturauftrag Received Data: ', $response);
+            return response()->json($response, 202);
         }
         return response()->json([
             'status' => 'Error',

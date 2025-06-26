@@ -30,7 +30,7 @@ class BPServices
     /**
      * BP-01-01 Geschäftspartner (Adressen)
      */
-    public function bp_0101_geschaeftspartner($data)
+    public function bp_0101_geschaeftspartner($data): ?array
     {
         // check if Adresse exist in CEOS
         // check Lov => 1/0
@@ -62,8 +62,8 @@ class BPServices
         Email                           => Varchar(80)   AdrEmail
         AutoWEAbr                       => Boolean      AdrGutschriftsverfahrenJN
         Sperrkennzeichen                => Boolean      AdrLiefersperreJN
-        Kundengruppe                    => Varchar(2)    ?????????????  //todo
-        Kundengruppe1                  => Varchar(3)    ????????????? //todo
+        Kundengruppe                    => Varchar(2)
+        Kundengruppe1                  => Varchar(3)
         UVI_Mailadresse                 => Varchar(80)
         PDF_Mailadresse                 => Varchar(80)
     */
@@ -85,7 +85,7 @@ class BPServices
                 $data['AutoWEAbr'] = 0;
             }
 
-            if ($data['Sperrkennzeichen'] !== null && $data['AutoWEAbr'] !== "0") {
+            if ($data['Sperrkennzeichen'] !== null && $data['Sperrkennzeichen'] !== "0") {
                 $data['Sperrkennzeichen'] = 1;
             } else {
                 $data['Sperrkennzeichen'] = 0;
@@ -144,18 +144,16 @@ class BPServices
             );
             $interneAdressnummer = $adresse['InterneAdressnummer'];
             if ($data['Adresstyp'] === "KUN" && $interneAdressnummer !== null) {
-                if ($data['Kundengruppe'] === null) {
-                    Log::error(' bp_0101_geschaeftspartner Kundengruppe ist leer',
-                        ['interneAdressnummer' => $interneAdressnummer]);
-                    return null;
+                if ($data['Kundengruppe'] !== null) {
+                    AdresseBranche::updateOrCreate(
+                        ['InterneAdressnummer' => $interneAdressnummer],
+                        [
+                            'KZBranche' => $data['Kundengruppe'],
+                            'AbrHauptJN' => 1,
+                        ]
+                    );
                 }
-                AdresseBranche::updateOrCreate(
-                    ['InterneAdressnummer' => $interneAdressnummer],
-                    [
-                        'KZBranche' => $data['Kundengruppe'],
-                        'AbrHauptJN' => 0,
-                    ]
-                );
+
             }
 
         } catch (Throwable $e) {

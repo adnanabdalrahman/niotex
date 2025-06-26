@@ -3,9 +3,18 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 
 class BP_0101_geschaeftspartnerRequest extends FormRequest
 {
+
+    public function prepareForValidation(): void
+    {
+        Log::info('BP_0101_geschaeftspartner Received Payload', [
+            'data' => $this->all()
+        ]);
+    }
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -37,17 +46,16 @@ class BP_0101_geschaeftspartnerRequest extends FormRequest
             'PostleitzahlPostfach' => 'nullable|string|max:10',
             'OrtPostfach' => 'nullable|string|max:40',
             'Telefon' => 'nullable|string|max:40',
-            'Telefon' => 'nullable|string|max:40',
             'Mobiltelefon' => 'nullable|string|max:40',
             'Fax' => 'nullable|string|max:40',
             'EMail' => 'nullable',
-            'AutoWEAbr' => 'nullable|boolean',
-            'Sperrkennzeichen' => 'nullable',
+            'AutoWEAbr' => 'nullable|string',
+            'Sperrkennzeichen' => 'nullable|string',
             'Kundengruppe' => 'nullable|string|max:2',
             'Kundengruppe1' => 'nullable|string|max:3',
             'UVIMailadresse' => 'nullable',
             'PDFMailadresse' => 'nullable',
-            'LVorm' => 'nullable|string',
+            'Loeschvormerkung' => 'nullable|string',
         ];
     }
 
@@ -120,7 +128,6 @@ class BP_0101_geschaeftspartnerRequest extends FormRequest
 
             'Kundengruppe1.string' => 'Die Kundengruppe1 muss ein Text sein.',
             'Kundengruppe1.max' => 'Die Kundengruppe1 darf maximal 3 Zeichen lang sein.',
-
             'Loeschvormerkung.string' => 'Das Feld "Lieferform" muss ein Text sein.',
         ];
     }
