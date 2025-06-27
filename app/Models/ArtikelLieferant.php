@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
+use Eloquent;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
+ *
  *
  * @property int $ArtikelLieferantID
  * @property int $InterneAdressnummer
@@ -120,7 +121,7 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ArtikelLieferant whereKZAdresseRabattgruppe($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ArtikelLieferant whereNRPreisbasis($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ArtikelLieferant whereTimeStamp($value)
- * @mixin \Eloquent
+ * @mixin Eloquent
  */
 class ArtikelLieferant extends Model
 {

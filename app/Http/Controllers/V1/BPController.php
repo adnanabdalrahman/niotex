@@ -63,7 +63,6 @@ class BPController extends Controller
      * */
     public function bp_01_03_Verwalter(BP_0103_verwalterRequest $request): JsonResponse
     {
-        Log::info('Received Payload for bp_01_03_Verwalter:', $request->all());
         $validated = $request->validated();
         $adressnummer = ltrim($validated['Adressnummer'], '0');
         $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
@@ -78,7 +77,10 @@ class BPController extends Controller
             ], 400);
         }
 
-        $currentAnsprechpartner = Ansprechpartner::where('InterneAdressnummer', $adresse->InterneAdressnummer)->first();
+        $currentAnsprechpartner = Ansprechpartner::
+        where('InterneAdressnummer', $adresse->InterneAdressnummer)
+            ->where('AnsIndividualC1', $validated['Geschaeftspartnernummer'])
+            ->first();
 
         $status = $currentAnsprechpartner !== null ? 'aktualisiert' : 'gespeichert';
         if ($request['LVorm'] !== null) {
@@ -87,7 +89,7 @@ class BPController extends Controller
 
         $data = $this->bpServices->bp_0103_verwalter($validated, $adresse->InterneAdressnummer);
         if ($data !== null) {
-            $message = "Ansprechpartner {$data['Adresse']} erfolgreich " . $status;
+            $message = "Ansprechpartner {$validated['Geschaeftspartnernummer']} erfolgreich " . $status;
             Log::info($message);
             return response()->json([
                 'status' => 'success',

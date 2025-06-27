@@ -31,6 +31,7 @@ class BP_0103_verwalterRequest extends FormRequest
     {
         return [
             'Adressnummer' => 'required|string|max:30',
+            'Geschaeftspartnernummer' => 'required',
             'LVorm' => 'nullable|string',
             'Titel' => 'nullable|string',
             'Anrede' => 'nullable|string',
@@ -53,30 +54,73 @@ class BP_0103_verwalterRequest extends FormRequest
     public function messages(): array
     {
         return [
-            // Header
-            'header.required' => 'Der Header-Bereich ist erforderlich.',
-            'header.kontraktnummer.required' => 'Das Feld "Vertragsnummer" ist erforderlich.',
-            'header.kontraktnummer.string' => 'Die Vertragsnummer muss ein Text sein.',
-            'header.kreditor.required' => 'Das Feld "Kreditor" ist erforderlich.',
-            'header.gueltigVon.required' => 'Das Feld "Gültig von" ist erforderlich.',
-            'header.gueltigVon.date_format' => 'Das Feld "Gültig von" muss im Format JJJJ-MM-TT vorliegen.',
-            'header.gueltigBis.required' => 'Das Feld "Gültig bis" ist erforderlich.',
-            'header.gueltigBis.date_format' => 'Das Feld "Gültig bis" muss im Format JJJJ-MM-TT vorliegen.',
-            'header.gueltigBis.after_or_equal' => 'Das Feld "Gültig bis" muss gleich oder nach "Gültig von" liegen.',
+            'Geschaeftspartnernummer.required' => 'Die Geschäftspartnernummer ist erforderlich.',
+            'DebitorenKreditorennummer.required' => 'Adressnummer (DebitorenKreditorennummer) ist erforderlich.',
 
-            // Positions
-            'positions.required' => 'Mindestens eine Position ist erforderlich.',
-            'positions.array' => 'Die Positionen müssen ein Array sein.',
-            'positions.*.kontraktnummer.required' => 'Die Vertragsnummer in jeder Position ist erforderlich.',
-            'positions.*.kontraktposition.required' => 'Die Positionsnummer ist erforderlich.',
-            'positions.*.kontraktposition.integer' => 'Die Positionsnummer muss eine ganze Zahl sein.',
-            'positions.*.materialkurztext.required' => 'Der Materialkurztext ist erforderlich.',
-            'positions.*.materialkurztext.string' => 'Der Materialkurztext muss ein Text sein.',
-            'positions.*.preis.required' => 'Der Preis ist erforderlich.',
-            'positions.*.preis.numeric' => 'Der Preis muss eine Zahl sein.',
-            'positions.*.preismengeneinheit.required' => 'Die Mengeneinheit für den Preis ist erforderlich.',
-            'positions.*.preismengeneinheit.numeric' => 'Die Mengeneinheit für den Preis muss eine Zahl sein.',
-            'positions.*.loeschkennzeichen.in' => 'Das Löschkennzeichen muss entweder leer oder "L" sein.',
+            'Anrede.string' => 'Die Anrede muss ein Text sein.',
+            'Titel.string' => 'Der Titel muss ein Text sein.',
+
+            'Vorname.string' => 'Der Vorname muss ein Text sein.',
+            'Vorname.max' => 'Der Vorname darf maximal 40 Zeichen lang sein.',
+
+            'Nachname.string' => 'Der Nachname muss ein Text sein.',
+            'Nachname.max' => 'Der Nachname darf maximal 40 Zeichen lang sein.',
+
+            'Name1.string' => 'Name1 muss ein Text sein.',
+            'Name1.max' => 'Name1 darf maximal 40 Zeichen lang sein.',
+
+            'Name2.string' => 'Name2 muss ein Text sein.',
+            'Name2.max' => 'Name2 darf maximal 40 Zeichen lang sein.',
+
+            'Name3.string' => 'Name3 muss ein Text sein.',
+            'Name3.max' => 'Name3 darf maximal 40 Zeichen lang sein.',
+
+            'Suchbegriff1.string' => 'Suchbegriff 1 muss ein Text sein.',
+            'Suchbegriff1.max' => 'Suchbegriff 1 darf maximal 10 Zeichen lang sein.',
+
+            'Suchbegriff2.string' => 'Suchbegriff 2 muss ein Text sein.',
+            'Suchbegriff2.max' => 'Suchbegriff 2 darf maximal 10 Zeichen lang sein.',
+
+            'Strasse.string' => 'Die Straße muss ein Text sein.',
+            'Strasse.max' => 'Die Straße darf maximal 60 Zeichen lang sein.',
+
+            'Postleitzahl.string' => 'Die Postleitzahl muss ein Text sein.',
+            'Postleitzahl.max' => 'Die Postleitzahl darf maximal 10 Zeichen lang sein.',
+
+            'Ort.string' => 'Der Ort muss ein Text sein.',
+            'Ort.max' => 'Der Ort darf maximal 40 Zeichen lang sein.',
+
+            'Land.string' => 'Das Land muss ein Text sein.',
+            'Land.size' => 'Der Ländercode muss genau 2 Zeichen lang sein.',
+
+            'Postfach.string' => 'Das Postfach muss ein Text sein.',
+            'Postfach.max' => 'Das Postfach darf maximal 10 Zeichen lang sein.',
+
+            'PostleitzahlPostfach.string' => 'Die Postleitzahl zum Postfach muss ein Text sein.',
+            'PostleitzahlPostfach.max' => 'Die Postleitzahl zum Postfach darf maximal 10 Zeichen lang sein.',
+
+            'OrtPostfach.string' => 'Der Ort zum Postfach muss ein Text sein.',
+            'OrtPostfach.max' => 'Der Ort zum Postfach darf maximal 40 Zeichen lang sein.',
+
+            'Telefon.string' => 'Die Telefonnummer muss ein Text sein.',
+            'Telefon.max' => 'Die Telefonnummer darf maximal 40 Zeichen lang sein.',
+
+            'Mobiltelefon.string' => 'Die Mobiltelefonnummer muss ein Text sein.',
+            'Mobiltelefon.max' => 'Die Mobiltelefonnummer darf maximal 40 Zeichen lang sein.',
+
+            'Fax.string' => 'Die Faxnummer muss ein Text sein.',
+            'Fax.max' => 'Die Faxnummer darf maximal 40 Zeichen lang sein.',
+
+            'EMail.email' => 'Die E-Mail-Adresse muss gültig sein.',
+
+            'AutoWEAbr.boolean' => 'Das Feld "Automatische WE-Abrechnung" muss ein Wahrheitswert (true/false) sein.',
+
+            'Kundengruppe.string' => 'Die Kundengruppe muss ein Text sein.',
+            'Kundengruppe.max' => 'Die Kundengruppe darf maximal 2 Zeichen lang sein.',
+
+            'Kundengruppe1.string' => 'Die Kundengruppe1 muss ein Text sein.',
+            'Kundengruppe1.max' => 'Die Kundengruppe1 darf maximal 3 Zeichen lang sein.',
+            'Loeschvormerkung.string' => 'Das Feld "Lieferform" muss ein Text sein.',
         ];
     }
 }
