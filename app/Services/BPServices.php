@@ -201,9 +201,11 @@ class BPServices
             if ($data['Anrede'] === null || $data['Anrede'] === "") {
                 $data['Anrede'] = 5;
             }
-
             $ansprechpartner = Ansprechpartner::updateOrCreate(
-                ['InterneAdressnummer' => $interneAdressnummer],
+                [
+                    'InterneAdressnummer' => $interneAdressnummer,
+                    'AnsIndividualC1' => $data['Geschaeftspartnernummer']
+                ],
                 [
                     'InterneAdressnummer' => $interneAdressnummer,
                     'NRTitel' => $data['Titel'],
@@ -218,7 +220,7 @@ class BPServices
                     'AnsEMail' => $data['EMail'],
                     'AnsIndividualD1' => $gueltigVon,
                     'AnsIndividualD2' => $gueltigBis,
-                    'AnsIndividualC1' => $data['Ansprechpartner1'],
+                    'AnsIndividualC1' => $data['Geschaeftspartnernummer'],
                     'AnsIndividualC2' => $data['Ansprechpartner2'],
                 ]
             );
@@ -232,6 +234,7 @@ class BPServices
         }
         return [
             'interneAnsprechpartnerId' => $ansprechpartnerId,
+            'Geschaeftspartnernummer' => $data['Geschaeftspartnernummer'],
             'Adresse' => $interneAdressnummer
         ];
     }

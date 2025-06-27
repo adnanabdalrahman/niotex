@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Eloquent;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
+ *
  *
  * @property string $VorArt
  * @property string $VorGruppe
@@ -15,18 +17,18 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $VNkEndwert
  * @property int|null $VNkAktuellerWert
  * @property string|null $TimeStamp
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NummernkreisVorgang newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NummernkreisVorgang newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NummernkreisVorgang query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NummernkreisVorgang whereTimeStamp($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NummernkreisVorgang whereVNkAktuellerWert($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NummernkreisVorgang whereVNkAnfangswert($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NummernkreisVorgang whereVNkArt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NummernkreisVorgang whereVNkEndwert($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NummernkreisVorgang whereVNkName($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NummernkreisVorgang whereVorArt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|NummernkreisVorgang whereVorGruppe($value)
- * @mixin \Eloquent
+ * @method static Builder<static>|NummernkreisVorgang newModelQuery()
+ * @method static Builder<static>|NummernkreisVorgang newQuery()
+ * @method static Builder<static>|NummernkreisVorgang query()
+ * @method static Builder<static>|NummernkreisVorgang whereTimeStamp($value)
+ * @method static Builder<static>|NummernkreisVorgang whereVNkAktuellerWert($value)
+ * @method static Builder<static>|NummernkreisVorgang whereVNkAnfangswert($value)
+ * @method static Builder<static>|NummernkreisVorgang whereVNkArt($value)
+ * @method static Builder<static>|NummernkreisVorgang whereVNkEndwert($value)
+ * @method static Builder<static>|NummernkreisVorgang whereVNkName($value)
+ * @method static Builder<static>|NummernkreisVorgang whereVorArt($value)
+ * @method static Builder<static>|NummernkreisVorgang whereVorGruppe($value)
+ * @mixin Eloquent
  */
 class NummernkreisVorgang extends Model
 {

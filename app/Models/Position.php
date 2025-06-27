@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Eloquent;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
+ *
  *
  * @property int $InterneVorgangsnummer
  * @property int $InternePositionsnummer
@@ -49,52 +51,52 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $KZKalkulationGruppe
  * @property string|null $TimeStamp
  * @property int|null $NRKostentraeger
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereArtikelUntergruppeID($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereFKtoNummer($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereFibuKontoGruppeID($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereInterneArtikelnummer($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereInternePositionsnummer($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereInterneVorgangsnummer($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereKZArtikelgruppe($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereKZKalkulationGruppe($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereKZProduktgruppe($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereKZWarengruppe($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereLagerGruppe($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereLagerortnummer($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereMagazinID($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereNRKostentraeger($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosAnlageAm($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosAnlageDurch($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosAutoAbbuchenJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosAutoZubuchenJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosBezeichnung1($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosChargenfaehigJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosEKInNachkalkulationJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosEbene($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosErledigtJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosFaktorAnsicht($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosFertigungsfaehigJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosFremdfertigungJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosGebuchtJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosHaupt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosKZMengeneinheit1Ansicht($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosLagerbuchungJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosLetzteAenderungAm($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosLetzteAenderungDurch($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosLieferantenfaehigJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosNeueSeite($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosNummer($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosNummernText($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosSeriennummernfaehigJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosTyp($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosUeberschrift($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosUrsprungsnachweisJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position wherePosVorgaenger($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position whereTimeStamp($value)
- * @mixin \Eloquent
+ * @method static Builder<static>|Position newModelQuery()
+ * @method static Builder<static>|Position newQuery()
+ * @method static Builder<static>|Position query()
+ * @method static Builder<static>|Position whereArtikelUntergruppeID($value)
+ * @method static Builder<static>|Position whereFKtoNummer($value)
+ * @method static Builder<static>|Position whereFibuKontoGruppeID($value)
+ * @method static Builder<static>|Position whereInterneArtikelnummer($value)
+ * @method static Builder<static>|Position whereInternePositionsnummer($value)
+ * @method static Builder<static>|Position whereInterneVorgangsnummer($value)
+ * @method static Builder<static>|Position whereKZArtikelgruppe($value)
+ * @method static Builder<static>|Position whereKZKalkulationGruppe($value)
+ * @method static Builder<static>|Position whereKZProduktgruppe($value)
+ * @method static Builder<static>|Position whereKZWarengruppe($value)
+ * @method static Builder<static>|Position whereLagerGruppe($value)
+ * @method static Builder<static>|Position whereLagerortnummer($value)
+ * @method static Builder<static>|Position whereMagazinID($value)
+ * @method static Builder<static>|Position whereNRKostentraeger($value)
+ * @method static Builder<static>|Position wherePosAnlageAm($value)
+ * @method static Builder<static>|Position wherePosAnlageDurch($value)
+ * @method static Builder<static>|Position wherePosAutoAbbuchenJN($value)
+ * @method static Builder<static>|Position wherePosAutoZubuchenJN($value)
+ * @method static Builder<static>|Position wherePosBezeichnung1($value)
+ * @method static Builder<static>|Position wherePosChargenfaehigJN($value)
+ * @method static Builder<static>|Position wherePosEKInNachkalkulationJN($value)
+ * @method static Builder<static>|Position wherePosEbene($value)
+ * @method static Builder<static>|Position wherePosErledigtJN($value)
+ * @method static Builder<static>|Position wherePosFaktorAnsicht($value)
+ * @method static Builder<static>|Position wherePosFertigungsfaehigJN($value)
+ * @method static Builder<static>|Position wherePosFremdfertigungJN($value)
+ * @method static Builder<static>|Position wherePosGebuchtJN($value)
+ * @method static Builder<static>|Position wherePosHaupt($value)
+ * @method static Builder<static>|Position wherePosKZMengeneinheit1Ansicht($value)
+ * @method static Builder<static>|Position wherePosLagerbuchungJN($value)
+ * @method static Builder<static>|Position wherePosLetzteAenderungAm($value)
+ * @method static Builder<static>|Position wherePosLetzteAenderungDurch($value)
+ * @method static Builder<static>|Position wherePosLieferantenfaehigJN($value)
+ * @method static Builder<static>|Position wherePosNeueSeite($value)
+ * @method static Builder<static>|Position wherePosNummer($value)
+ * @method static Builder<static>|Position wherePosNummernText($value)
+ * @method static Builder<static>|Position wherePosSeriennummernfaehigJN($value)
+ * @method static Builder<static>|Position wherePosTyp($value)
+ * @method static Builder<static>|Position wherePosUeberschrift($value)
+ * @method static Builder<static>|Position wherePosUrsprungsnachweisJN($value)
+ * @method static Builder<static>|Position wherePosVorgaenger($value)
+ * @method static Builder<static>|Position whereTimeStamp($value)
+ * @mixin Eloquent
  */
 class Position extends Model
 {
