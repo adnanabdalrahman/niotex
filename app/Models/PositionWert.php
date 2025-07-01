@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- *
+ * 
  *
  * @property int $PositionWertID
  * @property int $InterneVorgangsnummer
@@ -124,6 +124,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class PositionWert extends Model
 {
+    public $timestamps = false;
     public $incrementing = false;
     protected $connection = 'sqlsrv2';
     protected $table = 'cis.PositionWert';

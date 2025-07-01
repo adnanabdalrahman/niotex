@@ -86,8 +86,8 @@ class SDServices
             $data['VorIndividualC2'] = $requestData['auart'];
             $data['VorIndividualC3'] = $requestData['zzlgsnr'];
             $data['VorIndividualD4'] = $requestData['genrCeos'];// GebäudeNr
-            $data['VorNotiz'] = $requestData['txtZ012'];
 
+            $data['VorNotiz'] = $requestData['txtZ012'];
             $data['VorArt'] = 'A';
             $data['VorUnterArt'] = 'R';  // char 1
             $data['VorGruppe'] = 'RE'; //  -- Montage/Liefer/Rechnung: 'RE' / Vertr ge: 'WIE' ? / Rahmenauftr ge: 'AB'
@@ -135,7 +135,7 @@ class SDServices
         $data['VorNummer'] = $vorgangDataArray['VorNummer'];
         $data['VorGruppe'] = $vorgangDataArray['VorGruppe'];
         $data['Verkaufsbeleg'] = $vorgangDataArray['Verkaufsbeleg'];
-        $data['current_date'] = date('Ymd');
+
         $positionsArray = [];
         foreach ($positions as $key => $position) {
             $data['Artikelnummer'] = ltrim($position['matnr'], '0');
@@ -157,6 +157,11 @@ class SDServices
             $data['PosWMengeGut1'] = $position['kwmeng'];
             $data['PosWMengeRechnung1'] = $position['kwmeng'];
 
+            $data['current_date'] = date('Ymd');
+            $carbonMontagedatum = Carbon::parse((string)$position['montagedatum']);
+            $montagedatum = $carbonMontagedatum->format('Ymd');
+            $data['PosIndividualT3'] = $montagedatum;
+
             $positions = new PositionService();
             $positionsArray[] = $positions->createPosition($data);
         }
@@ -169,7 +174,7 @@ class SDServices
 
 
     /**
-     * SD-01-02 Beauftragung Rueckmeldung
+     * SD-01-02: CEOS-->SAP, beauftragung Rückmeldung
      */
     public function sd_0102_beauftragung_rueckmeldung($request)
     {
@@ -199,6 +204,7 @@ class SDServices
             $data['Zzlgsnr'] = (string)$vorgang->VorIndividualC3;
             $data['GenrCeos'] = (string)(int)$vorgang->VorIndividualD4;
             $data['TxtZ013'] = (string)$vorgang->VorStichwort;
+            $data['Augru'] = "MW";//todo dynamic most cases MW , should with Pante clarify
 
             $vorgang2Text = DB::connection('sqlsrv2')->table('cis.Vorgang2Text')
                 ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->first();
@@ -283,8 +289,8 @@ class SDServices
 
                 $data['to_Items'][] = [
                     'Matnr' => $artikel->Artikelnummer,
-                    'PosErl' => (string)1, // todo later
-                    'KwmengO' => (string)$KwmengO,  //todo later
+                    'PosErl' => (string)1, // todo later Preis Pro ME2 in Miclas
+                    'KwmengO' => (string)$KwmengO,  //todo later in miclas Menge zweite Feld
                     'Vorgn' => (string)$vorgang->VorNummer,
                     'Vbeln' => (string)$vorgang->VorIndividualC1,
                     'VorgnInt' => (string)$vorgang->InterneVorgangsnummer,
@@ -295,6 +301,7 @@ class SDServices
                     'TxtZ002' => (string)$position2Text->PosZusatztextLieferschein,
                     'TxtZ009' => (string)$position2Text->PosZusatztext,
                     'TxtZ010' => (string)$position2Text->PosNotiz,
+                    'Montagedatum' => "20250701"// todo come from CEOS(string)$position5Individual->PosIndividualT3, //
                 ];
             }
             Log::info('sd-01-02 Sent data', $data);
@@ -470,6 +477,10 @@ class SDServices
             $positionData['PosPreisEinzel'] = $einzelPreis;
             $positionData['PosWEinzelpreisMinusRabatt'] = $einzelPreis;
 
+            $positionData['PosPreisPosition'] = $position['netwr'];
+            $positionData['PosGesamtpreis'] = $position['netwr'];
+            $positionData['PosDBGesamt'] = $position['netwr'];
+
             $positionData['key'] = $key;
 
             $positions = new PositionService();
@@ -601,6 +612,8 @@ class SDServices
             Log::error($e->getMessage());
             return null;
         }
+        Log::info('sd-03-01 received data: ', $result);
+
         return $result;
     }
 
@@ -738,7 +751,7 @@ class SDServices
         $vorgangWert->VorWNettowertMwst1Gut = $header['nettowert'];
         $vorgangWert->VorWNettowertMwst1Rechnung = $header['nettowert'];
         $vorgangWert->save();
-        
+
         //------------------------------------------------------------------------------------
         $positions = $requestData['positions'];
         $positionsArray = [];
@@ -799,12 +812,20 @@ class SDServices
                 return null;
             }
             $einzelPreis = $position['nettowertposition'] / $position['menge'];
+
             $position1wert = Position1Wert::where('InternePositionsnummer', $currentPosition->InternePositionsnummer)->first();
             $position1wert->PosMwstProzent = $mwstSatzProzentPositionCode;
             $position1wert->PosGesamteinzelpreis = $einzelPreis;
             $position1wert->PosDBEinzel = $einzelPreis;
             $position1wert->PosPreisEinzel = $einzelPreis;
+
+            $position1wert->PosPreisPosition = $position['nettowertposition'];
+            $position1wert->PosGesamtpreis = $position['nettowertposition'];
+            $position1wert->PosDBGesamt = $position['nettowertposition'];
+
+
             $position1wert->save();
+
 
             $positionWert = PositionWert::where('InternePositionsnummer', $currentPosition->InternePositionsnummer)->first();
             $positionWert->PosWEinzelpreisMinusRabatt = $einzelPreis;

@@ -82,7 +82,6 @@ class SapApiClient
             'client_id' => $this->client_id,
             'client_secret' => $this->client_secret,
         ])->get($this->baseUrl . $endpoint . $data);
-
         if (!$response->successful()) {
             throw new Exception("SAP GET to '{$endpoint}' failed: " . $response->body());
         }

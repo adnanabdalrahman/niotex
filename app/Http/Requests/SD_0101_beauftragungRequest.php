@@ -30,7 +30,7 @@ class SD_0101_beauftragungRequest extends FormRequest
             'header.zzlgsnr' => 'nullable|string|max:9', // Liegenschaftsnummer Vorgang.VorIndividualC3
             'header.genrCeos' => 'nullable|integer',// Vorgang.VorIndividualD4
             'header.txtZ012' => 'nullable|string', //Bemerkung zur Liegenschaft Vorgang2Text.VorNotiz
-            'header.txtZ013' => 'nullable|string',// Vorgang.VorStichwort  Für Reparaturaufträge Ausstattung / Austauschgrund
+            'header.txtZ013' => 'nullable|string',// Vorgang.VorStichwort Für Reparaturaufträge Ausstattung / Austauschgrund
 
             'positions' => 'required|array|min:1',
             'positions.*.kondm' => 'required|string|max:2',
@@ -45,6 +45,7 @@ class SD_0101_beauftragungRequest extends FormRequest
 //            'positions.*.Vorgangsnummer' => 'nullable|integer',
             'positions.*.txtZ009' => 'nullable|string',
             'positions.*.txtZ010' => 'nullable|string',
+            'positions.*.montagedatum' => 'nullable|string',
         ];
     }
 

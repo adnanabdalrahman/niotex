@@ -126,6 +126,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Position1Wert extends Model
 {
+    public $timestamps = false;
     public $incrementing = false;
     protected $connection = 'sqlsrv2';
     protected $table = 'cis.Position1Wert';
