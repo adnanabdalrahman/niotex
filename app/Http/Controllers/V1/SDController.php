@@ -11,6 +11,7 @@ use App\Services\SDServices;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 
 class SDController extends Controller
@@ -32,6 +33,7 @@ class SDController extends Controller
      *
      * @param SD_0101_beauftragungRequest $request
      * @return JsonResponse
+     * @throws Throwable
      */
     public function sd_0101_beauftragung(SD_0101_beauftragungRequest $request)
     {
@@ -118,7 +120,6 @@ class SDController extends Controller
     {
         $vorgangDataArray = $this->sdServices->sd_0301_dienstleistungsrechnung($request);
         if ($vorgangDataArray !== null) {
-            Log::info('Sent Vorgang: ', $vorgangDataArray);
             return response()->json([
                 'status' => 'success',
                 'message' => 'Dienstleistungsrechnung erfolgreich übernommen',
@@ -140,12 +141,11 @@ class SDController extends Controller
      */
     public function sd_03_02_fakturiertedienstleistungsrechnung(SD_0302_fakturiertedienstleistungsrechnungRequest $request)
     {
-        Log::info('Received Payload for sd_03_02_fakturiertedienstleistungsrechnung:', $request->all());
         $validated = $request->validated();
         $resultDataArray = $this->sdServices->sd_03_02_fakturiertedienstleistungsrechnung($validated);
 
         if ($resultDataArray !== null) {
-            Log::info('Sent Vorgang: ', $resultDataArray);
+            Log::info('sd_03_02_fakturiertedienstleistungsrechnung Updated Vorgang: ', $resultDataArray);
             return response()->json([
                 'status' => 'success',
                 'message' => 'Auftrag erfolgreich gespeichert',

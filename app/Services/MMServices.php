@@ -12,6 +12,7 @@ use App\Models\ArtikelUntergruppe;
 use App\Models\Basisempfindlichkeit;
 use App\Models\Position;
 use App\Models\Position3Menge;
+use App\Models\Position5Individual;
 use App\Models\Produktgruppe;
 use App\Models\Vorgang;
 use App\Models\Warengruppe;
@@ -325,7 +326,7 @@ class MMServices
 
 */
         $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])
-            ->where('VorGruppe', 'RE') // todo After Test return to M_LG
+            ->where('VorGruppe', 'M_LG') // todo After Test return to M_LG
             ->first();
 
         if ($vorgang === null) {
@@ -386,7 +387,7 @@ class MMServices
         $data = [
             "TourId" => (string)(int)$tourId,
             "Remark" => "Test Remark", //todo later from Florian MAX 50 also in Florian page Max 50
-            "MoveStloc" => "",
+            "MoveStloc" => "H001",
             "to_Items" => $to_Items
         ];
         Log::info("mm_34_01_umlagerungsreservierung sent Data", $data);
@@ -399,10 +400,10 @@ class MMServices
         $lager = $response['d']['MoveStloc'] ?? null;
 
         if ($reservNo !== null) {
-            $vorgang->VorStatus = 100100;
+            $vorgang->VorStatus = 100100; //todo must change later ask pante
             $vorgang->VorIndividualD6 = $reservNo;
             $vorgang->save();
-            return $response;
+            //todo Anpassungen
         }
         return null;
     }
@@ -414,26 +415,35 @@ class MMServices
      * @param string $lager
      * @return array|null
      */
-    public function mm_22_01_lagerbestaende(string $artikelnummer, string $lager): ?array
+    public function mm_22_01_lagerbestaende(array $artikelnummer, string $lager): ?array
     {
-        $data = "?\$filter=Material eq '{$artikelnummer}' and Storage eq '{$lager}'  and Plant eq '1270'";
+        $materialEqArray = array_map(function ($artikelnummer) {
+            return "Material eq '{$artikelnummer}'";
+        }, $artikelnummer);
+        $materialFilterString = implode(' or ', $materialEqArray);
+        $data = "?\$filter=( {$materialFilterString} ) and Storage eq '{$lager}'  and Plant eq '1270'";
         try {
             $response = app(SapApiClient::class)->get($this->mm221_path, $data);
             if ($response === null) {
                 Log::error('mm_22_01_lagerbestaende Error Response', $response);
             }
+            if (isset($response['d']['results'])) {
+                $responseData = [];
+                foreach ($response['d']['results'] as $result) {
+                    $amount = ($result['Amount']);
+                    $artikel = Artikel::where('Artikelnummer', $artikelnummer)->first();
+                    ArtikelLager::updateOrCreate(
+                        [
+                            'interneArtikelnummer' => $artikel->InterneArtikelnummer
+                        ],
+                        [
+                            'AlaPhysikalischeMenge1' => $amount,
+                        ]
+                    );
 
-            if (isset($response['d']['results'][0]['Amount'])) {
-                $amount = ($response['d']['results'][0]['Amount']);
-                $artikel = Artikel::where('Artikelnummer', $artikelnummer)->first();
-                ArtikelLager::updateOrCreate(
-                    [
-                        'interneArtikelnummer' => $artikel->InterneArtikelnummer
-                    ],
-                    [
-                        'AlaPhysikalischeMenge1' => $amount,
-                    ]
-                );
+                    $responseData[] = ['Artikelnummer' => $artikel->InterneArtikelnummer, 'Amount' => $amount];
+                }
+
             } else {
                 Log::error('mm_22_01_lagerbestaende Kein Amount gefunden', $response);
                 return null;
@@ -442,10 +452,7 @@ class MMServices
             Log::error('mm_22_01_lagerbestaende' . $e->getMessage());
             return null;
         }
-        return [
-            'artikelnummer' => $artikelnummer,
-            'amount' => $amount
-        ];
+        return $responseData;
     }
 
 
@@ -548,7 +555,7 @@ class MMServices
             return null;
         }
 
-        $tourId = $vorgang->VorIndividualD5;
+        $tourId = '3025';
 
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
         if ($positions->isEmpty()) {
@@ -645,7 +652,8 @@ class MMServices
             return null;
         }
 
-        $tourId = $vorgang->VorIndividualD5;
+        $tourId = '3025';
+
 
         // get all Positions
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
@@ -654,22 +662,15 @@ class MMServices
             return null;
         }
         $to_Items = [];
+        $artikelNummerArray = [];
+        $positionNummerArray = [];
         foreach ($positions as $position) {
+            $positionNummerArray[] = $position->PosNummer;
+
             //get Artikelnummer by $position->InterneArtikelnummer.
             $artikel = Artikel::find($position->InterneArtikelnummer);
-            /*
-             todo clarify
-                        $artikelKunde = ArtikelKunde::where('InterneArtikelnummer', $artikel->InterneArtikelnummer)
-                            ->where('InterneAdressnummer', $adresse->InterneAdressnummer)
-                            ->first();
-                        if ($artikelKunde === null) {
-                            Log::error(
-                                'mm_33_01_b_NuAuftragspaket Kein ArtikelKunde gefunden',
-                                ['InterneArtikelnummer' => $artikel->InterneArtikelnummer]
-                            );
-                            return null;
-                        }
-            */
+            $artikelNummerArray[] = $artikel->Artikelnummer;
+
             if ($artikel === null) {
                 Log::error(
                     'mm_33_01_b_NuAuftragspaket Kein Artikel für Position gefunden',
@@ -694,7 +695,6 @@ class MMServices
                 'Material' => (string)(int)$artikel->Artikelnummer,
                 'ShortText' => $artikel->ArtBezeichnung1 ?? "",
                 "Quantity" => (string)(int)$position3Menge->PosMenge1,
-                //"Netpr" => $artikelKunde->AkuLetzterVK,
                 "Peinh" => '1',//always 1 //todo clarify from pante
                 "CeosData" => "X",
                 "Goodsmovement" => "",
@@ -712,7 +712,134 @@ class MMServices
             "to_items" => $to_Items
         ];
         Log::info("mm_33_01_b_NuAuftragspaket sent Data", $data);
-        return app(SapApiClient::class)->post($this->mm331_path, $data);
+        $result = app(SapApiClient::class)->post($this->mm331_path, $data);
+
+        if (isset($result['d'])) {
+            $receivedVorgangInfo = $result['d']['to_items']['results'];
+            $vorgang->VorIndividualC6 = $receivedVorgangInfo['PoNumber'] ?? null;
+            $vorgang->VorIndividualC5 = $receivedVorgangInfo['PoItem'] ?? null;
+            $vorgang->save();
+        }
+
+
+        if (isset($result['d']['to_items']['results'])) {
+            $receivedPositions = $result['d']['to_items']['results'];
+            $lastPositionNummer = max($positionNummerArray);;
+            foreach ($receivedPositions as $key => $receivedPosition) {
+                if (in_array($receivedPosition['Material'], $artikelNummerArray)) {
+                    $artikel = Artikel::where('Artikelnummer', $receivedPosition['Material'])->first();
+                    $position = Position::where(
+                        'InterneVorgangsnummer', $vorgang->InterneVorgangsnummer,
+                    )->where(
+                        'InterneArtikelnummer', $artikel->InterneArtikelnummer,
+                    )->first();
+
+                    $position5Individual = Position5Individual::where
+                    ('InternePositionsnummer', $position->InternePositionsnummer)->first();
+
+                    $position5Individual->PosIndividualD1 = $receivedPosition['Posnr'] ?? null;
+                    $position5Individual->PosIndividualC1 = $receivedPosition['PoNumber'] ?? null;
+                    $position5Individual->PosIndividualC2 = $receivedPosition['PoItem'] ?? null;
+                    $position5Individual->PosIndividualC4 = $receivedPosition['PoUnit'] ?? null;
+                    $position5Individual->save();
+
+                    $position3Menge = Position3Menge::where
+                    ('InternePositionsnummer', $position->InternePositionsnummer)->first();
+                    $position3Menge->PosMenge1 = $receivedPosition['Quantity'] ?? null;
+
+                    $dataArtikel = [
+                        'InterneArtikelnummer' => $artikel->InterneArtikelnummer,
+                        'InterneAdressnummer' => $adresse->InterneAdressnummer,
+                        'AkuArtikelBezeichnung1' => $receivedPosition['ShortText'],
+                        'NRPreisbasis' => $receivedPosition['Peinh'],
+                        'AkuLetzterVK' => $receivedPosition['Netpr'],
+                        //-----------------------------------------------------
+                        'AkuLetzterRabattWert1' => 0,
+                        'AkuLetzterRabattWert2' => 0,
+                        'AkuLetzteMenge1' => 0,
+                        'AkuLetzteMenge2' => 0,
+                        'AkuLetzterRabatt1' => 0,
+                        'AkuLetzterRabatt2' => 0,
+                        'AkuLetzterRabatt3' => 0,
+                    ];
+
+                    $artikelKunde = ArtikelKunde::updateOrCreate(
+                        ['InterneArtikelnummer', $artikel->InterneArtikelnummer,
+                            'InterneAdressnummer', $adresse->InterneAdressnummer
+                        ],
+                        $dataArtikel
+                    );
+                    $existArrayandUpdated[] = $position->InternePositionsnummer;
+                } else {
+                    /*
+                     cis.Position.PosTyp:
+                    NULL = Normaler Artikel
+                    1 = alternativer Artikel
+                    2 = optionaler Artikel
+                    4 = stornierter Artikel
+                    */
+                    $data['Artikelnummer'] = ltrim($receivedPosition['Material'], '0');
+                    $data['key'] = $lastPositionNummer;
+                    //$data['PosIndividualC3'] = $receivedPosition['kondm'];
+                    $data['PosIndividualD1'] = $receivedPosition['Posnr'];
+                    //$data['PosZusatztextLieferschein'] = $receivedPosition['txtZ002'];
+                    //$data['PosZusatztext'] = $receivedPosition['txtZ009'];
+                    //$data['PosNotiz'] = $receivedPosition['txtZ010'];
+
+                    $data['PosMenge1'] = $receivedPosition['Quantity'];
+                    $data['PosTyp'] = 2;
+                    $data['PosKZMengeneinheit1'] = 'ST';
+
+                    $data['PosWMengeGesamt1'] = $receivedPosition['Quantity'];
+                    $data['PosWMengeAuftrag1'] = $receivedPosition['Quantity'];
+                    $data['PosWMengeAbrechnung1'] = $receivedPosition['Quantity'];
+                    $data['PosWMengeLieferung1'] = $receivedPosition['Quantity'];
+                    $data['PosWMengeVersand1'] = $receivedPosition['Quantity'];
+                    $data['PosWMengeGut1'] = $receivedPosition['Quantity'];
+                    $data['PosWMengeRechnung1'] = $receivedPosition['Quantity'];
+
+                    $newPosition = new PositionService();
+                    $positionsArray[] = $newPosition->createPosition($data);
+                    $notExistArrayandCreated[] = $positionsArray['InternePositionsnummer'];
+                }
+
+            }
+            dd($notExistArrayandCreated, $existArrayandUpdated);
+
+        }
+
+
+        /*
+"Lifnr" => "6020020"
+"TourId" => "3025"
+"Interface" => "B"
+"PoNumber" => "4700056981"
+"PoItem" => "00010"
+
+//"Goodsmovement" => ""
+//"Vgart" => "M_RM"
+//"TourId" => "3025"
+//"GoodsmvmtLine" => "0000"
+//"Lifnr" => "6020020"
+//"Slgnr" => "510003001"
+//"Vbeln" => ""
+
+"CeosData" => "X"
+
+"Posnr" => "000000"     $position5Individual->PosIndividualD1
+"Material" => "99900021"  Position Artikelnummer
+"Quantity" => "36.000" (string)(int)$position3Menge->PosMenge1
+"Netpr" => "12.790" $artikelKunde->AkuLetzterVK,
+"ShortText" => "Neumontage und Regeltausch Wasserzähle" $artikelKunde->AkuArtikelBezeichnung1
+"Peinh" => "1"$artikelKunde->AkuArtikelBezeichnung1
+
+"PoUnit" => ""
+"PoNumber" => "4700056980"   $position5Individual->PosIndividualC1
+"PoItem" => "00010" $position5Individual->PosIndividualC2
+
+}
+*/
+
     }
 
 

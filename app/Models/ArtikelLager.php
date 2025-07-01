@@ -6,7 +6,7 @@ use Eloquent;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- *
+ * 
  *
  * @property int $ArtikelLagerID
  * @property int $InterneArtikelnummer

@@ -41,7 +41,6 @@ class PositionService
                 'PosEbene' => 0,
                 'PosNummer' => $data['key'] + 1,
                 'PosNummernText' => $data['key'] + 1,
-
                 'InterneArtikelnummer' => $interneArtikelnummer->InterneArtikelnummer,
                 'KZArtikelgruppe' => $interneArtikelnummer->KZArtikelgruppe,
                 'KZWarengruppe' => $interneArtikelnummer->KZWarengruppe,
@@ -51,6 +50,7 @@ class PositionService
                 'KZKalkulationGruppe' => $interneArtikelnummer->KZKalkulationGruppe,
 
                 'PosNeueSeite' => $data['PosNeueSeite'] ?? 0,
+                'PosTyp' => $data['PosTyp'] ?? NULL,
                 'PosSeriennummernfaehigJN' => $data['PosSeriennummernfaehigJN'] ?? 1,
                 'PosChargenfaehigJN' => $data['PosChargenfaehigJN'] ?? 1,
                 'PosAutoAbbuchenJN' => $data['PosAutoAbbuchenJN'] ?? 0,
@@ -122,6 +122,7 @@ class PositionService
                 'PosIndividualD1' => $data['PosIndividualD1'] ?? null,
                 'PosIndividualD7' => NULL, // todo  @ErweiterungVertragsNr from Johannes text
                 'PosIndividualC7' => $data['VorGruppe'] . ' ' . $data['VorNummer'],
+                'PosIndividualT3' => $data['PosIndividualT3'] ?? null,
 
             ]);
 
