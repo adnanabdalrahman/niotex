@@ -8,6 +8,7 @@ use App\Models\Adresse;
 use App\Models\Artikel;
 use App\Models\Position;
 use App\Models\Position1Wert;
+use App\Models\Position3Menge;
 use App\Models\PositionWert;
 use App\Models\Vorgang;
 use App\Models\Vorgang1Wert;
@@ -244,10 +245,7 @@ class SDServices
                     );
                     return null;
                 }
-                $position3Menge = DB::connection('sqlsrv2')->table('cis.Position3Menge')
-                    ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
-                    ->where('InternePositionsnummer', $position->InternePositionsnummer)
-                    ->first();
+                $position3Menge = Position3Menge::where('InternePositionsnummer', $position->InternePositionsnummer)->first();
                 if (is_null($position3Menge)) {
                     Log::error(
                         "Position3Menge nicht gefunden",
@@ -258,6 +256,19 @@ class SDServices
                     );
                     return null;
                 }
+
+                $position1wert = Position1Wert::where('InternePositionsnummer', $position->InternePositionsnummer)->first();
+                if (is_null($position1wert)) {
+                    Log::error(
+                        "Position1wert nicht gefunden",
+                        [
+                            'Vorgangnummer' => $request->InterneVorgangsnummer,
+                            'InternePositionsnummer' => $position->InternePositionsnummer,
+                        ]
+                    );
+                    return null;
+                }
+
                 $position2Text = DB::connection('sqlsrv2')->table('cis.Position2Text')
                     ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
                     ->where('InternePositionsnummer', $position->InternePositionsnummer)
@@ -273,24 +284,10 @@ class SDServices
                     return null;
                 }
 
-                //todo later delete with $KwmengO
-                $KwmengO = 0;
-                /*
-                   if ($position->InternePositionsnummer == 113865) {
-                        $KwmengO = 0;
-                    }
-                    if ($position->InternePositionsnummer == 113866) {
-                        $KwmengO = 7;
-                    }
-                    if ($position->InternePositionsnummer == 113867) {
-                        $KwmengO = 0;
-                    }
-                */
-
                 $data['to_Items'][] = [
                     'Matnr' => $artikel->Artikelnummer,
-                    'PosErl' => (string)1, // todo later Preis Pro ME2 in Miclas
-                    'KwmengO' => (string)$KwmengO,  //todo later in miclas Menge zweite Feld
+                    'PosErl' => (string)$position1wert->PosPreisProME2,
+                    'KwmengO' => (string)$position3Menge->PosMenge2,
                     'Vorgn' => (string)$vorgang->VorNummer,
                     'Vbeln' => (string)$vorgang->VorIndividualC1,
                     'VorgnInt' => (string)$vorgang->InterneVorgangsnummer,
@@ -371,7 +368,7 @@ class SDServices
 
         $vorgangData['VorArt'] = 'A';
         $vorgangData['VorUnterArt'] = 'R';  // char 1
-        $vorgangData['VorGruppe'] = 'WH'; //  -- Montage/Liefer/Rechnung: 'RE' / Vertr ge: 'WIE' ? / Rahmenauftr ge: 'AB'
+        $vorgangData['VorGruppe'] = 'WH-'; //  -- Montage/Liefer/Rechnung: 'RE' / Vertr ge: 'WIE' ? / Rahmenauftr ge: 'AB'
         $vorgangData['VNkArt'] = '100000';
         $vorgangData['VorStatus'] = '100400'; //-- 100000 Nicht gedruckt / 100010 Angebot / 100100 Auftragsbestätigung
 
@@ -475,11 +472,11 @@ class SDServices
             $positionData['PosGesamteinzelpreis'] = $einzelPreis;
             $positionData['PosDBEinzel'] = $einzelPreis;
             $positionData['PosPreisEinzel'] = $einzelPreis;
-            $positionData['PosWEinzelpreisMinusRabatt'] = $einzelPreis;
-
             $positionData['PosPreisPosition'] = $position['netwr'];
             $positionData['PosGesamtpreis'] = $position['netwr'];
             $positionData['PosDBGesamt'] = $position['netwr'];
+
+            $positionData['PosWEinzelpreisMinusRabatt'] = $einzelPreis;
 
             $positionData['key'] = $key;
 
@@ -847,3 +844,4 @@ class SDServices
         return null;
     }
 }
+
