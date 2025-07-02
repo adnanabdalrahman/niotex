@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Artikel;
 use App\Models\Preisbasis;
+use App\Services\PositionServices\Position1WertService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -87,7 +88,7 @@ class PositionService
                 'PosMengeRechnung1' => $data['PosMengeRechnung1'] ?? 0,
                 'PosMengeVersand1' => $data['PosMengeVersand1'] ?? 0,
                 'PosMengeAusschuss1' => $data['PosMengeAusschuss1'] ?? 0,
-                'PosMenge2' => $data['PosMenge2'] ?? 0, // todo Clarify with johannes
+                'PosMenge2' => $data['PosMenge2'] ?? 0,//KWmengO
                 'PosMengeAuftrag2' => $data['PosMengeAuftrag2'] ?? 0,
                 'PosMengeLieferung2' => $data['PosMengeLieferung2'] ?? 0,
                 'PosMengeAbrechnung2' => $data['PosMengeAbrechnung2'] ?? 0,
@@ -160,65 +161,19 @@ class PositionService
                 $gesamtPreis = 0;
             }
 
-            DB::connection('sqlsrv2')->table('cis.Position1Wert')->insertGetId([
-                'InterneVorgangsnummer' => $data['InterneVorgangsnummer'],
-                'InternePositionsnummer' => $internePositionsnummer,
-                'PosRabattfaehig' => $data['PosRabattfaehig'] ?? 1,
-                'PosRabattUnterpositionJN' => $data['PosRabattUnterpositionJN'] ?? 0,
-                'PosRabattPosition1' => $data['PosRabattPosition1'] ?? 0,
-                'PosRabattPosition2' => $data['PosRabattPosition2'] ?? 0,
-                'PosRabattPosition3' => $data['PosRabattPosition3'] ?? 0,
-                'PosRabattAdresse' => $data['PosRabattAdresse'] ?? 0,
-                'PosRabattWert1' => $data['PosRabattWert1'] ?? 0,
-                'PosRabattWert2' => $data['PosRabattWert2'] ?? 0,
-                'NRPreisbasis' => $interneArtikelnummer->NRPreisbasis,
-                'PosPreisfaktor' => $preisbasis->Preisfaktor,
-                'PosPreisProME2' => $data['PosPreisProME2'] ?? 0,
-                'PosPreisEinzel' => $data['PosPreisEinzel'] ?? 0,
-                'PosPreisUnterposition' => $data['PosPreisUnterposition'] ?? 0,
-                'PosPreisUnterposLager' => $data['PosPreisUnterposLager'] ?? 0,
-                'PosPreisPosition' => $gesamtPreis,
-                'PosGesamteinzelpreis' => $data['PosGesamteinzelpreis'] ?? 0,
-                'PosGesamtpreisVorRabatt' => $gesamtPreis,
-                'PosGesamtpreis' => $gesamtPreis,
-                'PosPreisEinkauf' => $data['PosPreisEinkauf'] ?? 0,
-                'PosPreisEinkaufOriginal' => $data['PosPreisEinkaufOriginal'] ?? 0,
-                'PosPreisEinkaufUnterposition' => $data['PosPreisEinkaufUnterposition'] ?? 0,
-                'PosPreisEinkaufVT' => $data['PosPreisEinkaufVT'] ?? 0,
-                'PosPreisEinkaufUnterpositionVT' => $data['PosPreisEinkaufUnterpositionVT'] ?? 0,
-                'PosGesamteinzelpreisEK' => $data['PosGesamteinzelpreisEK'] ?? 0,
-                'PosGesamtpreisEK' => $data['PosGesamtpreisEK'] ?? 0,
-                'PosGesamteinzelpreisEKVT' => $data['PosGesamteinzelpreisEKVT'] ?? 0,
-                'PosGesamtpreisEKVT' => $data['PosGesamtpreisEKVT'] ?? 0,
-                'PosPreisVerbindlichkeit' => $data['PosPreisVerbindlichkeit'] ?? 0,
-                'PosRundungsfaktorVK' => $data['PosRundungsfaktorVK'] ?? 0,
-                'PosAbzugEK' => $data['PosAbzugEK'] ?? 0,
-                'MwstNummer' => $data['MwstNummer'] ?? 3,
-                'PosMwstProzent' => $data['PosMwstProzent'] ?? 3,
-                'PosVerschnitt' => $data['PosVerschnitt'] ?? 0,
-                'PosDBEinzel' => $data['PosDBEinzel'] ?? 0,
-                'PosDBGesamt' => $gesamtPreis,
-                'PosDBProzent' => $data['PosDBProzent'] ?? 100,
-                'PosDBAufschlag' => $data['PosDBAufschlag'] ?? 0,
-                'PosSkontofaehigJN' => $data['PosSkontofaehigJN'] ?? 1,
+            /* Position1Wert */
+            $data['NRPreisbasis'] = $interneArtikelnummer->NRPreisbasis;
+            $data['PosPreisfaktor'] = $preisbasis->Preisfaktor;
+            $data['PosPreisPosition'] = $gesamtPreis;
+            $data['PosGesamtpreisVorRabatt'] = $gesamtPreis;
+            $data['PosGesamtpreis'] = $gesamtPreis;
+            $data['PosDBGesamt'] = $gesamtPreis;
 
-                'PosProvisionProzent' => $data['PosProvisionProzent'] ?? 0,
-                'PosPreisermittlungVK' => $data['PosPreisermittlungVK'] ?? null,
-                'PosPreisermittlungEK' => $data['PosPreisermittlungEK'] ?? null,
-                'PosPreisermittlungRabatt1' => $data['PosPreisermittlungRabatt1'] ?? null,
-                'PosPreisermittlungRabatt2' => $data['PosPreisermittlungRabatt2'] ?? null,
-                'PosPreisermittlungRabatt3' => $data['PosPreisermittlungRabatt3'] ?? null,
-                'PosPreisermittlungRabattWert1' => $data['PosPreisermittlungRabattWert1'] ?? null,
-                'PosPreisermittlungRabattWert2' => $data['PosPreisermittlungRabattWert2'] ?? null,
-                'WithholdingtaxKategorieID' => $data['WithholdingtaxKategorieID'] ?? null,
-                'PosWHTProzent' => $data['PosWHTProzent'] ?? null,
-                'PosPreisEinzelBrutto' => $data['PosPreisEinzelBrutto'] ?? 0,
-                'PosPreisPositionBrutto' => $data['PosPreisPositionBrutto'] ?? 0,
-                'PosGesamtpreisVorRabattBrutto' => $data['PosGesamtpreisVorRabattBrutto'] ?? 0,
-                'PosGesamteinzelpreisBrutto' => $data['PosGesamteinzelpreisBrutto'] ?? 0,
-                'PosGesamtpreisBrutto' => $data['PosGesamtpreisBrutto'] ?? 0,
-            ]);
+            $position1Wert = new Position1WertService($internePositionsnummer);
+            $position1Wert->savePosition1Wert($data);
 
+
+            /* PositionWert */
             DB::connection('sqlsrv2')->table('cis.PositionWert')->insertGetId([
                 'InterneVorgangsnummer' => $data['InterneVorgangsnummer'],
                 'InternePositionsnummer' => $internePositionsnummer,
@@ -281,7 +236,7 @@ class PositionService
                 'posnr' => $data['PosIndividualD1'],
             ];
         } catch (Throwable $e) {
-            Log::error('Create Vorgang' . $e->getMessage());
+            Log::error('Create Position' . $e->getMessage());
             return null;
         }
         return $positionsResultArray;

@@ -13,11 +13,14 @@ use App\Models\Basisempfindlichkeit;
 use App\Models\Position;
 use App\Models\Position3Menge;
 use App\Models\Position5Individual;
+use App\Models\Preisbasis;
 use App\Models\Produktgruppe;
 use App\Models\Vorgang;
 use App\Models\Warengruppe;
+use App\Services\PositionServices\Position1WertService;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -569,20 +572,6 @@ class MMServices
             }
 
             $artikel = Artikel::find($position->InterneArtikelnummer);
-            /*
-             *              todo clarify
-
-                      $artikelKunde = ArtikelKunde::where('InterneArtikelnummer', $artikel->InterneArtikelnummer)
-                          ->where('InterneAdressnummer', $adresse->InterneAdressnummer)
-                          ->first();
-                      if ($artikelKunde === null) {
-                          Log::error(
-                              'mm_33_01_a_Leistungsbestaetigung Kein ArtikelKunde gefunden',
-                              ['InterneArtikelnummer' => $artikel->InterneArtikelnummer]
-                          );
-                          return null;
-                      }
-          */
             if ($artikel === null) {
                 Log::error(
                     'mm_33_01_a_Leistungsbestaetigung Kein Artikel für Position gefunden',
@@ -654,7 +643,6 @@ class MMServices
 
         $tourId = '3025';
 
-
         // get all Positions
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
         if ($positions->isEmpty()) {
@@ -720,11 +708,9 @@ class MMServices
             $vorgang->VorIndividualC5 = $receivedVorgangInfo['PoItem'] ?? null;
             $vorgang->save();
         }
-
-
         if (isset($result['d']['to_items']['results'])) {
             $receivedPositions = $result['d']['to_items']['results'];
-            $lastPositionNummer = max($positionNummerArray);;
+            $notExistArrayandCreated = [];
             foreach ($receivedPositions as $key => $receivedPosition) {
                 if (in_array($receivedPosition['Material'], $artikelNummerArray)) {
                     $artikel = Artikel::where('Artikelnummer', $receivedPosition['Material'])->first();
@@ -736,23 +722,78 @@ class MMServices
 
                     $position5Individual = Position5Individual::where
                     ('InternePositionsnummer', $position->InternePositionsnummer)->first();
+                    if ($position5Individual === null) {
+                        DB::connection('sqlsrv2')->table('cis.Position5Individual')->insertGetId([
+                            'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
+                            'InternePositionsnummer' => $position->InternePositionsnummer,
+                            'PosIndividualD1' => $receivedPosition['Posnr'] ?? null,
+                            'PosIndividualC1' => $receivedPosition['PoNumber'] ?? null,
+                            'PosIndividualC2' => $receivedPosition['PoItem'] ?? null,
+                            'PosIndividualC4' => $receivedPosition['PoUnit'] ?? null,
+                            'PosIndividualC7' => $vorgang->VorGruppe . ' ' . $vorgang->VorNummer,
+                        ]);
+                        //todo change it with update or create using model
+                    } else {
+                        $position5Individual->PosIndividualD1 = $receivedPosition['Posnr'] ?? null;
+                        $position5Individual->PosIndividualC1 = $receivedPosition['PoNumber'] ?? null;
+                        $position5Individual->PosIndividualC2 = $receivedPosition['PoItem'] ?? null;
+                        $position5Individual->PosIndividualC4 = $receivedPosition['PoUnit'] ?? null;
+                        $position5Individual->save();
+                    }
 
-                    $position5Individual->PosIndividualD1 = $receivedPosition['Posnr'] ?? null;
-                    $position5Individual->PosIndividualC1 = $receivedPosition['PoNumber'] ?? null;
-                    $position5Individual->PosIndividualC2 = $receivedPosition['PoItem'] ?? null;
-                    $position5Individual->PosIndividualC4 = $receivedPosition['PoUnit'] ?? null;
-                    $position5Individual->save();
 
-                    $position3Menge = Position3Menge::where
-                    ('InternePositionsnummer', $position->InternePositionsnummer)->first();
-                    $position3Menge->PosMenge1 = $receivedPosition['Quantity'] ?? null;
+                    $gesamtPreis = $receivedPosition['Netpr'] * $receivedPosition['Quantity'];
+                    $preisbasis = Preisbasis::where('NRPreisbasis', $artikel->NRPreisbasis)->first();
+
+                    /* Position1Wert */
+                    $data['PosGesamteinzelpreis'] = $receivedPosition['Netpr'];
+                    $data['PosDBEinzel'] = $receivedPosition['Netpr'];
+                    $data['PosPreisEinzel'] = $receivedPosition['Netpr'];
+                    $data['NRPreisbasis'] = $receivedPosition['Peinh'];
+                    $data['PosPreisfaktor'] = $preisbasis->Preisfaktor;
+                    $data['PosPreisPosition'] = $gesamtPreis;
+                    $data['PosGesamtpreisVorRabatt'] = $gesamtPreis;
+                    $data['PosGesamtpreis'] = $gesamtPreis;
+                    $data['PosDBGesamt'] = $gesamtPreis;
+
+                    $position1Wert = new Position1WertService($position->InterneVorgangsnummer);
+                    $position1Wert->savePosition1Wert($data);
+                    
+                    $position3Menge = Position3Menge::updateOrCreate(
+                        ['InternePositionsnummer' => $position->InternePositionsnummer],
+                        [
+                            'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
+                            'InternePositionsnummer' => $position->InternePositionsnummer,
+                            'PosMenge1' => $receivedPosition['Quantity'],
+                            'PosKZMengeneinheit1' => 0,
+                            'PosMengeLieferung1' => 0,
+                            'PosMengeAbrechnung1' => 0,
+                            'PosMengeRechnung1' => 0,
+                            'PosMengeVersand1' => 0,
+                            'PosMengeAusschuss1' => 0,
+                            'PosMenge2' => 0,
+                            'PosMengeAuftrag2' => 0,
+                            'PosMengeLieferung2' => 0,
+                            'PosMengeAbrechnung2' => 0,
+                            'PosMengeRechnung2' => 0,
+                            'PosMengeVersand2' => 0,
+                            'PosMengeAusschuss2' => 0,
+                            'PosMultiplikator' => 0,
+                            'PosMultiplikatorAuftrag' => 0,
+                            'PosMultiplikatorLieferung' => 0,
+                            'PosMultiplikatorAbrechnung' => 0,
+                            'PosMultiplikatorRechnung' => 0,
+                            'PosMultiplikatorVersand' => 0,
+                            'PosBundleMenge1' => 0,
+                            'PosBundleMenge2' => 0,
+                        ]);
 
                     $dataArtikel = [
                         'InterneArtikelnummer' => $artikel->InterneArtikelnummer,
                         'InterneAdressnummer' => $adresse->InterneAdressnummer,
                         'AkuArtikelBezeichnung1' => $receivedPosition['ShortText'],
                         'NRPreisbasis' => $receivedPosition['Peinh'],
-                        'AkuLetzterVK' => $receivedPosition['Netpr'],
+                        'AkuLetzterVK' => $gesamtPreis,
                         //-----------------------------------------------------
                         'AkuLetzterRabattWert1' => 0,
                         'AkuLetzterRabattWert2' => 0,
@@ -763,32 +804,34 @@ class MMServices
                         'AkuLetzterRabatt3' => 0,
                     ];
 
+
                     $artikelKunde = ArtikelKunde::updateOrCreate(
-                        ['InterneArtikelnummer', $artikel->InterneArtikelnummer,
-                            'InterneAdressnummer', $adresse->InterneAdressnummer
+                        ['InterneArtikelnummer' => $artikel->InterneArtikelnummer,
+                            'InterneAdressnummer' => $adresse->InterneAdressnummer
                         ],
                         $dataArtikel
                     );
                     $existArrayandUpdated[] = $position->InternePositionsnummer;
                 } else {
-                    /*
-                     cis.Position.PosTyp:
-                    NULL = Normaler Artikel
-                    1 = alternativer Artikel
-                    2 = optionaler Artikel
-                    4 = stornierter Artikel
-                    */
-                    $data['Artikelnummer'] = ltrim($receivedPosition['Material'], '0');
-                    $data['key'] = $lastPositionNummer;
-                    //$data['PosIndividualC3'] = $receivedPosition['kondm'];
-                    $data['PosIndividualD1'] = $receivedPosition['Posnr'];
-                    //$data['PosZusatztextLieferschein'] = $receivedPosition['txtZ002'];
-                    //$data['PosZusatztext'] = $receivedPosition['txtZ009'];
-                    //$data['PosNotiz'] = $receivedPosition['txtZ010'];
+                    $data['InterneVorgangsnummer'] = $vorgang->InterneVorgangsnummer;
+                    $data['VorGruppe'] = $vorgang->VorGruppe;
+                    $data['VorNummer'] = $vorgang->VorNummer;
 
+                    $data['Artikelnummer'] = ltrim($receivedPosition['Material'], '0');
+
+
+                    $positionNummerArray = array_map('intval', $positionNummerArray); // convert strings to integers for comparison
+                    $nextNumber = max($positionNummerArray);
+                    while (in_array($nextNumber, $positionNummerArray)) {
+                        $nextNumber++;
+                    }
+                    $data['key'] = $nextNumber;
+                    $positionNummerArray[] = $nextNumber;
+
+                    $data['PosIndividualD1'] = $receivedPosition['Posnr'];
                     $data['PosMenge1'] = $receivedPosition['Quantity'];
                     $data['PosTyp'] = 2;
-                    $data['PosKZMengeneinheit1'] = 'ST';
+                    $data['PosKZMengeneinheit1'] = 'LE';
 
                     $data['PosWMengeGesamt1'] = $receivedPosition['Quantity'];
                     $data['PosWMengeAuftrag1'] = $receivedPosition['Quantity'];
@@ -798,13 +841,28 @@ class MMServices
                     $data['PosWMengeGut1'] = $receivedPosition['Quantity'];
                     $data['PosWMengeRechnung1'] = $receivedPosition['Quantity'];
 
+                    $gesamtPreis = $receivedPosition['Netpr'] * $receivedPosition['Quantity'];
+
+                    $data['PosGesamteinzelpreis'] = $receivedPosition['Netpr'];
+                    $data['PosDBEinzel'] = $receivedPosition['Netpr'];
+                    $data['PosPreisEinzel'] = $receivedPosition['Netpr'];
+                    $data['PosWEinzelpreisMinusRabatt'] = $receivedPosition['Netpr'];
+
+                    $data['PosPreisPosition'] = $gesamtPreis;
+                    $data['PosGesamtpreis'] = $gesamtPreis;
+                    $data['PosDBGesamt'] = $gesamtPreis;
+
                     $newPosition = new PositionService();
-                    $positionsArray[] = $newPosition->createPosition($data);
-                    $notExistArrayandCreated[] = $positionsArray['InternePositionsnummer'];
+                    $newPosition = $newPosition->createPosition($data);
+                    if ($newPosition === null) {
+                        Log::error('creation Failed');
+                        return null;
+                    }
+                    $notExistArrayandCreated[] = $newPosition['InternePositionsnummer'];
                 }
 
             }
-            dd($notExistArrayandCreated, $existArrayandUpdated);
+            dd($notExistArrayandCreated, $existArrayandUpdated, $result);
 
         }
 
