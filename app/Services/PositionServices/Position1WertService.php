@@ -15,7 +15,6 @@ class Position1WertService
         $this->internePositionsnummer = $internePositionsnummer;
     }
 
-
     public function savePosition1Wert($data): ?Position1Wert
     {
         try {
@@ -32,15 +31,15 @@ class Position1WertService
                     'PosRabattWert1' => $data['PosRabattWert1'] ?? 0,
                     'PosRabattWert2' => $data['PosRabattWert2'] ?? 0,
                     'NRPreisbasis' => $data['NRPreisbasis'],
-                    'PosPreisfaktor' => $data['PosPreisfaktor'],
+                    'PosPreisfaktor' => $data['PosPreisfaktor'] ?? 1,
                     'PosPreisProME2' => $data['PosPreisProME2'] ?? 0,
                     'PosPreisEinzel' => $data['PosPreisEinzel'] ?? 0,
                     'PosPreisUnterposition' => $data['PosPreisUnterposition'] ?? 0,
                     'PosPreisUnterposLager' => $data['PosPreisUnterposLager'] ?? 0,
                     'PosPreisPosition' => $data['PosPreisPosition'],
                     'PosGesamteinzelpreis' => $data['PosGesamteinzelpreis'] ?? 0,
-                    'PosGesamtpreisVorRabatt' => $data['PosGesamtpreisVorRabatt'],
-                    'PosGesamtpreis' => $data['PosGesamtpreis'],
+                    'PosGesamtpreisVorRabatt' => $data['PosGesamtpreisVorRabatt'] ?? $data['externGesamtPris'],
+                    'PosGesamtpreis' => $data['PosGesamtpreis'] ?? $data['externGesamtPris'],
                     'PosPreisEinkauf' => $data['PosPreisEinkauf'] ?? 0,
                     'PosPreisEinkaufOriginal' => $data['PosPreisEinkaufOriginal'] ?? 0,
                     'PosPreisEinkaufUnterposition' => $data['PosPreisEinkaufUnterposition'] ?? 0,
@@ -57,7 +56,7 @@ class Position1WertService
                     'PosMwstProzent' => $data['PosMwstProzent'] ?? 3,
                     'PosVerschnitt' => $data['PosVerschnitt'] ?? 0,
                     'PosDBEinzel' => $data['PosDBEinzel'] ?? 0,
-                    'PosDBGesamt' => $data['PosDBGesamt'],
+                    'PosDBGesamt' => $data['PosDBGesamt'] ?? $data['externGesamtPris'],
                     'PosDBProzent' => $data['PosDBProzent'] ?? 100,
                     'PosDBAufschlag' => $data['PosDBAufschlag'] ?? 0,
                     'PosSkontofaehigJN' => $data['PosSkontofaehigJN'] ?? 1,

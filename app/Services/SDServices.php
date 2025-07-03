@@ -25,6 +25,8 @@ class SDServices
     protected string $sd0102_path;
     protected string $sd0301_path;
 
+    protected string $vorGruppe;
+
 
     protected array $auth;
 
@@ -39,7 +41,7 @@ class SDServices
         ];
         $this->sd0102_path = config('sap.sd0102_path');
         $this->sd0301_path = config('sap.sd0301_path');
-
+        $this->vorGruppe = config('vorgruppe');
         $this->mwstSatzProzentArray = [
             7 => 2,
             19 => 3,
@@ -91,7 +93,7 @@ class SDServices
             $data['VorNotiz'] = $requestData['txtZ012'];
             $data['VorArt'] = 'A';
             $data['VorUnterArt'] = 'R';  // char 1
-            $data['VorGruppe'] = 'RE'; //  -- Montage/Liefer/Rechnung: 'RE' / Vertr ge: 'WIE' ? / Rahmenauftr ge: 'AB'
+            $data['VorGruppe'] = $this->vorGruppe[$requestData['augru']]; //  -- Montage/Liefer/Rechnung: 'RE' / Vertr ge: 'WIE' ? / Rahmenauftr ge: 'AB'
             $data['VNkArt'] = '100000';
             $data['VorStatus'] = '100100'; //-- 100000 Nicht gedruckt / 100010 Angebot / 100100 Auftragsbestätigung
 
@@ -114,23 +116,6 @@ class SDServices
     public function sd_0101_beauftragung_positions($positions, $vorgangDataArray): ?array
     {
         //todo important delete all position if one fails also vorgang
-        /*
-        matnr  Materialnummer => Position.InterneArtikelnummer   (FK):Artikel.Artikelnummer→Artikel.InterneArtikelnummer
-        kondm  Materialgruppe => Position5Individual.PosIndividualC3  (FK):Position5Individual.InterneVorgangsnumer&InternePositionsnummer]→Position.InterneVorgangsnumer&InternePositionsnummer
-        posnr  Verkaufsbelegposition => Position5Individual.PosIndividualD1
-        kwmeng Menge/Positionsmenge erledigt => Position3Menge.PosMenge1  (FK):Position3Menge.InterneVorgangsnumer&InternePositionsnummer]→Position.InterneVorgangsnumer&InternePositionsnummer
-        vrkme Mengeneinheit => Position3Menge.PosKZMengeneinheit1  FK):Mengeneinheit.KZMengeneinheit
-        posErl Position erledigt => 1 = erledigt 2  = // todo Clarify now ignore
-        txtZ002 Bemerkung NU / Monteur => Position2Text.PosZusatztextLieferschein    (FK): Position2Text.InterneVorgangsnumer&InternePositionsnummer→Position.InterneVorgangsnumer&InternePositionsnummer
-        txtZ009 Info zur Montage SAP => Position2Text.PosZusatztext  (FK):Position2Text.InterneVorgangsnumer&InternePositionsnummer]→Position.InterneVorgangsnumer&InternePositionsnummer
-        txtZ010 Info zur Montage CEOS => Position2Text.PosNotiz   (FK):Position2Text.InterneVorgangsnumer&InternePositionsnummer→Position.InterneVorgangsnumer&InternePositionsnummer
-
-        kwmengO Menge offen => //todo clarify later with Johannes ignore
-        aufnr Kontierungsobjekt =>  Ignorieren
-        vorgn Vorgangsnummer CEOS => Vorgang.VorNummer (FK):Position.InterneVorgangsnummer→Vorgang.InterneVorgangsnummer // todo clarify in header
-        VBELN => From Header
-        VORGNINT => InterneVorgangsnummer
-         */
 
         $data['InterneVorgangsnummer'] = $vorgangDataArray['InterneVorgangsnummer'];
         $data['VorNummer'] = $vorgangDataArray['VorNummer'];
@@ -150,6 +135,7 @@ class SDServices
             $data['PosMenge1'] = $position['kwmeng'];
             $data['PosKZMengeneinheit1'] = $position['vrkme'];
 
+            $data['PosIndividualC5'] = $position['kwmeng'];
             $data['PosWMengeGesamt1'] = $position['kwmeng'];
             $data['PosWMengeAuftrag1'] = $position['kwmeng'];
             $data['PosWMengeAbrechnung1'] = $position['kwmeng'];
@@ -360,7 +346,6 @@ class SDServices
         $vorgangData['VorDatumRechnung'] = $fkdat;
         $vorgangData['VorDatumAuftragseingang'] = $fkdat;
 
-
         $vorgangData['VorIndividualC7'] = $header['zuonr'];
         $vorgangData['VorIndividualC3'] = $header['zzlgsnr'];
         $vorgangData['VorAuftraggeber'] = $adresse->InterneAdressnummer;
@@ -368,9 +353,14 @@ class SDServices
 
         $vorgangData['VorArt'] = 'A';
         $vorgangData['VorUnterArt'] = 'R';  // char 1
-        $vorgangData['VorGruppe'] = 'WH-'; //  -- Montage/Liefer/Rechnung: 'RE' / Vertr ge: 'WIE' ? / Rahmenauftr ge: 'AB'
+        $vorgangData['VorGruppe'] = 'WH'; //  -- Montage/Liefer/Rechnung: 'RE' / Vertr ge: 'WIE' ? / Rahmenauftr ge: 'AB'
         $vorgangData['VNkArt'] = '100000';
         $vorgangData['VorStatus'] = '100400'; //-- 100000 Nicht gedruckt / 100010 Angebot / 100100 Auftragsbestätigung
+
+        if ($header['vbeln'] == $header['zuonr']) {
+            $vorgangData['VorStatus'] = '100430';
+        }
+
 
         $vorgangData['VorNettowert'] = $header['netwr'];
         $vorgangData['VorNettowertMwst1'] = $header['netwr'];
@@ -844,4 +834,8 @@ class SDServices
         return null;
     }
 }
+
+
+
+
 
