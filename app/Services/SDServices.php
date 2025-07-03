@@ -25,8 +25,7 @@ class SDServices
     protected string $sd0102_path;
     protected string $sd0301_path;
 
-    protected string $vorGruppe;
-
+    protected array $vorGruppe;
 
     protected array $auth;
 
@@ -346,8 +345,8 @@ class SDServices
         $vorgangData['VorDatumRechnung'] = $fkdat;
         $vorgangData['VorDatumAuftragseingang'] = $fkdat;
 
-        $vorgangData['VorIndividualC7'] = $header['zuonr'];
         $vorgangData['VorIndividualC3'] = $header['zzlgsnr'];
+        $vorgangData['VorIndividualC7'] = $header['zuonr'];
         $vorgangData['VorAuftraggeber'] = $adresse->InterneAdressnummer;
         $vorgangData['VorIndividualD4'] = $adresse->VorIndividualD4 ?? ''; // GebäudeNr
 

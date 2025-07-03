@@ -17,10 +17,34 @@ use Illuminate\Support\Facades\Log;
 class MMController extends Controller
 {
     protected MMServices $mmServices;
+    protected MMServices\MM_33_01_b_Services $mm331bServices;
+    protected MMServices\MM_31_01_Services $mm311Services;
+    protected MMServices\MM_34_01_Services $mm341Services;
+    protected MMServices\MM_22_01_Services $mm221Services;
+    protected MMServices\MM_35_02_Services $mm352Services;
+    protected MMServices\MM_33_01_a_Services $mm331aServices;
+    protected MMServices\MM_37_1_Services $mm371aServices;
 
-    public function __construct(MMServices $mmServices)
+    public function __construct(
+        MMServices                     $mmServices,
+        MMServices\MM_33_01_b_Services $mm331bServices,
+        MMServices\MM_31_01_Services   $mm311Services,
+        MMServices\MM_34_01_Services   $mm341Services,
+        MMServices\MM_22_01_Services   $mm221Services,
+        MMServices\MM_35_02_Services   $mm352Services,
+        MMServices\MM_33_01_a_Services $mm331aServices,
+        MMServices\MM_37_1_Services    $mm371aServices,
+
+    )
     {
         $this->mmServices = $mmServices;
+        $this->mm331bServices = $mm331bServices;
+        $this->mm331aServices = $mm331aServices;
+        $this->mm311Services = $mm311Services;
+        $this->mm341Services = $mm341Services;
+        $this->mm221Services = $mm221Services;
+        $this->mm352Services = $mm352Services;
+        $this->mm371aServices = $mm371aServices;
     }
 
     /**
@@ -42,7 +66,7 @@ class MMController extends Controller
         if ($request['LVorm'] !== null) {
             $status = 'gelöscht';
         }
-        $data = $this->mmServices->mm_31_01_materialstammdaten($validated);
+        $data = $this->mm311Services->mm_31_01_materialstammdaten($validated);
 
         if ($data !== null) {
             $message = "Material {$data['Material']} erfolgreich " . $status;
@@ -66,7 +90,7 @@ class MMController extends Controller
     public function mm_37_1_NuLeistungspositionen(MM_3701_nuLeistungspositionenRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $data = $this->mmServices->mm_37_1_NuLeistungspositionen($validated);
+        $data = $this->mm371aServices->mm_37_1_NuLeistungspositionen($validated);
 
         if ($data !== null) {
             $message = "Leistungspositionen erfolgreich gespeichert";
@@ -99,7 +123,7 @@ class MMController extends Controller
             'Vorgangnummer' => 'required',
         ]);
 
-        $response = $this->mmServices->mm_34_01_umlagerungsreservierung($data);
+        $response = $this->mm341Services->mm_34_01_umlagerungsreservierung($data);
         if ($response !== null) {
             $message = "mm_34_01_umlagerungsreservierung erfolgreich gesendet";
             Log::info($message);
@@ -132,7 +156,7 @@ class MMController extends Controller
         $data = $request->validate([
             'Vorgangnummer' => 'required',
         ]);
-        $response = $this->mmServices->mm_35_02_materialverbrauch($data);
+        $response = $this->mm352Services->mm_35_02_materialverbrauch($data);
         if ($response !== null) {
             return response()->json(
                 [
@@ -157,7 +181,7 @@ class MMController extends Controller
         $data = $request->validate([
             'Vorgangnummer' => 'required',
         ]);
-        $response = $this->mmServices->mm_33_01_a_Leistungsbestaetigung($data);
+        $response = $this->mm331aServices->mm_33_01_a_Leistungsbestaetigung($data);
         if ($response !== null) {
             return response()->json([
                 'message' => 'mm_33_01_a_Leistungsbestaetigung erfolgreich gesendet',
@@ -177,7 +201,7 @@ class MMController extends Controller
     public function mm_22_1_lagerbestaende(MM_2201_SAPStockRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $response = $this->mmServices->mm_22_01_lagerbestaende(
+        $response = $this->mm221Services->mm_22_01_lagerbestaende(
             $validated['artikelnummer'],
             $validated['lager']
         );
@@ -205,7 +229,7 @@ class MMController extends Controller
         $data = $request->validate([
             'Vorgangnummer' => 'required',
         ]);
-        $response = $this->mmServices->mm_33_01_b_NuAuftragspaket($data);
+        $response = $this->mm331bServices->mm_33_01_b_NuAuftragspaket($data);
 
         if ($response !== null) {
             return response()->json([
