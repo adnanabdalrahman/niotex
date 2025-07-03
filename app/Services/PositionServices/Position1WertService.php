@@ -80,9 +80,8 @@ class Position1WertService
 
         } catch (Throwable $e) {
             Log::error('Failed to update/create Position1Wert', [
-                'error' => $e,
+                'error' => $e->getMessage(),
                 'internePositionsnummer' => $this->internePositionsnummer,
-                'data' => $data
             ]);
             return null;
         }
