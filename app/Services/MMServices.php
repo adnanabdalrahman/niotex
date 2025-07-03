@@ -329,7 +329,7 @@ class MMServices
 
 */
         $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])
-            ->where('VorGruppe', 'M_LG') // todo After Test return to M_LG
+            ->where('VorGruppe', 'M_LG')
             ->first();
 
         if ($vorgang === null) {
@@ -344,7 +344,7 @@ class MMServices
         $milliseconds = now()->addDays(10)->timestamp * 1000;
         $tourDate = "/Date({$milliseconds})/";
 
-        $tourId = '1025'; // todo after test return to $vorgang->VorIndividualD5;
+        $tourId = $vorgang->VorGruppe . $vorgang->VorNummer; // todo after test return to $vorgang->VorIndividualD5;
         // get all Positions
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
 
@@ -458,8 +458,9 @@ class MMServices
         return $responseData;
     }
 
-
     /**
+     * MM_35_02 materialverbrauch
+     * CEOSWEB-->CEOS-->SAP
      * @throws Exception
      */
     public function mm_35_02_materialverbrauch($data)
@@ -701,7 +702,9 @@ class MMServices
         ];
         Log::info("mm_33_01_b_NuAuftragspaket sent Data", $data);
         $result = app(SapApiClient::class)->post($this->mm331_path, $data);
-
+        if ($result == null) {
+            return null;
+        }
         if (isset($result['d'])) {
             $receivedVorgangInfo = $result['d']['to_items']['results'];
             $vorgang->VorIndividualC6 = $receivedVorgangInfo['PoNumber'] ?? null;
@@ -758,7 +761,7 @@ class MMServices
 
                     $position1Wert = new Position1WertService($position->InterneVorgangsnummer);
                     $position1Wert->savePosition1Wert($data);
-                    
+
                     $position3Menge = Position3Menge::updateOrCreate(
                         ['InternePositionsnummer' => $position->InternePositionsnummer],
                         [
@@ -858,11 +861,11 @@ class MMServices
                         Log::error('creation Failed');
                         return null;
                     }
-                    $notExistArrayandCreated[] = $newPosition['InternePositionsnummer'];
+                    $notExistArrayAndCreated[] = $newPosition['InternePositionsnummer'];
                 }
 
             }
-            dd($notExistArrayandCreated, $existArrayandUpdated, $result);
+            dd($notExistArrayAndCreated, $existArrayandUpdated, $result);
 
         }
 

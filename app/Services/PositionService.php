@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Artikel;
 use App\Models\Preisbasis;
 use App\Services\PositionServices\Position1WertService;
+use App\Services\PositionServices\PositionWertService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -164,71 +165,17 @@ class PositionService
             /* Position1Wert */
             $data['NRPreisbasis'] = $interneArtikelnummer->NRPreisbasis;
             $data['PosPreisfaktor'] = $preisbasis->Preisfaktor;
-            $data['PosPreisPosition'] = $gesamtPreis;
-            $data['PosGesamtpreisVorRabatt'] = $gesamtPreis;
-            $data['PosGesamtpreis'] = $gesamtPreis;
-            $data['PosDBGesamt'] = $gesamtPreis;
-
+            $data['externGesamtPris'] = $gesamtPreis;
             $position1Wert = new Position1WertService($internePositionsnummer);
             $position1Wert->savePosition1Wert($data);
 
 
             /* PositionWert */
-            DB::connection('sqlsrv2')->table('cis.PositionWert')->insertGetId([
-                'InterneVorgangsnummer' => $data['InterneVorgangsnummer'],
-                'InternePositionsnummer' => $internePositionsnummer,
+            $positionWertData['externGesamtPris'] = $gesamtPreis;
+            $positionWert = new PositionWertService($internePositionsnummer);
+            $positionWert->savePositionWert($positionWertData);
 
-                'PosWPreisPositionGesamt' => $gesamtPreis,
-                'PosWPreisPositionAuftrag' => $gesamtPreis,
-                'PosWPreisPositionAbrechnung' => $gesamtPreis,
-                'PosWPreisPositionLieferung' => $gesamtPreis,
-                'PosWPreisPositionVersand' => $gesamtPreis,
-                'PosWPreisPositionGut' => $gesamtPreis,
-                'PosWPreisPositionRechnung' => $gesamtPreis,
-                'PosWGesamtpreisVorRabattGes' => $data['PosWGesamtpreisVorRabattGes'] ?? $gesamtPreis,
-                'PosWGesamtpreisVorRabattAuf' => $data['PosWGesamtpreisVorRabattAuf'] ?? $gesamtPreis,
-                'PosWGesamtpreisVorRabattAbr' => $data['PosWGesamtpreisVorRabattAbr'] ?? $gesamtPreis,
-                'PosWGesamtpreisVorRabattLief' => $data['PosWGesamtpreisVorRabattLief'] ?? $gesamtPreis,
-                'PosWGesamtpreisVorRabattVers' => $data['PosWGesamtpreisVorRabattVers'] ?? $gesamtPreis,
-                'PosWGesamtpreisVorRabattGut' => $data['PosWGesamtpreisVorRabattGut'] ?? $gesamtPreis,
-                'PosWGesamtpreisVorRabattRec' => $data['PosWGesamtpreisVorRabattRec'] ?? $gesamtPreis,
-                'PosWGesamtpreisGesamt' => $data['PosWGesamtpreisGesamt'] ?? $gesamtPreis,
-                'PosWGesamtpreisAuftrag' => $data['PosWGesamtpreisAuftrag'] ?? $gesamtPreis,
-                'PosWGesamtpreisAbrechnung' => $data['PosWGesamtpreisAbrechnung'] ?? $gesamtPreis,
-                'PosWGesamtpreisLieferung' => $data['PosWGesamtpreisLieferung'] ?? $gesamtPreis,
-                'PosWGesamtpreisVersand' => $data['PosWGesamtpreisVersand'] ?? $gesamtPreis,
-                'PosWGesamtpreisGut' => $data['PosWGesamtpreisGut'] ?? $gesamtPreis,
-                'PosWGesamtpreisRechnung' => $data['PosWGesamtpreisRechnung'] ?? $gesamtPreis,
-                'PosWGesamtpreisEKGesamt' => $data['PosWGesamtpreisEKGesamt'] ?? 0,
-                'PosWGesamtpreisEKAuftrag' => $data['PosWGesamtpreisEKAuftrag'] ?? 0,
-                'PosWGesamtpreisEKAbrechnung' => $data['PosWGesamtpreisEKAbrechnung'] ?? 0,
-                'PosWGesamtpreisEKLieferung' => $data['PosWGesamtpreisEKLieferung'] ?? 0,
-                'PosWGesamtpreisEKVersand' => $data['PosWGesamtpreisEKVersand'] ?? 0,
-                'PosWGesamtpreisEKGut' => $data['PosWGesamtpreisEKGut'] ?? 0,
-                'PosWGesamtpreisEKRechnung' => $data['PosWGesamtpreisEKRechnung'] ?? 0,
-                'PosWGesamtpreisEKVTGesamt' => $data['PosWGesamtpreisEKVTGesamt'] ?? 0,
-                'PosWGesamtpreisEKVTAuftrag' => $data['PosWGesamtpreisEKVTAuftrag'] ?? 0,
-                'PosWGesamtpreisEKVTAbrechnung' => $data['PosWGesamtpreisEKVTAbrechnung'] ?? 0,
-                'PosWGesamtpreisEKVTLieferung' => $data['PosWGesamtpreisEKVTLieferung'] ?? 0,
-                'PosWGesamtpreisEKVTVersand' => $data['PosWGesamtpreisEKVTVersand'] ?? 0,
-                'PosWGesamtpreisEKVTGut' => $data['PosWGesamtpreisEKVTGut'] ?? 0,
-                'PosWGesamtpreisEKVTRechnung' => $data['PosWGesamtpreisEKVTRechnung'] ?? 0,
-                'PosWEinzelpreisMinusRabatt' => $data['PosWEinzelpreisMinusRabatt'] ?? 0,
-                'PosWMengeGesamt1' => $data['PosWMengeGesamt1'],
-                'PosWMengeAuftrag1' => $data['PosWMengeAuftrag1'],
-                'PosWMengeAbrechnung1' => $data['PosWMengeAbrechnung1'],
-                'PosWMengeLieferung1' => $data['PosWMengeLieferung1'],
-                'PosWMengeVersand1' => $data['PosWMengeVersand1'],
-                'PosWMengeGut1' => $data['PosWMengeGut1'],
-                'PosWMengeRechnung1' => $data['PosWMengeRechnung1'],
-                'PosWMengeAuftrag2' => $data['PosWMengeAuftrag2'] ?? 0,
-                'PosWMengeAbrechnung2' => $data['PosWMengeAbrechnung2'] ?? 0,
-                'PosWMengeLieferung2' => $data['PosWMengeLieferung2'] ?? 0,
-                'PosWMengeVersand2' => $data['PosWMengeVersand2'] ?? 0,
-                'PosWMengeGesamt2' => $data['PosWMengeGesamt2'] ?? 0,
-                'PosWMengeGut2' => $data['PosWMengeGut2'] ?? 0,
-                'PosWMengeRechnung2' => $data['PosWMengeRechnung2'] ?? 0,
-            ]);
+
             $positionsResultArray = [
                 'InternePositionsnummer' => $internePositionsnummer,
                 'InterneVorgangsnummer' => $data['InterneVorgangsnummer'],

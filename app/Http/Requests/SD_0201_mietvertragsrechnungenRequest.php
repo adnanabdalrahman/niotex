@@ -14,6 +14,22 @@ class SD_0201_mietvertragsrechnungenRequest extends FormRequest
         ]);
     }
 
+    public function withValidator($validator)
+    {
+        $validator->sometimes(['header.datumvon', 'header.datumbis'], 'nullable|date', function ($input) {
+            return $input->header['vbeln'] === $input->header['zuonr'];
+        });
+
+        $validator->sometimes('header.datumvon', 'required|date', function ($input) {
+            return $input->header['vbeln'] !== $input->header['zuonr'];
+        });
+
+        $validator->sometimes('header.datumbis', 'required|date|after_or_equal:header.datumvon', function ($input) {
+            return $input->header['vbeln'] !== $input->header['zuonr'];
+        });
+    }
+
+
     public function authorize(): bool
     {
         return true;
@@ -25,8 +41,6 @@ class SD_0201_mietvertragsrechnungenRequest extends FormRequest
             'header' => 'required|array',
             'header.vbeln' => 'required|string',
             'header.fkdat' => 'required|date',
-            'header.datumvon' => 'required|date',
-            'header.datumbis' => 'required|date|after_or_equal:header.datumvon',
             'header.vorgn' => 'required|integer',
             'header.vorgnInt' => 'required|integer',
             'header.kunnr' => 'required|string',
