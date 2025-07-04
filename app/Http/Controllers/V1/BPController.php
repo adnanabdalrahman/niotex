@@ -13,12 +13,17 @@ use Illuminate\Support\Facades\Log;
 
 class BPController extends Controller
 {
+    protected BPServices\BP_01_01_Services $bp0101Services;
+    protected BPServices\BP_01_03_Services $bp0103Services;
 
-    protected BPServices $bpServices;
+    public function __construct(
+        BPServices\BP_01_01_Services $bp0101Services,
+        BPServices\BP_01_03_Services $bp0103Services
 
-    public function __construct(BPServices $bpServices)
+    )
     {
-        $this->bpServices = $bpServices;
+        $this->bp0101Services = $bp0101Services;
+        $this->bp0103Services = $bp0103Services;
     }
 
     /*
@@ -40,7 +45,7 @@ class BPController extends Controller
             $status = 'gesperrt';
         }
 
-        $data = $this->bpServices->bp_0101_geschaeftspartner($validated);
+        $data = $this->bp0101Services->bp_0101_geschaeftspartner($validated);
         if ($data !== null) {
             $message = "Geschäftspartner {$data['Adresse']} erfolgreich " . $status;
             Log::info($message);
@@ -87,7 +92,7 @@ class BPController extends Controller
             $status = 'gelöscht';
         }
 
-        $data = $this->bpServices->bp_0103_verwalter($validated, $adresse->InterneAdressnummer);
+        $data = $this->bp0103Services->bp_0103_verwalter($validated, $adresse->InterneAdressnummer);
         if ($data !== null) {
             $message = "Ansprechpartner {$validated['Geschaeftspartnernummer']} erfolgreich " . $status;
             Log::info($message);

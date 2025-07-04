@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Eloquent;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -122,7 +123,7 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Position1Wert wherePosWHTProzent($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Position1Wert whereTimeStamp($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Position1Wert whereWithholdingtaxKategorieID($value)
- * @mixin \Eloquent
+ * @mixin Eloquent
  */
 class Position1Wert extends Model
 {

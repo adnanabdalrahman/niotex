@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Eloquent;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
+ *
  *
  * @property int $InterneVorgangsnummer
  * @property int $InternePositionsnummer
@@ -48,51 +50,51 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $PosIndividualCombo7
  * @property int|null $PosIndividualCombo8
  * @property string|null $TimeStamp
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual whereInternePositionsnummer($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual whereInterneVorgangsnummer($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosAbmasse1($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosAbmasse2($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosAbmasse3($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosAbmasse4($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualC1($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualC10($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualC2($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualC3($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualC4($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualC5($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualC6($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualC7($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualC8($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualC9($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualCombo1($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualCombo2($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualCombo3($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualCombo4($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualCombo5($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualCombo6($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualCombo7($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualCombo8($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualD1($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualD10($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualD2($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualD3($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualD4($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualD5($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualD6($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualD7($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualD8($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualD9($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualT1($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualT2($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualT3($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualT4($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualT5($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual wherePosIndividualT6($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Position5Individual whereTimeStamp($value)
- * @mixin \Eloquent
+ * @method static Builder<static>|Position5Individual newModelQuery()
+ * @method static Builder<static>|Position5Individual newQuery()
+ * @method static Builder<static>|Position5Individual query()
+ * @method static Builder<static>|Position5Individual whereInternePositionsnummer($value)
+ * @method static Builder<static>|Position5Individual whereInterneVorgangsnummer($value)
+ * @method static Builder<static>|Position5Individual wherePosAbmasse1($value)
+ * @method static Builder<static>|Position5Individual wherePosAbmasse2($value)
+ * @method static Builder<static>|Position5Individual wherePosAbmasse3($value)
+ * @method static Builder<static>|Position5Individual wherePosAbmasse4($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualC1($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualC10($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualC2($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualC3($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualC4($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualC5($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualC6($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualC7($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualC8($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualC9($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualCombo1($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualCombo2($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualCombo3($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualCombo4($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualCombo5($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualCombo6($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualCombo7($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualCombo8($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualD1($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualD10($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualD2($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualD3($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualD4($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualD5($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualD6($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualD7($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualD8($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualD9($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualT1($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualT2($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualT3($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualT4($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualT5($value)
+ * @method static Builder<static>|Position5Individual wherePosIndividualT6($value)
+ * @method static Builder<static>|Position5Individual whereTimeStamp($value)
+ * @mixin Eloquent
  */
 class Position5Individual extends Model
 {

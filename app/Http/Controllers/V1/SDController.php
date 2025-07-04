@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\V1;
 
-
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SD_0101_beauftragungRequest;
 use App\Http\Requests\SD_0201_mietvertragsrechnungenRequest;
@@ -17,11 +16,28 @@ use Throwable;
 class SDController extends Controller
 {
 
-    protected SDServices $sdServices;
+    protected SDServices\SD_0101_Services $sd0101Services;
+    protected SDServices\SD_0102_Services $sd0102Services;
+    protected SDServices\SD_0201_Services $sd0201Services;
+    protected SDServices\SD_03_01_Services $sd0301Services;
+    protected SDServices\SD_03_02_Services $sd0302Services;
 
-    public function __construct(SDServices $sdServices)
+    public function __construct(
+        SDServices\SD_0101_Services  $sd0101Services,
+        SDServices\SD_0102_Services  $sd0102Services,
+        SDServices\SD_0201_Services  $sd0201Services,
+        SDServices\SD_03_01_Services $sd0301Services,
+        SDServices\SD_03_02_Services $sd0302Services,
+
+    )
     {
-        $this->sdServices = $sdServices;
+        $this->sd0101Services = $sd0101Services;
+        $this->sd0102Services = $sd0102Services;
+        $this->sd0201Services = $sd0201Services;
+        $this->sd0301Services = $sd0301Services;
+        $this->sd0302Services = $sd0302Services;
+
+
     }
 
     // SD-01-01: SAP-->CEOS, in SAP wird ein Kundenauftrag angelegt -
@@ -38,9 +54,9 @@ class SDController extends Controller
     public function sd_0101_beauftragung(SD_0101_beauftragungRequest $request)
     {
         $validated = $request->validated();
-        $vorgangDataArray = $this->sdServices->sd_0101_beauftragung_vorgang($validated['header']);
+        $vorgangDataArray = $this->sd0101Services->sd_0101_beauftragung_vorgang($validated['header']);
         if ($vorgangDataArray !== null) {
-            $positionsNrArray = $this->sdServices->sd_0101_beauftragung_positions($validated['positions'], $vorgangDataArray);
+            $positionsNrArray = $this->sd0101Services->sd_0101_beauftragung_positions($validated['positions'], $vorgangDataArray);
             if ($positionsNrArray !== null) {
                 Log::info('sd_0101_beauftragung Beauftragung erfolgreich empfangen', [
                     'header' => $vorgangDataArray,
@@ -66,7 +82,7 @@ class SDController extends Controller
     // SD-01-02: CEOS-->SAP, beauftragung Rückmeldung
     public function sd_01_02_beauftragungRueckmeldung(Request $request)
     {
-        $vorgangDataArray = $this->sdServices->sd_0102_beauftragung_rueckmeldung($request);
+        $vorgangDataArray = $this->sd0102Services->sd_0102_beauftragung_rueckmeldung($request);
         if ($vorgangDataArray !== null) {
             Log::info('Sent Vorgang: ', $vorgangDataArray);
             return response()->json([
@@ -96,7 +112,7 @@ class SDController extends Controller
         $validated = $request->validated();
 
 
-        $resultDataArray = $this->sdServices->sd_0201_mietvertragsrechnungen($validated);
+        $resultDataArray = $this->sd0201Services->sd_0201_mietvertragsrechnungen($validated);
 
         if ($resultDataArray !== null) {
             Log::info('Auftrag erfolgreich gespeichert: ', $resultDataArray);
@@ -120,7 +136,7 @@ class SDController extends Controller
      */
     public function sd_03_01_dienstleistungsrechnung(Request $request)
     {
-        $vorgangDataArray = $this->sdServices->sd_0301_dienstleistungsrechnung($request);
+        $vorgangDataArray = $this->sd0301Services->sd_0301_dienstleistungsrechnung($request);
         if ($vorgangDataArray !== null) {
             return response()->json([
                 'status' => 'success',
@@ -144,7 +160,7 @@ class SDController extends Controller
     public function sd_03_02_fakturiertedienstleistungsrechnung(SD_0302_fakturiertedienstleistungsrechnungRequest $request)
     {
         $validated = $request->validated();
-        $resultDataArray = $this->sdServices->sd_03_02_fakturiertedienstleistungsrechnung($validated);
+        $resultDataArray = $this->sd0302Services->sd_03_02_fakturiertedienstleistungsrechnung($validated);
 
         if ($resultDataArray !== null) {
             Log::info('sd_03_02_fakturiertedienstleistungsrechnung Updated Vorgang: ', $resultDataArray);

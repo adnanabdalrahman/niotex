@@ -16,7 +16,6 @@ use Illuminate\Support\Facades\Log;
 
 class MMController extends Controller
 {
-    protected MMServices $mmServices;
     protected MMServices\MM_33_01_b_Services $mm331bServices;
     protected MMServices\MM_31_01_Services $mm311Services;
     protected MMServices\MM_34_01_Services $mm341Services;
@@ -26,7 +25,6 @@ class MMController extends Controller
     protected MMServices\MM_37_1_Services $mm371aServices;
 
     public function __construct(
-        MMServices                     $mmServices,
         MMServices\MM_33_01_b_Services $mm331bServices,
         MMServices\MM_31_01_Services   $mm311Services,
         MMServices\MM_34_01_Services   $mm341Services,
@@ -37,7 +35,6 @@ class MMController extends Controller
 
     )
     {
-        $this->mmServices = $mmServices;
         $this->mm331bServices = $mm331bServices;
         $this->mm331aServices = $mm331aServices;
         $this->mm311Services = $mm311Services;
