@@ -11,18 +11,17 @@ use Illuminate\Support\Facades\Log;
 
 class SEController extends Controller
 {
+    protected SEServices\SE_26_01_Services $se2601Services;
 
-    protected SEServices $seServices;
-
-    public function __construct(SEServices $seServices)
+    public function __construct(SEServices\SE_26_01_Services $se2601Services)
     {
-        $this->seServices = $seServices;
+        $this->se2601Services = $se2601Services;
     }
 
     // SE-26-01: CEOS-->SAP, Reparaturauftrag
     public function se_26_01_Reparaturauftrag(Request $request)
     {
-        $response = $this->seServices->se_26_01_Reparaturauftrag($request);
+        $response = $this->se2601Services->se_26_01_Reparaturauftrag($request);
         if ($response !== null) {
             Log::info('se_26_01_Reparaturauftrag Received Data: ', $response);
             return response()->json($response, 202);
