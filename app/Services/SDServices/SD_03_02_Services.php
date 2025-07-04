@@ -201,15 +201,6 @@ class SD_03_02_Services
                 //Position3Menge
                 $positionData['PosKZMengeneinheit1'] = 'ST';
                 $positionData['PosMenge1'] = $position['menge'];
-
-                //PositionWert
-                $positionData['PosWMengeGesamt1'] = $position['menge'];
-                $positionData['PosWMengeAuftrag1'] = $position['menge'];
-                $positionData['PosWMengeAbrechnung1'] = $position['menge'];
-                $positionData['PosWMengeLieferung1'] = $position['menge'];
-                $positionData['PosWMengeVersand1'] = $position['menge'];
-                $positionData['PosWMengeGut1'] = $position['menge'];
-                $positionData['PosWMengeRechnung1'] = $position['menge'];
             */
 
             if ($position['nettowertposition'] > 0) {
@@ -238,7 +229,7 @@ class SD_03_02_Services
 
             $position1wert->save();
 
-
+            //PositionWert
             $positionWert = PositionWert::where('InternePositionsnummer', $currentPosition->InternePositionsnummer)->first();
             $positionWert->PosWEinzelpreisMinusRabatt = $einzelPreis;
             $positionWert->save();

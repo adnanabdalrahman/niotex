@@ -151,7 +151,6 @@ class SD_0201_Services
         //------------------------------------------------------------------------------------
         $positions = $requestData['positions'];
 
-        $positionData['InterneVorgangsnummer'] = $vorgang['InterneVorgangsnummer'];
         $positionsArray = [];
         foreach ($positions as $key => $position) {
             $artikelNummer = ltrim($position['matnr'], '0');
@@ -179,7 +178,7 @@ class SD_0201_Services
                 Log::error('sd_0201_mietvertragsrechnungen Position Steuersatz ist unklar');
                 return null;
             }
-
+            $positionData['InterneVorgangsnummer'] = $vorgang['InterneVorgangsnummer'];
             $positionData['PosIndividualD1'] = $position['posnr'];
             $positionData['PosKZMengeneinheit1'] = 'ST';
             $positionData['PosMenge1'] = $position['fkimg'];
@@ -205,8 +204,6 @@ class SD_0201_Services
         Log::error('sd_0201_mietvertragsrechnungen Positions Creation Failed');
         return null;
     }
-
-
 }
 
 
