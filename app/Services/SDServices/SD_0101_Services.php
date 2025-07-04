@@ -96,7 +96,6 @@ class SD_0101_Services
                 return [
                     'InterneVorgangsnummer' => $vorgang['InterneVorgangsnummer'],
                     'VorNummer' => $vorgang['VorNummer'],
-                    'VorGruppe' => $vorgang['VorGruppe'],
                     'Verkaufsbeleg' => $requestData['vbeln'],
                 ];
             }
@@ -109,10 +108,7 @@ class SD_0101_Services
     public function sd_0101_beauftragung_positions($positions, $vorgangDataArray): ?array
     {
         //todo important delete all position if one fails also vorgang
-        $positionData['InterneVorgangsnummer'] = $vorgangDataArray['InterneVorgangsnummer'];
-        $positionData['VorNummer'] = $vorgangDataArray['VorNummer'];
-        $positionData['VorGruppe'] = $vorgangDataArray['VorGruppe'];
-        $positionData['Verkaufsbeleg'] = $vorgangDataArray['Verkaufsbeleg'];
+        $vorgangsnummer = $vorgangDataArray['VorNummer'];
 
         $positionsArray = [];
         foreach ($positions as $key => $position) {
@@ -123,13 +119,15 @@ class SD_0101_Services
                     "Material für Position nicht gefunden",
                     [
                         'Material' => $artikelNummer,
-                        'Vorgangnummer' => $positionData['VorNummer']
+                        'Vorgangnummer' => $vorgangsnummer
                     ]
                 );
                 return null;
             }
 
             $positionData['key'] = $key;
+            $positionData['InterneVorgangsnummer'] = $vorgangDataArray['InterneVorgangsnummer'];
+
             $positionData['PosIndividualC3'] = $position['kondm'];
             $positionData['PosIndividualD1'] = $position['posnr'];
             $positionData['PosZusatztextLieferschein'] = $position['txtZ002'];

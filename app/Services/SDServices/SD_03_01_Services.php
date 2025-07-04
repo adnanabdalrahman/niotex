@@ -4,13 +4,15 @@ namespace App\Services\SDServices;
 
 use App\Models\Adresse;
 use App\Models\Artikel;
+use App\Models\Position2Text;
+use App\Models\Position3Menge;
+use App\Models\Position5Individual;
 use App\Models\Vorgang;
 use App\Services\SapApiClient;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
-
 
 class SD_03_01_Services
 {
@@ -84,10 +86,8 @@ class SD_03_01_Services
                     return null;
                 }
 
-                $position5Individual = DB::connection('sqlsrv2')->table('cis.Position5Individual')
-                    ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
-                    ->where('InternePositionsnummer', $position->InternePositionsnummer)
-                    ->first();
+                $position5Individual = Position5Individual::where
+                ('InternePositionsnummer', $position->InternePositionsnummer)->first();
                 if (is_null($position5Individual)) {
                     Log::error(
                         "Position5Individual nicht gefunden",
@@ -98,10 +98,8 @@ class SD_03_01_Services
                     );
                     return null;
                 }
-                $position3Menge = DB::connection('sqlsrv2')->table('cis.Position3Menge')
-                    ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
-                    ->where('InternePositionsnummer', $position->InternePositionsnummer)
-                    ->first();
+                $position3Menge = Position3Menge::where
+                ('InternePositionsnummer', $position->InternePositionsnummer)->first();
                 if (is_null($position3Menge)) {
                     Log::error(
                         "Position3Menge nicht gefunden",
@@ -112,10 +110,8 @@ class SD_03_01_Services
                     );
                     return null;
                 }
-                $position2Text = DB::connection('sqlsrv2')->table('cis.Position2Text')
-                    ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
-                    ->where('InternePositionsnummer', $position->InternePositionsnummer)
-                    ->first();
+                $position2Text = Position2Text::where
+                ('InternePositionsnummer', $position->InternePositionsnummer)->first();
                 if (is_null($position2Text)) {
                     Log::error(
                         "Position2Text nicht gefunden",
@@ -148,8 +144,7 @@ class SD_03_01_Services
 
         return $result;
     }
-
-
+    
 }
 
 
