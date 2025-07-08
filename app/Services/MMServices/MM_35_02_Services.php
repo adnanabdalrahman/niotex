@@ -8,6 +8,7 @@ use App\Models\Position;
 use App\Models\Position3Menge;
 use App\Models\Vorgang;
 use App\Services\SapApiClient;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
@@ -28,16 +29,16 @@ class MM_35_02_Services
      * CEOSWEB-->CEOS-->SAP
      * @throws Exception
      */
-    public function mm_35_02_materialverbrauch($data)
+    public function mm_35_02_materialverbrauch($requestData)
     {
-        $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])
-            ->where('VorGruppe', 'RE') //todo return to M_LG
+        $vorgang = Vorgang::where('VorNummer', $requestData['Vorgangnummer'])
+            ->where('VorGruppe', $requestData['VorGruppe'])//'M_LG'
             ->first();
 
         if ($vorgang === null) {
             Log::error(
                 'mm_35_02_materialverbrauch Kein Vorgang vorhanden',
-                ['Vorgangnummer' => $data['Vorgangnummer']]
+                ['Vorgangnummer' => $requestData['Vorgangnummer']]
             );
             return null;
         }
@@ -47,9 +48,9 @@ class MM_35_02_Services
             return null;
         }
 
-        $tourId = '1025';//todo later $vorgang->VorIndividualD5;
-        //todo later get date from Blau (now Fake + 10 days)
-        $milliseconds = now()->addDays(10)->timestamp * 1000;
+        $milliseconds = Carbon::parse($requestData['tourDate'])
+                ->addDays(10)
+                ->timestamp * 1000;
         $tourDate = "/Date({$milliseconds})/";
 
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
@@ -88,17 +89,17 @@ class MM_35_02_Services
                 'Posnr' => '',
                 'Slgnr' => $vorgang->VorIndividualC3,
                 'Vgart' => $vorgang->VorGruppe,
-                "TourId" => $tourId,
+                "TourId" => (string)$requestData['tourId'],
             ];
         }
 
-        $data = [
-            "TourId" => (string)(int)$tourId,
+        $requestData = [
+            "TourId" => (string)(int)$requestData['tourId'],
             "MoveDate" => $tourDate,
             "to_Items" => $to_Items
         ];
-        Log::info("mm_35_02_materialverbrauch sent Data", $data);
-        $response = app(SapApiClient::class)->post($this->mm352_path, $data);
+        Log::info("mm_35_02_materialverbrauch sent Data", $requestData);
+        $response = app(SapApiClient::class)->post($this->mm352_path, $requestData);
         return $response;
     }
 

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Artikel;
-use App\Models\Preisbasis;
 use App\Services\PositionServices\Position1WertService;
 use App\Services\PositionServices\Position2TextService;
 use App\Services\PositionServices\Position3MengeService;
@@ -28,9 +27,6 @@ class PositionService
     public function createPosition($data, Artikel $artikel): ?array
     {
         try {
-            //todo check and delete
-            $data['PosNummer'] = $data['key'] + 1;
-            $data['PosNummernText'] = $data['key'] + 1;
             $positionService = new PositionServiceTable();
             $position = $positionService->createPosition($data, $artikel);
             $internePositionsnummer = $position->InternePositionsnummer;
@@ -53,12 +49,8 @@ class PositionService
             $position7Zusatz = new Position7ZusatzService($internePositionsnummer);
             $position7Zusatz->savePosition7Zusatz($data);
 
-            $preisbasis = Preisbasis::where('NRPreisbasis', $artikel->NRPreisbasis)->first();
 
             /* Position1Wert */
-            //todo check and delete
-            $data['NRPreisbasis'] = $artikel->NRPreisbasis;
-            $data['PosPreisfaktor'] = $preisbasis->Preisfaktor;
             $position1Wert = new Position1WertService($internePositionsnummer);
             $position1Wert->savePosition1Wert($data);
 
@@ -69,6 +61,7 @@ class PositionService
             $positionsResultArray = [
                 'InternePositionsnummer' => $internePositionsnummer,
                 'InterneVorgangsnummer' => $data['InterneVorgangsnummer'],
+                'vorgn' => $data['VorNummer'],
                 'posnr' => $data['PosIndividualD1'],
             ];
         } catch (Throwable $e) {

@@ -81,7 +81,9 @@ class MMController extends Controller
         }
     }
 
+    //------------------------------------------------------------------------------------------------------------------
     /*
+    SAP → CEOS
     Übertragung für den NU zugelassene Leistungspositionen von SAP an CEOS
     */
     public function mm_37_1_NuLeistungspositionen(MM_3701_nuLeistungspositionenRequest $request): JsonResponse
@@ -104,6 +106,7 @@ class MMController extends Controller
             ], 400);
         }
     }
+    //------------------------------------------------------------------------------------------------------------------
 
     /**
      * MM_34_01 Umlagerungsreservierung
@@ -118,6 +121,9 @@ class MMController extends Controller
     {
         $data = $request->validate([
             'Vorgangnummer' => 'required',
+            'VorGruppe' => 'required',
+            'tourId' => 'required',
+            'tourDate' => 'required|date',
         ]);
 
         $response = $this->mm341Services->mm_34_01_umlagerungsreservierung($data);
@@ -138,6 +144,7 @@ class MMController extends Controller
 
     }
 
+    //------------------------------------------------------------------------------------------------------------------
 
     /**
      * MM_35_02 materialverbrauch
@@ -152,7 +159,11 @@ class MMController extends Controller
     {
         $data = $request->validate([
             'Vorgangnummer' => 'required',
+            'VorGruppe' => 'required',
+            'tourId' => 'required',
+            'tourDate' => 'required|date',
         ]);
+
         $response = $this->mm352Services->mm_35_02_materialverbrauch($data);
         if ($response !== null) {
             return response()->json(
@@ -173,20 +184,48 @@ class MMController extends Controller
      * @throws Exception
      */
 
-    public function mm_33_01_a_Leistungsbestaetigung(Request $request): JsonResponse
+    public function mm_33_01_a_NuLeistungsbestaetigung(Request $request): JsonResponse
     {
         $data = $request->validate([
             'Vorgangnummer' => 'required',
+            'VorGruppe' => 'required',
         ]);
-        $response = $this->mm331aServices->mm_33_01_a_Leistungsbestaetigung($data);
+        $response = $this->mm331aServices->mm_33_01_a_NuLeistungsbestaetigung($data);
         if ($response !== null) {
             return response()->json([
-                'message' => 'mm_33_01_a_Leistungsbestaetigung erfolgreich gesendet',
+                'message' => 'mm_33_01_a_NuLeistungsbestaetigung erfolgreich gesendet',
                 'data' => $response
             ], 202);
         }
-        return response()->json(['message' => 'mm_33_01_a_Leistungsbestaetigung fehlgeschlagen'], 400);
+        return response()->json(['message' => 'mm_33_01_a_NuLeistungsbestaetigung fehlgeschlagen'], 400);
     }
+
+    /**
+     * MM_33_01b NU-Auftragspaket
+     * CEOSWEB-->CEOS-->SAP
+     *
+     * @param Request $request
+     * @return JsonResponse
+     * @throws Exception
+     */
+
+    public function mm_33_01_b_NuAuftragspaket(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'Vorgangnummer' => 'required',
+            'VorGruppe' => 'required',
+        ]);
+        $response = $this->mm331bServices->mm_33_01_b_NuAuftragspaket($data);
+
+        if ($response !== null) {
+            return response()->json([
+                'message' => 'mm_33_01_b_NuAuftragspaket erfolgreich gesendet',
+                'data' => $response
+            ], 202);
+        }
+        return response()->json(['message' => 'mm_33_01_b_NuAuftragspaket fehlgeschlagen'], 400);
+    }
+
 
     /**
      * MM-22-1 Abfrage nach Lagerbestände
@@ -211,31 +250,5 @@ class MMController extends Controller
         }
         return response()->json(['message' => 'Menge speichern fehlgeschlagen'], 400);
     }
-
-    /**
-     * MM_33_01b NU-Auftragspaket
-     * CEOSWEB-->CEOS-->SAP
-     *
-     * @param Request $request
-     * @return JsonResponse
-     * @throws Exception
-     */
-
-    public function mm_33_01_b_NuAuftragspaket(Request $request): JsonResponse
-    {
-        $data = $request->validate([
-            'Vorgangnummer' => 'required',
-        ]);
-        $response = $this->mm331bServices->mm_33_01_b_NuAuftragspaket($data);
-
-        if ($response !== null) {
-            return response()->json([
-                'message' => 'mm_33_01_b_NuAuftragspaket erfolgreich gesendet',
-                'data' => $response
-            ], 202);
-        }
-        return response()->json(['message' => 'mm_33_01_b_NuAuftragspaket fehlgeschlagen'], 400);
-    }
-
 
 }

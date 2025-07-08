@@ -36,7 +36,7 @@ class MM_33_01_b_Services
     public function mm_33_01_b_NuAuftragspaket($requestData): ?array
     {
         $vorgang = Vorgang::where('VorNummer', $requestData['Vorgangnummer'])
-            ->where('VorGruppe', 'NU')
+            ->where('VorGruppe', $requestData['VorGruppe']) //NU
             ->first();
 
         if ($vorgang === null) {
@@ -133,15 +133,17 @@ class MM_33_01_b_Services
                 )->where(
                     'InterneArtikelnummer', $artikel->InterneArtikelnummer,
                 )->first();
-                $preisbasis = Preisbasis::where('NRPreisbasis', $artikel->NRPreisbasis)->first();
 
                 $positionData['InterneVorgangsnummer'] = $vorgang->InterneVorgangsnummer;
+                $positionData['VorNummer'] = $vorgang->VorNummer;
                 $positionData['PosIndividualD1'] = $receivedPosition['Posnr'];
                 $positionData['PosIndividualC1'] = $receivedPosition['PoNumber'];
                 $positionData['PosIndividualC2'] = $receivedPosition['PoItem'];
                 $positionData['PosIndividualC4'] = $receivedPosition['PoUnit'];
                 $positionData['PosIndividualC5'] = $receivedPosition['Quantity'];
                 $positionData['PosIndividualC7'] = $vorgang->VorGruppe . ' ' . $vorgang->VorNummer;
+
+                $preisbasis = Preisbasis::where('NRPreisbasis', $receivedPosition['Peinh'])->first();
                 $positionData['NRPreisbasis'] = $receivedPosition['Peinh'];
                 $positionData['PosPreisfaktor'] = $preisbasis->Preisfaktor;
 
@@ -208,9 +210,11 @@ class MM_33_01_b_Services
                     while (in_array($nextNumber, $positionNummerArray)) {
                         $nextNumber++;
                     }
-                    $positionData['key'] = $nextNumber;
+
                     $positionNummerArray[] = $nextNumber;
 
+                    $positionData['PosNummer'] = $nextNumber + 1;
+                    $positionData['PosNummernText'] = $nextNumber + 1;
                     $newPosition = new PositionService();
                     $newPosition = $newPosition->createPosition($positionData, $artikel);
                     if ($newPosition === null) {

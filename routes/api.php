@@ -61,7 +61,7 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
                 Route::post('/2201/lagerbestaende', [MMController::class, 'mm_22_1_lagerbestaende']);
 
                 //mm-33-01A: CEOSWEB-->CEOS-->SAP,  Liefer-/Leistungsbestätigung
-                Route::post('/3301a/leistungsbestaetigung', [MMController::class, 'mm_33_01_a_Leistungsbestaetigung']);
+                Route::post('/3301a/leistungsbestaetigung', [MMController::class, 'mm_33_01_a_NuLeistungsbestaetigung']);
 
 
                 //mm-33-01B: CEOSWEB-->CEOS-->SAP, NU-Auftragspaket
