@@ -25,22 +25,22 @@ class MM_33_01_a_Services
     /**
      * @throws Exception
      */
-    public function mm_33_01_a_Leistungsbestaetigung($data)
+    public function mm_33_01_a_NuLeistungsbestaetigung($requestData)
     {
-        $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])
-            ->where('VorGruppe', 'NU')
+        $vorgang = Vorgang::where('VorNummer', $requestData['Vorgangnummer'])
+            ->where('VorGruppe', $requestData['VorGruppe']) // NU
             ->first();
 
         if ($vorgang === null) {
             Log::error(
-                'mm_33_01_a_Leistungsbestaetigung Kein Vorgang vorhanden',
-                ['Vorgangnummer' => $data['Vorgangnummer']]
+                'mm_33_01_a_NuLeistungsbestaetigung Kein Vorgang vorhanden',
+                ['Vorgangnummer' => $requestData['Vorgangnummer']]
             );
             return null;
         }
         $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
         if ($adresse === null) {
-            Log::error("mm_33_01_a_Leistungsbestaetigung Kein Adresse für Vorgang gefunden");
+            Log::error("mm_33_01_a_NuLeistungsbestaetigung Kein Adresse für Vorgang gefunden");
             return null;
         }
 
@@ -60,7 +60,7 @@ class MM_33_01_a_Services
             $artikel = Artikel::find($position->InterneArtikelnummer);
             if ($artikel === null) {
                 Log::error(
-                    'mm_33_01_a_Leistungsbestaetigung Kein Artikel für Position gefunden',
+                    'mm_33_01_a_NuLeistungsbestaetigung Kein Artikel für Position gefunden',
                     [
                         'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
                         'Position' => $position->InternePositionsnummer,
@@ -93,14 +93,14 @@ class MM_33_01_a_Services
             ];
         }
 
-        $data = [
+        $requestData = [
             "TourId" => (string)(int)$tourId,
             "Interface" => 'A',
             "Lifnr" => $adresse->AdressNummer,
             "PoNumber" => $vorgang->VorIndividualC6 ?? "",
             "to_items" => $to_Items
         ];
-        Log::info("mm_33_01_a_Leistungsbestaetigung sent Data", $data);
-        return app(SapApiClient::class)->post($this->mm331_path, $data);
+        Log::info("mm_33_01_a_NuLeistungsbestaetigung sent Data", $requestData);
+        return app(SapApiClient::class)->post($this->mm331_path, $requestData);
     }
 }

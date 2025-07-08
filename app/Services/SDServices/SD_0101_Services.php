@@ -6,6 +6,7 @@ use App\Exceptions\AdresseGesperrtException;
 use App\Exceptions\AdresseNotFoundException;
 use App\Models\Adresse;
 use App\Models\Artikel;
+use App\Models\Preisbasis;
 use App\Services\PositionService;
 use App\Services\VorgangService;
 use Carbon\Carbon;
@@ -125,8 +126,8 @@ class SD_0101_Services
                 return null;
             }
 
-            $positionData['key'] = $key;
             $positionData['InterneVorgangsnummer'] = $vorgangDataArray['InterneVorgangsnummer'];
+            $positionData['VorNummer'] = $vorgangDataArray['VorNummer'];
 
             $positionData['PosIndividualC3'] = $position['kondm'];
             $positionData['PosIndividualD1'] = $position['posnr'];
@@ -141,7 +142,13 @@ class SD_0101_Services
             $carbonMontagedatum = Carbon::parse((string)$position['montagedatum']);
             $montagedatum = $carbonMontagedatum->format('Ymd');
             $positionData['PosIndividualT3'] = $montagedatum;
+            
+            $preisbasis = Preisbasis::where('NRPreisbasis', $artikel->NRPreisbasis)->first();
+            $positionData['NRPreisbasis'] = $artikel->NRPreisbasis;
+            $positionData['PosPreisfaktor'] = $preisbasis->Preisfaktor;
 
+            $positionData['PosNummer'] = $key + 1;
+            $positionData['PosNummernText'] = $key + 1;
             $positions = new PositionService();
             $createdPosition = $positions->createPosition($positionData, $artikel);
             if ($createdPosition !== null) {
@@ -154,8 +161,6 @@ class SD_0101_Services
         Log::error('sd_0101_beauftragung_positions Positions Creation Failed');
         return null;
     }
-
-
 }
 
 

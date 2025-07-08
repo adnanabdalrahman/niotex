@@ -7,9 +7,9 @@ use App\Models\Position;
 use App\Models\Position3Menge;
 use App\Models\Vorgang;
 use App\Services\SapApiClient;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Log;
-
 
 class MM_34_01_Services
 {
@@ -21,37 +21,30 @@ class MM_34_01_Services
     }
 
 
-    //MM_34_01 Umlagerungsreservierung
-
     /**
      * MM-34-1 Umlagerungsreservierung
-     * Receive material data from SAP.
-     *
+     * CEOSWEB-->CEOSAPI-->SAP
      * @throws Exception
      */
 
-    public function mm_34_01_umlagerungsreservierung($data): ?array
+    public function mm_34_01_umlagerungsreservierung($requestData): ?array
     {
-        // todo source data from CEOS mapping
-        // what to do with the received data??
-        //ist ReqDate gleich TourDate (Bedarfstermin) ?
-
-        $vorgang = Vorgang::where('VorNummer', $data['Vorgangnummer'])
-            ->where('VorGruppe', 'M_LG')
+        $vorgang = Vorgang::where('VorNummer', $requestData['Vorgangnummer'])
+            ->where('VorGruppe', $requestData['VorGruppe']) //M_LG
             ->first();
 
         if ($vorgang === null) {
             Log::error(
                 'mm_34_01_umlagerungsreservierung Kein Vorgang vorhanden',
-                ['Vorgangnummer' => $data['Vorgangnummer']]
+                ['Vorgangnummer' => $requestData['Vorgangnummer']]
             );
             return null;
         }
 
-        //todo later get date from Blau (now Fake + 10 days)
-        $milliseconds = now()->addDays(10)->timestamp * 1000;
+        $milliseconds = Carbon::parse($requestData['tourDate'])
+                ->addDays(10)
+                ->timestamp * 1000;
         $tourDate = "/Date({$milliseconds})/";
-
 
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
 
@@ -61,7 +54,7 @@ class MM_34_01_Services
                 Log::error(
                     'mm_34_01_umlagerungsreservierung Kein InterneArtikelnummer in Position gefunden',
                     [
-                        'InterneVorgangsnummer' => $data['Vorgangnummer'],
+                        'InterneVorgangsnummer' => $requestData['Vorgangnummer'],
                         'Position' => $position->InternePositionsnummer
                     ]
                 );
@@ -74,7 +67,7 @@ class MM_34_01_Services
                 Log::error(
                     'mm_34_01_umlagerungsreservierung Kein Artikel für Position gefunden',
                     [
-                        'InterneVorgangsnummer' => $data['Vorgangnummer'],
+                        'InterneVorgangsnummer' => $requestData['Vorgangnummer'],
                         'Position' => $position->InternePositionsnummer,
                         'InterneArtikelnummer' => $position->InterneArtikelnummer
                     ]
@@ -92,17 +85,16 @@ class MM_34_01_Services
                 "ReqDate" => $tourDate,
             ];
         }
-        $tourId = $vorgang->VorGruppe . $vorgang->VorNummer; // todo after test return to $vorgang->VorIndividualD5;
 
-        $data = [
-            "TourId" => (string)$tourId,
+        $requestData = [
+            "TourId" => (string)$requestData['tourId'],
             "Remark" => "Test Remark", //todo later from Florian MAX 50 also in Florian page Max 50
             "MoveStloc" => "",
             "MoveStlocSearch" => "",
             "to_Items" => $to_Items
         ];
-        Log::info("mm_34_01_umlagerungsreservierung sent Data", $data);
-        $response = app(SapApiClient::class)->post($this->mm341_path, $data);
+        Log::info("mm_34_01_umlagerungsreservierung sent Data", $requestData);
+        $response = app(SapApiClient::class)->post($this->mm341_path, $requestData);
         if ($response === null) {
             Log::error('mm_22_01_lagerbestaende Error Response');
             return null;
@@ -116,7 +108,7 @@ class MM_34_01_Services
             if ($reservNo !== null) {
                 $reservNo = ltrim($reservNo, '0');
                 $vorgang->VorStatus = 100220;
-                $vorgang->VorIndividualD6 = $reservNo;
+                $vorgang->VorIndividualD6 = (int)$reservNo;
                 $vorgang->save();
                 return [
                     'reservNo' => $reservNo,
