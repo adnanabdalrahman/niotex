@@ -101,6 +101,16 @@ class MM_33_01_a_Services
             "to_items" => $to_Items
         ];
         Log::info("mm_33_01_a_NuLeistungsbestaetigung sent Data", $requestData);
-        return app(SapApiClient::class)->post($this->mm331_path, $requestData);
+        $result = app(SapApiClient::class)->post($this->mm331_path, $requestData);
+
+        if ($result !== null && isset($result['data']['d']['TourId'])) {
+            $vorgang->VorStatus = 100300;
+            $vorgang->save();
+            return [
+                'message' => "mm_33_01_a_NuLeistungsbestaetigung erfolgreich gesendet und status geändert",
+            ];
+        }
+        Log::error('mm_33_01_a_NuLeistungsbestaetigung SAP Response Error ');
+        return null;
     }
 }

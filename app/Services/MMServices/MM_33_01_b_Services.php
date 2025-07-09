@@ -90,6 +90,7 @@ class MM_33_01_b_Services
                 'Vgart' => 'M_RM',//todo clarify with VIVAWEST $vorgang->VorGruppe, erklärt Vor_Gruppe
                 'Vbeln' => '',
                 'Posnr' => '',
+                'PosInt' => $position->InternePositionsnummer,
                 'Material' => (string)(int)$artikel->Artikelnummer,
                 'ShortText' => $artikel->ArtBezeichnung1 ?? "",
                 "Quantity" => (string)(int)$position3Menge->PosMenge1,
@@ -122,16 +123,15 @@ class MM_33_01_b_Services
             $vorgang->save();
         }
         if (isset($result['d']['to_items']['results'])) {
+            Log::info('received_data', $result);
             $receivedPositions = $result['d']['to_items']['results'];
             $notExistArrayAndCreated = [];
             $existArrayAndUpdated = [];
             foreach ($receivedPositions as $key => $receivedPosition) {
-                //todo later with PosInt
+
                 $artikel = Artikel::where('Artikelnummer', $receivedPosition['Material'])->first();
                 $position = Position::where(
-                    'InterneVorgangsnummer', $vorgang->InterneVorgangsnummer,
-                )->where(
-                    'InterneArtikelnummer', $artikel->InterneArtikelnummer,
+                    'InternePositionsnummer', $receivedPosition['PosInt'],
                 )->first();
 
                 $positionData['InterneVorgangsnummer'] = $vorgang->InterneVorgangsnummer;
@@ -155,7 +155,7 @@ class MM_33_01_b_Services
                 $positionData['externEinzelPreis'] = $receivedPosition['Netpr'];
                 $positionData['externMenge'] = $receivedPosition['Quantity'];
 
-                if (in_array($receivedPosition['Material'], $artikelNummerArray)) {
+                if ($receivedPosition['PosInt'] != 0) {
                     $position5Individual = new Position5IndividualService($position->InternePositionsnummer);
                     if ($position5Individual->savePosition5Individual($positionData) === null) {
                         return null;

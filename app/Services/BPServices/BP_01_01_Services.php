@@ -89,7 +89,7 @@ class BP_01_01_Services
             $adresse = Adresse::updateOrCreate(
                 ['AdressNummer' => $data['DebitorenKreditorennummer']],
                 [
-                    'AdrFremdnummer' => $data['Geschaeftspartnernummer'], // Primary
+                    'AdrFremdnummer' => $data['Geschaeftspartnernummer'], // AdrFibuNummer aber wegen Lange → AdrFremdnummer
                     'AdressNummer' => $data['DebitorenKreditorennummer'],
                     'KZWaehrung' => "EUR", // ???????
                     'KZAdresstyp' => $data['Adresstyp'],

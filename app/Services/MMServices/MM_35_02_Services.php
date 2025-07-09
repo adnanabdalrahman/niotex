@@ -48,9 +48,7 @@ class MM_35_02_Services
             return null;
         }
 
-        $milliseconds = Carbon::parse($requestData['tourDate'])
-                ->addDays(10)
-                ->timestamp * 1000;
+        $milliseconds = Carbon::parse($requestData['tourDate'])->timestamp * 1000;
         $tourDate = "/Date({$milliseconds})/";
 
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
@@ -78,17 +76,16 @@ class MM_35_02_Services
                 ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
                 ->first();
             $to_Items[] = [
-                'MoveDate' => $tourDate, //todo clarify if correct (should from Ceos comes)
                 'Material' => (string)(int)$artikel->Artikelnummer,
                 "MoveType" => "261",
                 "Storage" => '',
-                "DynamicStorage" => $adresse->AdressNummer,
+                "DynamicStorage" => "6019995",// todo important later $adresse->AdressNummer,
                 "EntryQnt" => (string)(int)$position3Menge->PosMenge1,
                 "EntryUom" => "ST",
                 'Vbeln' => '',
                 'Posnr' => '',
                 'Slgnr' => $vorgang->VorIndividualC3,
-                'Vgart' => $vorgang->VorGruppe,
+                'Vgart' => 'M_RM',// $vorgang->VorGruppe,
                 "TourId" => (string)$requestData['tourId'],
             ];
         }
