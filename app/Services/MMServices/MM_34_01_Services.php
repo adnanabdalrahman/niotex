@@ -41,9 +41,7 @@ class MM_34_01_Services
             return null;
         }
 
-        $milliseconds = Carbon::parse($requestData['tourDate'])
-                ->addDays(10)
-                ->timestamp * 1000;
+        $milliseconds = Carbon::parse($requestData['tourDate'])->timestamp * 1000;
         $tourDate = "/Date({$milliseconds})/";
 
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();

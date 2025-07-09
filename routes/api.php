@@ -2,12 +2,12 @@
 
 use App\Http\Controllers\V1\BPController;
 use App\Http\Controllers\V1\MMController;
+use App\Http\Controllers\V1\REController;
 use App\Http\Controllers\V1\SDController;
 use App\Http\Controllers\V1\SEController;
 use App\Http\Middleware\VerifyCeosWebToken;
 use App\Http\Middleware\VerifySapToken;
 use Illuminate\Support\Facades\Route;
-
 
 Route::middleware([VerifySapToken::class])->group(function () {
 
@@ -44,8 +44,13 @@ Route::middleware([VerifySapToken::class])->group(function () {
                 //SD-03-02: SAP-->CEOS, fakturierte Dienstleistungsrechnung
                 Route::post('/0302/fakturiertedienstleistungsrechnung', [SDController::class,
                     'sd_03_02_fakturiertedienstleistungsrechnung']);
-
             });
+
+            Route::prefix('re')->group(function () {
+                //RE-01-01: SAP->CEOS, Liegenschaften
+                Route::post('/0101/liegenschaften', [REController::class, 're_01_01_Liegenschaften']);
+            });
+
         });
 });
 
@@ -89,6 +94,7 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
                 //SE-26-01: CEOSWEB-->CEOS-->SAP , reparaturauftrag
                 Route::post('/2601/reparaturauftrag', [SEController::class, 'se_26_01_Reparaturauftrag']);
             });
+
 
         });
 });

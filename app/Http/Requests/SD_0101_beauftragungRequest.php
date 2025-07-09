@@ -34,7 +34,7 @@ class SD_0101_beauftragungRequest extends FormRequest
             'header.augru' => 'required|string',// Vorgruppe
 
             'positions' => 'required|array|min:1',
-            'positions.*.kondm' => 'required|string|max:2',
+            'positions.*.kondm' => 'required|string|max:2', //Materialgruppe PosIndividualC3
             'positions.*.kwmeng' => 'required|numeric',
             'positions.*.kwmengO' => 'nullable|numeric',
             'positions.*.posnr' => 'required|integer',
