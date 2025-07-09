@@ -25,7 +25,7 @@ class MM_33_01_a_Services
     /**
      * @throws Exception
      */
-    public function mm_33_01_a_NuLeistungsbestaetigung($requestData)
+    public function mm_33_01_a_NuLeistungsbestaetigung($requestData): ?array
     {
         $vorgang = Vorgang::where('VorNummer', $requestData['Vorgangnummer'])
             ->where('VorGruppe', $requestData['VorGruppe']) // NU
@@ -102,15 +102,24 @@ class MM_33_01_a_Services
         ];
         Log::info("mm_33_01_a_NuLeistungsbestaetigung sent Data", $requestData);
         $result = app(SapApiClient::class)->post($this->mm331_path, $requestData);
-
-        if ($result !== null && isset($result['data']['d']['TourId'])) {
+        if ($result !== null && isset($result['d']['TourId'])) {
             $vorgang->VorStatus = 100300;
             $vorgang->save();
+
+            $receivedPositionsArray = $result['d']['to_items']['results'];
+            $sendPositionsArray = [];
+            foreach ($receivedPositionsArray as $key => $position) {
+                $sendPositionsArray[$key]['GoodsmvmtLine'] = $position['GoodsmvmtLine'];
+                $sendPositionsArray[$key]['Goodsmovement'] = $position['Goodsmovement'];
+            }
+
             return [
-                'message' => "mm_33_01_a_NuLeistungsbestaetigung erfolgreich gesendet und status geändert",
+                'Header' => [
+                    'tourId' => $result['d']['TourId'],
+                ],
+                'Positions' => $sendPositionsArray,
             ];
         }
-        Log::error('mm_33_01_a_NuLeistungsbestaetigung SAP Response Error ');
         return null;
     }
 }
