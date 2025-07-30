@@ -127,6 +127,4 @@ class Basisempfindlichkeit extends Model
     protected $table = 'cis.RakArtikel';
     protected $primaryKey = 'InterneArtikelNummer';
     protected $guarded = [];
-
-
 }

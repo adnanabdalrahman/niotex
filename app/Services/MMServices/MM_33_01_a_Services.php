@@ -76,7 +76,7 @@ class MM_33_01_a_Services
                 'TourId' => (string)(int)$tourId,
                 'Lifnr' => $adresse->AdressNummer,
                 'Slgnr' => $vorgang->VorIndividualC3,
-                'Vgart' => 'M_RM', // 'M',//todo clarify with VIVAWEST $vorgang->VorGruppe,
+                'Vgart' => $vorgang->VorGruppe,//todo 'M_RM',clarify with VIVAWEST $vorgang->VorGruppe,
                 'Vbeln' => '',
                 'Posnr' => '',
                 'Material' => (string)(int)$artikel->Artikelnummer,

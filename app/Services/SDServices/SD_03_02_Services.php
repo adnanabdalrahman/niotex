@@ -218,7 +218,8 @@ class SD_03_02_Services
             $einzelPreis = $position['nettowertposition'] / $position['menge'];
 
             $position1wert = Position1Wert::where('InternePositionsnummer', $currentPosition->InternePositionsnummer)->first();
-            $position1wert->PosMwstProzent = $mwstSatzProzentPositionCode;
+            $position1wert->PosMwstProzent = $mwstSatzProzentPosition;
+            $position1wert->MwstNummer = $mwstSatzProzentPositionCode;
             $position1wert->PosGesamteinzelpreis = $einzelPreis;
             $position1wert->PosDBEinzel = $einzelPreis;
             $position1wert->PosPreisEinzel = $einzelPreis;

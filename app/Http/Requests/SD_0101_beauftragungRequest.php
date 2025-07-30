@@ -53,43 +53,16 @@ class SD_0101_beauftragungRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'header.required' => 'Das Feld "header" ist erforderlich.',
-            'header.array' => 'Das Feld "header" muss ein gültiges Array sein.',
-
-            'header.vbeln.required' => 'Die Verkaufsbelegnummer (vbeln) ist erforderlich.',
-            'header.vbeln.string' => 'Die Verkaufsbelegnummer (vbeln) muss ein Text sein.',
-            'header.vbeln.max' => 'Die Verkaufsbelegnummer (vbeln) darf maximal 10 Zeichen lang sein.',
-
-            'header.auart.required' => 'Der Auftragstyp (auart) ist erforderlich.',
-            'header.auart.string' => 'Der Auftragstyp (auart) muss ein Text sein.',
-            'header.auart.max' => 'Der Auftragstyp (auart) darf maximal 4 Zeichen lang sein.',
-
-            'header.kunnr.required' => 'Die Kundennummer ist erforderlich.',
-            'header.kunnr.numeric' => 'Die Kundennummer muss eine Zahl sein.',
-            'header.kunnr.integer' => 'Die Kundennummer darf keine Dezimalstelle haben.',
-            'header.kunnr.min' => 'Die Kundennummer darf nicht negativ sein.',
-            'header.kunnr.max' => 'Die Kundennummer darf maximal :max sein.',
-
-            'header.vdatu.required' => 'Das gewünschte Lieferdatum (vdatu) ist erforderlich.',
-            'header.vdatu.date' => 'Das gewünschte Lieferdatum (vdatu) muss ein gültiges Datum sein.',
-
-            'header.zzlgsnr.string' => 'Die Zusatznummer (zzlgsnr) muss ein Text sein.',
-            'header.zzlgsnr.max' => 'Die Zusatznummer (zzlgsnr) darf maximal 9 Zeichen lang sein.',
-
-            'header.genrCeos.integer' => 'Der Wert von genrCeos muss eine ganze Zahl sein.',
-            'positions.required' => 'Die Liste der Positionen ("positions") ist erforderlich.',
-            'positions.*.PosNr.required' => 'Die Positionsnummer ("PosNr") ist für jede Position erforderlich.',
-            'positions.*.PosNr.integer' => 'Die Positionsnummer ("PosNr") muss eine ganze Zahl sein.',
-            'positions.array' => 'Die Positionen ("positions") müssen ein Array sein.',
-            'positions.*.aufnr.required' => 'Die Auftragsnummer ("aufnr") ist für jede Position erforderlich.',
-            'positions.*.kondm.required' => 'Der Konditionstyp ("kondm") ist für jede Position erforderlich.',
-            'positions.*.kwmeng.required' => 'Die Menge ("kwmeng") ist für jede Position erforderlich.',
-            'positions.*.kwmeng.numeric' => 'Die Menge ("kwmeng") muss eine Zahl sein.',
-            'positions.*.matnr.required' => 'Die Materialnummer ("matnr") ist für jede Position erforderlich.',
-            'positions.*.matnr.string' => 'Die Materialnummer ("matnr") muss ein String sein.',
-            'positions.*.vrkme.required' => 'Die Maßeinheit ("vrkme") ist für jede Position erforderlich.',
-            'positions.*.vrkme.string' => 'Die Maßeinheit ("vrkme") muss ein String sein.',
+            'required' => 'Das Feld ":attribute" ist erforderlich.',
+            'string' => 'Das Feld ":attribute" muss ein Text sein.',
+            'numeric' => 'Das Feld ":attribute" muss eine Zahl sein.',
+            'integer' => 'Das Feld ":attribute" muss eine Ganzzahl sein.',
+            'max' => 'Das Feld ":attribute" darf maximal :max Zeichen enthalten.',
+            'min' => 'Das Feld ":attribute" muss mindestens :min betragen.',
+            'array' => 'Das Feld ":attribute" muss ein Array sein.',
+            'date' => 'Das Feld ":attribute" muss ein gültiges Datum sein.',
+            'boolean' => 'Das Feld ":attribute" muss entweder true oder false sein.',
         ];
     }
-
+    
 }

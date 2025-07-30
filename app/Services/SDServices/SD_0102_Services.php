@@ -68,10 +68,9 @@ class SD_0102_Services
 
             //---------------------------------------------------------------------------------------------
             $positions = Position::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->get();
-
             foreach ($positions as $position) {
                 //ignore unterpositionen
-                if (intval($position->PosNummer) != $position->PosNummer) {
+                if (intval($position->PosNummernText) != $position->PosNummernText) {
                     continue;
                 }
                 $artikel = Artikel::where('InterneArtikelnummer', $position->InterneArtikelnummer)->first();
@@ -167,8 +166,6 @@ class SD_0102_Services
         }
         return $result;
     }
-
-
 }
 
 
