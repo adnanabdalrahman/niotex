@@ -65,35 +65,13 @@ class SD_0201_mietvertragsrechnungenRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'header.required' => 'Das Header-Feld ist erforderlich.',
-            'header.vbeln.required' => 'Feld "vbeln" ist erforderlich.',
-            'header.fkdat.required' => 'Feld "fkdat" ist erforderlich.',
-            'header.fkdat.date' => '"fkdat" muss ein gültiges Datum sein.',
-            'header.datumvon.required' => 'Feld "datumvon" ist erforderlich.',
-            'header.datumvon.date' => '"datumvon" muss ein gültiges Datum sein.',
-            'header.datumbis.required' => 'Feld "datumbis" ist erforderlich.',
-            'header.datumbis.date' => '"datumbis" muss ein gültiges Datum sein.',
-            'header.datumbis.after_or_equal' => '"datumbis" muss gleich oder nach "datumvon" sein.',
-            'header.zuonr.required' => 'Feld "zuonr" ist erforderlich.',
-            'header.netwr.required' => 'Feld "netwr" ist erforderlich.',
-            'header.netwr.numeric' => '"netwr" muss eine Zahl sein.',
-            'header.mwsbk.required' => 'Feld "mwsbk" ist erforderlich.',
-            'header.mwsbk.numeric' => '"mwsbk" muss eine Zahl sein.',
-            'header.zzlgsnr.required' => 'Feld "zzlgsnr" ist erforderlich.',
-            'header.vorgn.required' => 'Feld "vorgn" ist erforderlich.',
-            'header.vorgn.integer' => '"vorgn" muss eine ganze Zahl sein.',
-            'header.vorgnInt.required' => 'Feld "vorgnInt" ist erforderlich.',
-            'header.kunnr.required' => 'Feld "kunnr" ist erforderlich.',
-
-            'positions.required' => 'Das Positionsfeld ist erforderlich und darf nicht leer sein.',
-            'positions.array' => 'Positionsdaten müssen ein Array sein.',
-            'positions.*.matnr.required' => 'Feld "matnr" in einer Position ist erforderlich.',
-            'positions.*.vorgn.required' => 'Feld "vorgn" in einer Position ist erforderlich.',
-            'positions.*.vorgnInt.required' => 'Feld "vorgnInt" in einer Position ist erforderlich.',
-            'positions.*.posnr.required' => 'Feld "posnr" in einer Position ist erforderlich.',
-            'positions.*.fkimg.required' => 'Feld "fkimg" in einer Position ist erforderlich.',
-            'positions.*.netwr.required' => 'Feld "netwr" in einer Position ist erforderlich.',
-            'positions.*.mwsbp.required' => 'Feld "mwsbp" in einer Position ist erforderlich.',
+            'required' => 'Das Feld ":attribute" ist erforderlich.',
+            'string' => 'Das Feld ":attribute" muss ein Text sein.',
+            'numeric' => 'Das Feld ":attribute" muss eine Zahl sein.',
+            'integer' => 'Das Feld ":attribute" muss eine Ganzzahl sein.',
+            'date' => 'Das Feld ":attribute" muss ein gültiges Datum sein.',
+            'array' => 'Das Feld ":attribute" muss ein Array sein.',
+            'min' => 'Das Feld ":attribute" muss mindestens :min Elemente enthalten.',
         ];
     }
 }

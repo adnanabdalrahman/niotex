@@ -79,13 +79,13 @@ class MM_35_02_Services
                 'Material' => (string)(int)$artikel->Artikelnummer,
                 "MoveType" => "261",
                 "Storage" => '',
-                "DynamicStorage" => "6019995",// todo important later $adresse->AdressNummer,
+                "DynamicStorage" => $adresse->AdressNummer,
                 "EntryQnt" => (string)(int)$position3Menge->PosMenge1,
                 "EntryUom" => "ST",
                 'Vbeln' => '',
                 'Posnr' => '',
                 'Slgnr' => $vorgang->VorIndividualC3,
-                'Vgart' => 'M_RM',// $vorgang->VorGruppe,
+                'Vgart' => $vorgang->VorGruppe,
                 "TourId" => (string)$requestData['tourId'],
             ];
         }

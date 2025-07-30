@@ -4,8 +4,8 @@ namespace App\Http\Controllers\V1;
 
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RE_0101_LiegenschaftenRequest;
 use App\Services\REServices;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 
@@ -19,10 +19,10 @@ class REController extends Controller
     }
 
     // RE-01-01: SAP-->CEOS, Liegenschaften
-    public function re_01_01_Liegenschaften(Request $request)
+    public function re_01_01_Liegenschaften(RE_0101_LiegenschaftenRequest $request)
     {
-        //todo build Request validation
-        $response = $this->re0101Services->re_01_01_Liegenschaften($request);
+        $validated = $request->validated();
+        $response = $this->re0101Services->re_01_01_Liegenschaften($validated);
         if ($response !== null) {
             Log::info('re_01_01_Liegenschaften Received Data: ', $response);
             $message = "Liegenschaften erfolgreich empfangen";

@@ -31,8 +31,10 @@ class MM_2201_SAPStockRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'artikelnummer' => 'artikelnummer is required.',
-            'lager' => 'Only "H001" (Hauptlager) is supported.',
+            'required' => 'Das Feld ":attribute" ist erforderlich.',
+            'string' => 'Das Feld ":attribute" muss ein Text sein.',
+            'size' => 'Das Feld ":attribute" muss genau :size Zeichen lang sein.',
+            'in' => 'Das Feld ":attribute" muss den Wert :values haben.',
         ];
     }
 }

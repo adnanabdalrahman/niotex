@@ -100,7 +100,7 @@ class SD_0201_Services
         $vorgangData['VorSkontofaehigMwst1'] = $header['netwr'];
 
         $vorgangData['VorMwstSatz1'] = $mwstSatzProzentCode;
-        $vorgangData['VorMwstSatzProzent1'] = $mwstSatzProzentCode;
+        $vorgangData['VorMwstSatzProzent1'] = $mwstSatzProzent;
         $vorgangData['VorBruttowert'] = $header['mwsbk'];
         $vorgangData['VorSkontofaehigBrutto'] = $header['mwsbk'];
 
@@ -184,13 +184,13 @@ class SD_0201_Services
             $positionData['PosIndividualD1'] = $position['posnr'];
             $positionData['PosKZMengeneinheit1'] = 'ST';
             $positionData['PosMenge1'] = $position['fkimg'];
-            $positionData['PosMwstProzent'] = $mwstSatzProzentPositionCode;
+            $positionData['PosMwstProzent'] = $mwstSatzProzentPosition;
             $positionData['externMenge'] = $position['fkimg'];
             $positionData['externEinzelPreis'] = $position['netwr'] / $position['fkimg'];;
             $positionData['externGesamtPreis'] = $position['netwr'];
             $positionData['PosNummer'] = $key + 1;
             $positionData['PosNummernText'] = $key + 1;
-            
+
             $preisbasis = Preisbasis::where('NRPreisbasis', $artikel->NRPreisbasis)->first();
             $positionData['NRPreisbasis'] = $artikel->NRPreisbasis;
             $positionData['PosPreisfaktor'] = $preisbasis->Preisfaktor;
