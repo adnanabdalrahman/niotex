@@ -151,7 +151,8 @@ class SD_0102_Services
                     'TxtZ002' => (string)$position2Text->PosZusatztextLieferschein,
                     'TxtZ009' => (string)$position2Text->PosZusatztext,
                     'TxtZ010' => (string)$position2Text->PosNotiz,
-                    'Montagedatum' => "20250701"// todo come from CEOS(string)$position5Individual->PosIndividualT3, //
+                    'PosAtt' => (string)$position5Individual->PosIndividualC4,
+                    'Montagedatum' => (string)$position5Individual->PosIndividualT3
                 ];
             }
             Log::info('sd-01-02 Sent data', $data);
@@ -167,8 +168,3 @@ class SD_0102_Services
         return $result;
     }
 }
-
-
-
-
-
