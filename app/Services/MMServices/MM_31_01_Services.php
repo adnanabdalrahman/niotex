@@ -21,8 +21,7 @@ class MM_31_01_Services
     {
 
     }
-
-
+    
     /**
      * MM-31-1 Materialstammdaten
      * SAP -> CEOS
@@ -104,7 +103,7 @@ class MM_31_01_Services
                 ['Artikelnummer' => $data['Material']],
                 [
                     'Artikelnummer' => $data['Material'],
-                    'ArtMatchcode' => $data['Material'],
+                    'ArtMatchcode' => $data['Materialkurztext'],
                     'ArtBezeichnung1' => $data['Materialkurztext'], // ArtMatchcode
                     'ArtBezeichnung2' => $data['Bezeichnung1'] . "|" . $data['Bezeichnung2'],
                     'KZArtMengeneinheit1' => $data['Basismengeneinheit'],
