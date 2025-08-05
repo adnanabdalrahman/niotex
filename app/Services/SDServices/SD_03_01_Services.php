@@ -122,20 +122,28 @@ class SD_03_01_Services
                     );
                     return null;
                 }
+                if ($position3Menge->PosKZMengeneinheit1 == "Stck") {
+                    $vrkme = "ST";
+                } else {
+                    $vrkme = $position3Menge->PosKZMengeneinheit1;
+                }
                 $data['to_ServItems'][] = [
                     'Matnr' => $artikel->Artikelnummer,
                     'Kwmeng' => (string)$position3Menge->PosMenge1,
-                    'Vrkme' => (string)$position3Menge->PosKZMengeneinheit1,
+                    'Vrkme' => (string)$vrkme,
                     'Vorgn' => (string)$vorgang->VorNummer,
                     'VorgnInt' => (string)$vorgang->InterneVorgangsnummer,
                 ];
             }
             Log::info('sd-03-01 Sent data', $data);
             $result = app(SapApiClient::class)->post($this->sd0301_path, $data);
-            if ($result === null) {
-                Log::error('sd-03-01 Error received');
+            if ($result === null ||
+                !isset($result['d']['Status']) ||
+                $result['d']['Status'] === "error") {
+                Log::error('sd-03-01 Error received', $result);
                 return null;
             }
+
         } catch (Throwable $e) {
             Log::error($e->getMessage());
             return null;
@@ -144,7 +152,7 @@ class SD_03_01_Services
 
         return $result;
     }
-    
+
 }
 
 

@@ -109,6 +109,11 @@ class SD_03_02_Services
         $vorgang->VorIndividualC3 = $header['liegenschaft'];
         $vorgang->VorRechnungsNummer = $vorgang->VorRechnungsnummer ?? '';
         $vorgang->VorStatus = 100400; //-- 100000 Nicht gedruckt / 100010 Angebot / 100100 Auftragsbestätigung
+
+        //Storno
+        if ($header['fakturanummer'] == $header['vorlagebeleg']) {
+            $vorgang->VorStatus = 100430;
+        }
         $vorgang->save();
 
         $vorgang1Wert->VorNettowert = $header['nettowert'];

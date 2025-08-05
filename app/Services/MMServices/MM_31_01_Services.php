@@ -21,7 +21,7 @@ class MM_31_01_Services
     {
 
     }
-    
+
     /**
      * MM-31-1 Materialstammdaten
      * SAP -> CEOS
@@ -30,7 +30,6 @@ class MM_31_01_Services
     {
 
         /*
-
        todo
        HIBEzuHAWA1 =>  String (18)
        HIBEzuHAWA2 => String (18)
