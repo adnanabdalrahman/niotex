@@ -58,7 +58,7 @@ class SD_0102_Services
             $data['Zzlgsnr'] = (string)$vorgang->VorIndividualC3;
             $data['GenrCeos'] = (string)(int)$vorgang->VorIndividualD4;
             $data['TxtZ013'] = (string)$vorgang->VorStichwort;
-            $data['Augru'] = "MW";//todo dynamic most cases MW , should with Pante clarify VOrGruppe mapping
+            $data['Augru'] = array_search($vorgang->VorGruppe, $this->vorGruppe);
 
             $vorgang2Text = DB::connection('sqlsrv2')->table('cis.Vorgang2Text')
                 ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->first();
@@ -137,27 +137,38 @@ class SD_0102_Services
                     return null;
                 }
 
+                $posErl = $position1wert->PosPreisProME2 ? 1 : 2;
+
+                if ($position3Menge->PosKZMengeneinheit1 == "Stck") {
+                    $vrkme = "ST";
+                } else {
+                    $vrkme = $position3Menge->PosKZMengeneinheit1;
+                }
+
+
                 $data['to_Items'][] = [
                     'Matnr' => $artikel->Artikelnummer,
-                    'PosErl' => (string)$position1wert->PosPreisProME2,
+                    'PosErl' => (string)$posErl,
                     'KwmengO' => (string)$position3Menge->PosMenge2,
                     'Vorgn' => (string)$vorgang->VorNummer,
                     'Vbeln' => (string)$vorgang->VorIndividualC1,
                     'VorgnInt' => (string)$vorgang->InterneVorgangsnummer,
-                    'Kondm' => (string)$position5Individual->PosIndividualC3,
+                    //'Kondm' => (string)$position5Individual->PosIndividualC3, //nicht mehr benötigt
                     'Posnr' => (string)(int)$position5Individual->PosIndividualD1,
                     'Kwmeng' => (string)$position3Menge->PosMenge1,
-                    'Vrkme' => (string)$position3Menge->PosKZMengeneinheit1,
+                    'Vrkme' => (string)$vrkme,
                     'TxtZ002' => (string)$position2Text->PosZusatztextLieferschein,
                     'TxtZ009' => (string)$position2Text->PosZusatztext,
                     'TxtZ010' => (string)$position2Text->PosNotiz,
                     'PosAtt' => (string)$position5Individual->PosIndividualC4,
-                    'Montagedatum' => (string)$position5Individual->PosIndividualT3
+                    'Montagedatum' => Carbon::parse($position5Individual->PosIndividualT3)->format('Ymd')
                 ];
             }
             Log::info('sd-01-02 Sent data', $data);
             $result = app(SapApiClient::class)->post($this->sd0102_path, $data);
-            if ($result === null) {
+            if ($result === null ||
+                !isset($result['d']['Status']) ||
+                $result['d']['Status'] === "error") {
                 Log::error('sd-01-02 Error received');
                 return null;
             }

@@ -83,10 +83,11 @@ class SD_0201_Services
         $vorgangData['VorUnterArt'] = 'R';  // char 1
         $vorgangData['VorGruppe'] = 'WH'; //  -- Montage/Liefer/Rechnung: 'RE' / Vertr ge: 'WIE' ? / Rahmenauftr ge: 'AB'
         $vorgangData['VNkArt'] = '100000';
-        $vorgangData['VorStatus'] = '100400'; //-- 100000 Nicht gedruckt / 100010 Angebot / 100100 Auftragsbestätigung
+        $vorgangData['VorStatus'] = 100400; //-- 100000 Nicht gedruckt / 100010 Angebot / 100100 Auftragsbestätigung
 
+        //Storno
         if ($header['vbeln'] == $header['zuonr']) {
-            $vorgangData['VorStatus'] = '100430';
+            $vorgangData['VorStatus'] = 100430;
         }
 
 

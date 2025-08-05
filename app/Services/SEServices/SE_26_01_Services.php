@@ -14,7 +14,7 @@ class SE_26_01_Services
 {
     protected string $baseUrl;
     protected string $se2601_path;
-    
+
     public function __construct()
     {
         $this->baseUrl = config('sap.base_url');
@@ -100,13 +100,17 @@ class SE_26_01_Services
                     );
                     return null;
                 }
-
+                if ($position3Menge->PosKZMengeneinheit1 == "Stck") {
+                    $vrkme = "ST";
+                } else {
+                    $vrkme = $position3Menge->PosKZMengeneinheit1;
+                }
 
                 $positionArray[] = [
                     'Matnr' => $artikel->Artikelnummer,
                     'TxtZ009' => (string)$position2Text->PosZusatztext,
                     'Kwmeng' => (string)$position3Menge->PosMenge1,
-                    'Vrkme' => (string)$position3Menge->PosKZMengeneinheit1,
+                    'Vrkme' => (string)$vrkme,
                     'Vorgn' => (string)$vorgang->VorNummer,
                     'VorgnInt' => (string)$vorgang->InterneVorgangsnummer,
                     'Abgru' => '',
@@ -115,9 +119,19 @@ class SE_26_01_Services
             $data['to_Items'] = $positionArray;
             Log::info('se-26-01 Sent data', $data);
             $result = app(SapApiClient::class)->post($this->se2601_path, $data);
-            if ($result === null) {
+            if ($result === null ||
+                !isset($result['d']['Status']) ||
+                $result['d']['Status'] === "error") {
+                Log::error('se-26-01 Error received');
                 return null;
             }
+            //Storno
+            if ($result['d']['Vbeln'] == $result['d']['Zuonr']) {
+                $vorgang->VorStatus = 100430;
+                $vorgang->save();
+            }
+
+
         } catch (Throwable $e) {
             Log::error($e->getMessage());
             return null;

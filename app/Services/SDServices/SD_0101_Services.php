@@ -142,7 +142,7 @@ class SD_0101_Services
             $carbonMontagedatum = Carbon::parse((string)$position['montagedatum']);
             $montagedatum = $carbonMontagedatum->format('Ymd');
             $positionData['PosIndividualT3'] = $montagedatum;
-            
+
             $preisbasis = Preisbasis::where('NRPreisbasis', $artikel->NRPreisbasis)->first();
             $positionData['NRPreisbasis'] = $artikel->NRPreisbasis;
             $positionData['PosPreisfaktor'] = $preisbasis->Preisfaktor;
