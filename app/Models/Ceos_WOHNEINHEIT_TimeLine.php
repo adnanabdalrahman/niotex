@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- *
+ * 
  *
  * @property int $ID
  * @property int $LiegenschaftsID
@@ -66,6 +66,12 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWWJN($value)
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWohnFläche($value)
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWohneinheitID($value)
+ * @property int|null $lfd. Adressnummer GE CEOS
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereLfd.AdressnummerGECEOS($value)
+ * @property int|null $lfd. Adressnummer GE CEOS
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereLfd.AdressnummerGECEOS($value)
+ * @property int|null $lfd. Adressnummer GE CEOS
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereLfd.AdressnummerGECEOS($value)
  * @mixin Eloquent
  */
 class Ceos_WOHNEINHEIT_TimeLine extends Model
