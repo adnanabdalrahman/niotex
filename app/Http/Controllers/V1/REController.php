@@ -34,7 +34,7 @@ class REController extends Controller
         }
         return response()->json([
             'status' => 'Error',
-            'message' => 'se_26_01_Reparaturauftrag fehlgeschlagen',
+            'message' => 're_01_01_Liegenschaften fehlgeschlagen',
         ], 400);
     }
 
