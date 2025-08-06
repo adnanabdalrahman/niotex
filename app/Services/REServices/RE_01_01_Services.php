@@ -3,11 +3,14 @@
 namespace App\Services\REServices;
 
 use App\Models\Adresse;
+use App\Models\Ceos_ABRECHNUNG;
+use App\Models\Ceos_ABRECHNUNG_TimeLine;
 use App\Models\Ceos_GEBAEUDE;
 use App\Models\Ceos_GEBAEUDE_TimeLine;
 use App\Models\Ceos_LIEGENSCHAFT;
 use App\Models\Ceos_LIEGENSCHAFT_TimeLine;
 use App\Models\Ceos_MIETER;
+use App\Models\Ceos_MIETER_TimeLine;
 use App\Models\Ceos_VERWALTUNG;
 use App\Models\Ceos_VERWALTUNG_TimeLine;
 use App\Models\Ceos_WOHNEINHEIT;
@@ -108,243 +111,225 @@ class RE_01_01_Services
      *
      */
 
-    public function re_01_01_Liegenschaften($request): ?array
+    public function re_01_01_Liegenschaften($receivedLiegenschaften): ?array
     {
         //todo delete all if Error happens
         try {
 
             //---------------- LIEGENSCHAFT -------------------------------
+            foreach ($receivedLiegenschaften as $liegenschaft) {
+                $receivedLiegenschaft = $liegenschaft['liegenschaft'];
 
-            $receivedLiegenschaft = $request['liegenschaft'];
-            $liegenschaft = Ceos_LIEGENSCHAFT::updateOrCreate(
-                [
-                    'LG_FOREIGN_ID' => $receivedLiegenschaft['mdmId']
-                ],
-                [
-                    'User' => 0,
-                ]
-            );
-            // Ceos_LIEGENSCHAFT_TimeLine
-            //todo check default values
-            $fullHash = '9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2df5a9963a96f8ba17f65d4df9ee06b6fe24b6f5df4cbcd1bbac5c3a0b653f9a4c2fdeebb8f5a2c';
-
-            // update datumBis (DatumVon) for the last LiegenschaftTimeline if Exist
-            $lastLiegenschaftTimeLine = Ceos_LIEGENSCHAFT_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
-                ->orderBy('ID', 'desc')
-                ->first();
-            $lastLiegenschaftTimeLine->DatumBis = $receivedLiegenschaft['validfrom'];
-            $lastLiegenschaftTimeLine->save();
-
-            $liegenschaftTimeLine = Ceos_LIEGENSCHAFT_TimeLine::insertGetId(
-                [
-                    'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
-                    'Liegenschaftsnummer' => $receivedLiegenschaft['slgnr'],
-                    'Fernablesung_JN' => $receivedLiegenschaft['fern'],
-                    'Fernablesung_Ab' => $receivedLiegenschaft['fernAb'],
-                    'OnlinePortal_JN' => $receivedLiegenschaft['opk'],
-                    'OnlinePortal_Ab' => $receivedLiegenschaft['opkAb'],
-                    'UviReady_JN' => $receivedLiegenschaft['uvir'],
-                    'UviReady_Ab' => $receivedLiegenschaft['uvirAb'],
-                    'Mdf' => $receivedLiegenschaft['mdf'],
-                    'Mdf_Bis' => $receivedLiegenschaft['mdfBis'],
-                    'DatumVon' => $receivedLiegenschaft['validfrom'],
-                    'DatumBis' => $receivedLiegenschaft['validto'],
-                    'User' => 0,
-                    'FULL_HASH' => \DB::raw("CONVERT(varbinary(64), 0x{$fullHash})"),
-                ]
-            );
-
-            //---------------- Adressen - GEBAEUDE -------------------------------
-            $adressen = $receivedLiegenschaft['adressen'];
-            foreach ($adressen as $adress) {
-                $gebaeude = Ceos_GEBAEUDE::updateOrCreate(
+                $liegenschaft = Ceos_LIEGENSCHAFT::updateOrCreate(
                     [
-                        'GEB_FOREIGN_ID' => $adress['mdmId']
+                        'LG_FOREIGN_ID' => $receivedLiegenschaft['mdmId']
                     ],
                     [
                         'User' => 0,
                     ]
                 );
+                $fullHash = '9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2df5a9963a96f8ba17f65d4df9ee06b6fe24b6f5df4cbcd1bbac5c3a0b653f9a4c2fdeebb8f5a2c';
 
-                // update datumBis (DatumVon) for the last record
-                $lastGebaeudeTimeLine = Ceos_GEBAEUDE_TimeLine::
-                where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
-                    ->where('GebaeudeID', $gebaeude->GebaeudeID)
-                    ->orderBy('ID', 'desc')
-                    ->first();
-                $lastGebaeudeTimeLine->DatumBis = $adress['validfrom'];
-                $lastGebaeudeTimeLine->save();
-
-                $gebaeudeTimeLineID = Ceos_GEBAEUDE_TimeLine::insertGetId(
+                //todo clarify if update or delete and insert
+                $liegenschaftTimeLine = Ceos_LIEGENSCHAFT_TimeLine::updateOrCreate(
                     [
-                        'GebaeudeID' => $gebaeude->GebaeudeID,
-                        'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
-                        'DatumVon' => $adress['validfrom'],
-                        'DatumBis' => $adress['validto'],
-                        'GebaeudeNr' => $adress['genrCeos'],
-                        'LG_Strasse' => $adress['lgStr'],
-                        'LG_PLZ' => $adress['lgPlz'],
-                        'LG_Ort' => $adress['lgOrt'],
-                        'Heizanlage_JN' => $adress['hausHeizanlage'],
-                        'User' => 0,
-                    ]
-                );
-            }
-
-            //---------------- KUNDEN - VERWALTUNG -------------------------------
-            $kunden = $receivedLiegenschaft['kunden'];
-            foreach ($kunden as $kunde) {
-                $verwaltung = Ceos_VERWALTUNG::updateOrCreate(
-                    [
-                        'VER_FOREIGN_ID' => $kunde['kunnr']
-                    ],
-                    [
-                        'User' => 0,
-                    ]
-                );
-
-                // update datumBis (DatumVon) for the last record
-                $lastVerwaltungTimeLine = Ceos_GEBAEUDE_TimeLine::
-                where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
-                    ->where('VerwaltungID', $verwaltung->VerwaltungID)
-                    ->orderBy('ID', 'desc')
-                    ->first();
-                $lastVerwaltungTimeLine->DatumBis = $kunde['validfrom'];
-                $lastVerwaltungTimeLine->save();
-
-                $adressnummer = ltrim($kunde['kunnr'], '0');
-                $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
-                if ($adresse == null) {
-                    Log::error('re_01_01_Liegenschaften Kein Adresse gefunden');
-                    return null;
-                }
-
-                $verwaltungTimeline = Ceos_VERWALTUNG_TimeLine::insertGetId(
-                    [
-                        'VerwaltungID' => $verwaltung->VerwaltungID,
-                        'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
-                        'DatumVon' => $kunde['validfrom'],
-                        'DatumBis' => $kunde['validto'],
-                        'AuftraggeberID' => $adresse->InterneAdressnummer,
-                        'Kundenart' => $kunde['kdart'],
-                        'ErsteAbr' => $kunde['abrfirst'],
-                        'LetzteAbr' => $kunde['abrlast'],
-                        'User' => 0,
-                    ]
-                );
-            }
-
-
-            //---------------- MIETOBJEKTE - WOHNEINHEIT -------------------------------
-            $mietobjekte = $receivedLiegenschaft['mietobjekte'];
-            foreach ($mietobjekte as $mietobjekt) {
-                $mietobjekt = Ceos_WOHNEINHEIT::updateOrCreate(
-                    [
-                        'WE_FOREIGN_ID' => $mietobjekt['mdmIdMe']
-                    ],
-                    [
-                        'User' => 0,
-                    ]
-                );
-
-                if ($mietobjekt == null) {
-                    Log::error('re_01_01_Liegenschaften $mietobjekt creation Failed ');
-                    return null;
-                }
-                Ceos_WOHNEINHEIT_TimeLine::updateOrCreate(
-                    [
-                        'VerwaltungID' => $mietobjekt->WohneinheitID,
                         'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                     ],
                     [
-
-                        /*
-                        Ceos_GEBAEUDE_TimeLine::updateOrCreate(
-                                [
-                                    'GebaeudeID' => $gebaeude->GebaeudeID,
-                                    'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
-                                ],
-                                [
-                                    'DatumVon' => $adress['validfrom'],
-                                    'DatumBis' => $adress['validto'],
-                                    'GebaeudeNr' => $adress['genrCeos'],
-                                    'LG_Strasse' => $adress['lgStr'],
-                                    'LG_PLZ' => $adress['lgPlz'],
-                                    'LG_Ort' => $adress['lgOrt'],
-                                    'Heizanlage_JN' => $adress['hausHeizanlage'],
-                                    'User' => 0,
-                                ]
-                            );
-                        */
-                        'GebaeudeNr' => $mietobjekt['validfrom'], //todo clarify from Benjamin
-
-
-                        'WE_LfdNr' => $mietobjekt['menrCeos'],
-                        'WE_Bezeichnung' => $mietobjekt['mLage'],
-                        'Gewerblich_JN' => $mietobjekt['gewerblichJn'],
-                        'DatumVon' => $mietobjekt['validfrom'],
-                        'DatumBis' => $mietobjekt['validto'],
+                        'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
+                        'Liegenschaftsnummer' => $receivedLiegenschaft['slgnr'],
+                        'Fernablesung_JN' => $receivedLiegenschaft['fern'],
+                        'Fernablesung_Ab' => $receivedLiegenschaft['fernAb'],
+                        'OnlinePortal_JN' => $receivedLiegenschaft['opk'],
+                        'OnlinePortal_Ab' => $receivedLiegenschaft['opkAb'],
+                        'UviReady_JN' => $receivedLiegenschaft['uvir'],
+                        'UviReady_Ab' => $receivedLiegenschaft['uvirAb'],
+                        'Mdf' => $receivedLiegenschaft['mdf'],
+                        'Mdf_Bis' => $receivedLiegenschaft['mdfBis'],
+                        'DatumVon' => $receivedLiegenschaft['validfrom'],
+                        'DatumBis' => $receivedLiegenschaft['validto'],
                         'User' => 0,
-                    ]
-                );
-            }
-
-
-            //---------------- MIETER_ - MIETER_ -------------------------------
-            // continue from hier
-            $receivedMieters = $receivedLiegenschaft['mieter'];
-            foreach ($receivedMieters as $receivedMieter) {
-                $mieter = Ceos_MIETER::updateOrCreate(
-                    [
-                        'MI_FOREIGN_ID' => $receivedMieter[''] // todo need unique value
-                    ],
-                    [
-                        'User' => 0,
+                        //todo should be deleted
+                        'FULL_HASH' => \DB::raw("CONVERT(varbinary(64), 0x{$fullHash})"),
                     ]
                 );
 
-                if ($mieter == null) {
-                    Log::error('re_01_01_Liegenschaften Mieter creation Failed ');
-                    return null;
+                //---------------- Adressen - GEBAEUDE -------------------------------
+                $adressen = $receivedLiegenschaft['adressen'];
+                // delete all adressen
+                Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
+
+
+                foreach ($adressen as $adresse) {
+                    $gebaeude = Ceos_GEBAEUDE::updateOrCreate(
+                        [
+                            'GEB_FOREIGN_ID' => $adresse['mdmId']
+                        ],
+                        [
+                            'User' => 0,
+                        ]
+                    );
+                    $gebaeudeTimeLineID = Ceos_GEBAEUDE_TimeLine::insertGetId(
+                        [
+                            'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
+                            'GebaeudeID' => $gebaeude->GebaeudeID,
+                            'DatumVon' => $adresse['validfrom'],
+                            'DatumBis' => $adresse['validto'],
+                            'GebaeudeNr' => $adresse['genrCeos'],
+                            'LG_Strasse' => $adresse['lgStr'],
+                            'LG_PLZ' => $adresse['lgPlz'],
+                            'LG_Ort' => $adresse['lgOrt'],
+                            'Heizanlage_JN' => $adresse['hausHeizanlage'],
+                            'User' => 0,
+                        ]
+                    );
+                }
+
+                //---------------- KUNDEN - VERWALTUNG -------------------------------
+                $kunden = $receivedLiegenschaft['kunden'];
+                // delete all Kunden
+                Ceos_VERWALTUNG_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
+                foreach ($kunden as $kunde) {
+                    $verwaltung = Ceos_VERWALTUNG::updateOrCreate(
+                        [
+                            'VER_FOREIGN_ID' => $kunde['kunnr']
+                        ],
+                        [
+                            'User' => 0,
+                        ]
+                    );
+                    $adressnummer = ltrim($kunde['kunnr'], '0');
+                    $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
+                    if ($adresse == null) {
+                        Log::error('re_01_01_Liegenschaften Kein Adresse gefunden');
+                        return null;
+                    }
+                    $verwaltungTimeline = Ceos_VERWALTUNG_TimeLine::insertGetId(
+                        [
+                            'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
+                            'VerwaltungID' => $verwaltung->VerwaltungID,
+                            'DatumVon' => $kunde['validfrom'],
+                            'DatumBis' => $kunde['validto'],
+                            'AuftraggeberID' => $adresse->InterneAdressnummer,
+                            'Kundenart' => $kunde['kdart'],
+                            'ErsteAbr' => $kunde['abrfirst'],
+                            'LetzteAbr' => $kunde['abrlast'],
+                            'User' => 0,
+                        ]
+                    );
+                }
+
+                //---------------- MIETOBJEKTE - WOHNEINHEIT -------------------------------
+                // delete all WOHNEINHEIT
+                Ceos_WOHNEINHEIT_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
+                $mietobjekte = $receivedLiegenschaft['mietobjekte'];
+                foreach ($mietobjekte as $mietobjekt) {
+                    $wohneinheit = Ceos_WOHNEINHEIT::updateOrCreate(
+                        [
+                            'WE_FOREIGN_ID' => $mietobjekt['mdmIdMe']
+                        ],
+                        [
+                            'User' => 0,
+                        ]
+                    );
+                    Ceos_WOHNEINHEIT_TimeLine::insertGetId(
+                        [
+                            'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
+                            'WohneinheitID' => $wohneinheit->WohneinheitID,
+                            //todo clarify
+                            'GebaeudeID' => $mietobjekt['genrCeos'],
+                            //todo clarify
+                            //'lfd. Adressnummer GE CEOS' => $mietobjekt['genrCeos'],
+                            //todo clarify
+                            'WE_LfdNr' => $mietobjekt['menrCeos'],
+                            'WE_Bezeichnung' => $mietobjekt['mLage'],
+                            'Gewerblich_JN' => $mietobjekt['gewerblichJn'],
+                            'DatumVon' => $mietobjekt['validfrom'],
+                            'DatumBis' => $mietobjekt['validto'],
+                            'User' => 0,
+                        ]
+                    );
+                }
+                //---------------- MIETER_ MIETER -------------------------------
+                // delete all MIETER_
+                Ceos_MIETER_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
+
+                $receivedMieters = $receivedLiegenschaft['mieter'];
+                foreach ($receivedMieters as $receivedMieter) {
+                    $mieter = Ceos_MIETER::updateOrCreate(
+                        [
+                            'MI_FOREIGN_ID' => ''// todo need unique value
+                        ],
+                        [
+                            'User' => 0,
+                        ]
+                    );
+                    // todo clarify menrCeos -> FK:Ceos_MIETER_TimeLine.[lfd. Adressnummer ME CEOS] (Ceos_GEBAEUDEWOHNEINHEIT_TimeLine.WE_LfdNr)
+                    Ceos_MIETER_TimeLine::insertGetId(
+                        [
+                            'MieterID' => $mieter->MieterID,
+                            'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
+                            /* genrCeos -> FK:Ceos_WOHNEINHEIT_TimeLine.[lfd. Adressnummer GE CEOS] (Ceos_GEBAEUDE_TimeLine.GebaeudeNr)*/
+                            //'GebaeudeNr' => $receivedMieter['genrCeos'],
+                            'WohneinheitID' => $receivedMieter['menrCeos'],
+                            'Mietvertragsnummer' => $receivedMieter['recnnr'],
+                            'M_Name1' => $receivedMieter['mName'],
+                            'M_Anrede' => $receivedMieter['mAnrede'],
+                            'DatumVon' => $receivedMieter['datumEinzug'],
+                            'DatumBis' => $receivedMieter['datumAuszug'],
+                            'User' => 0,
+                        ]
+                    );
                 }
 
 
-                /*
-                    * genrCeos -> FK:Ceos_MIETER_TimeLine.[lfd. Adressnummer GE CEOS] (Ceos_GEBAEUDE_TimeLine.GebaeudeNr)
-                    * menrCeos -> FK:Ceos_MIETER_TimeLine.[lfd. Adressnummer ME CEOS] (Ceos_GEBAEUDEWOHNEINHEIT_TimeLine.WE_LfdNr)
-                    * recnnr -> Ceos_MIETER_TimeLine.Mietvertragsnummer
-                    * mName -> Ceos_MIETER_TimeLine.M_Name1
-                    * mAnrede -> Ceos_MIETER_TimeLine.M_Anrede
-                    * datumEinzug -> Ceos_MIETER_TimeLine.DatumVon
-                    * datumAuszug -> Ceos_MIETER_TimeLine.DatumBis
-                **/
+                //---------------- ABRECHNUNGSDATEN  -------------------------------
+                // delete all ABRECHNUNGEN
+                Ceos_ABRECHNUNG_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
 
-                Ceos_WOHNEINHEIT_TimeLine::updateOrCreate(
-                    [
-                        'MieterID' => $mieter->MieterID,
-                        'WohneinheitID' => $liegenschaft->LiegenschaftsID,
-                    ],
-                    [
-                        /* genrCeos -> FK:Ceos_WOHNEINHEIT_TimeLine.[lfd. Adressnummer GE CEOS] (Ceos_GEBAEUDE_TimeLine.GebaeudeNr)*/
-                        'GebaeudeNr' => $mietobjekt['validfrom'], //todo clarify from Benjamin
+                $abrechnungsdaten = $receivedLiegenschaft['abrechnungsdaten'];
+                foreach ($abrechnungsdaten as $receivedAbrechnung) {
+                    $abrechnung = Ceos_ABRECHNUNG::updateOrCreate(
+                        [
+                            'ABR_FOREIGN_ID' => ''// todo need unique value
+                        ],
+                        [
+                            'User' => 0,
+                        ]
+                    );
 
-                        'WE_LfdNr' => $mietobjekt['menrCeos'],
-                        'WE_Bezeichnung' => $mietobjekt['mLage'],
-                        'Gewerblich_JN' => $mietobjekt['gewerblichJn'],
-                        'DatumVon' => $mietobjekt['validfrom'],
-                        'DatumBis' => $mietobjekt['validto'],
-                        'User' => 0,
-                    ]
-                );
+                    Ceos_ABRECHNUNG_TimeLine::insertGetId(
+                        [
+                            'AbrechnungID' => $abrechnung->AbrechnungID,
+                            'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
+                            'DatumVon' => $receivedAbrechnung['datab'],
+                            'DatumBis' => $receivedAbrechnung['datbi'],
+                            // todo why is date ?? 
+                            'Stichtag HKA' => $receivedAbrechnung['sttHka'],
+                            'Stichtag KWA' => $receivedAbrechnung['sttKwa'],
+                            'Stichtag NKA' => $receivedAbrechnung['sttNka'],
+                            'Stichtag STA' => $receivedAbrechnung['sttSta'],
+                            'Heizkostenabrechnung' => $receivedAbrechnung['hka'],
+                            'Kaltwasserabrechnung' => $receivedAbrechnung['kwa'],
+                            'Nebenkostenabrechnung' => $receivedAbrechnung['nka'],
+                            'Stromabrechnung' => $receivedAbrechnung['sta'],
+                            'Ablesung' => $receivedAbrechnung['abl'],
+                            'Selbstableser' => $receivedAbrechnung['selbstableserJn'],
+                            'DTA' => $receivedAbrechnung['dta'],
+                            'BKB' => $receivedAbrechnung['bkb'],
+                            'ServiceRWM' => $receivedAbrechnung['rwm'],
+                            'Abrechnung/Haus' => $receivedAbrechnung['hwabr'],
+                            'Warmwasser' => $receivedAbrechnung['ww'],
+                            'User' => 0,
+                        ]
+                    );
+                }
             }
-
-
-            return ['message' => true];
 
         } catch (Throwable $e) {
             Log::error($e->getMessage());
             return null;
         }
-        return $result;
+        return ['message' => true];
     }
 }
