@@ -7,6 +7,7 @@ use App\Models\Ceos_ABRECHNUNG;
 use App\Models\Ceos_ABRECHNUNG_TimeLine;
 use App\Models\Ceos_GEBAEUDE;
 use App\Models\Ceos_GEBAEUDE_TimeLine;
+use App\Models\Ceos_ID_SAP;
 use App\Models\Ceos_LIEGENSCHAFT;
 use App\Models\Ceos_LIEGENSCHAFT_TimeLine;
 use App\Models\Ceos_MIETER;
@@ -105,11 +106,32 @@ class RE_01_01_Services
      *  korrnrHk -> Ceos_ID_SAP.VALUE
      *  korrnrKw -> Ceos_ID_SAP.VALUE
      *  tplnr -> Ceos_ID_SAP.VALUE
-     *  tplnr -> Ceos_ID_SAP.VALUE
      *  lgnrExt -> Ceos_ID_SAP.VALUE
      *
      *
      */
+
+
+    /*
+
+                      ID              - Type            - Value
+                      LiegenschaftsID - LG_KORR_Nr      - $mietobjekt['lgnrExt'] Liegenschaft
+                      Geb - GEB_TPlatz     - $mietobjekt['tplnr'] Ge
+
+
+
+    --[WE_TPlatz] NVARCHAR(100),			--> Schnittstelle tplnr									-> extra Tabelle "cis.Ceos_ID_SAP"
+    --[WE_HK_KORR_Nr] NVARCHAR(20),			--> Schnittstelle korrnrHk (Korrespondenznummer HK)		-> extra Tabelle "cis.Ceos_ID_SAP"
+    --[WE_KW_KORR_Nr] NVARCHAR(20),			--> Schnittstelle korrnrKw (Korrespondenznummer KW)		-> extra Tabelle "cis.Ceos_ID_SAP"
+    --[GER_Zählpunktnummer] NVARCHAR(40),	--> Schnittstelle ?Zählpunktnummer?						-> extra Tabelle "cis.Ceos_ID_SAP"
+    --evtl weitere(s) Feld(er) auf Geräte-Ebene
+    [VALUE] NVARCHAR(100) NOT NULL,		-- Wert des Daten-Feldes
+    --[User] INT NOT NULL,
+    [TimeStamp] TIMESTAMP,
+    CONSTRAINT U_Ceos_ID_SAP UNIQUE([TYPE],[ID])
+    );
+        */
+
 
     public function re_01_01_Liegenschaften($receivedLiegenschaften): ?array
     {
@@ -136,7 +158,6 @@ class RE_01_01_Services
                         'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                     ],
                     [
-                        'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                         'Liegenschaftsnummer' => $receivedLiegenschaft['slgnr'],
                         'Fernablesung_JN' => $receivedLiegenschaft['fern'],
                         'Fernablesung_Ab' => $receivedLiegenschaft['fernAb'],
@@ -153,13 +174,19 @@ class RE_01_01_Services
                         'FULL_HASH' => \DB::raw("CONVERT(varbinary(64), 0x{$fullHash})"),
                     ]
                 );
+                if ($receivedLiegenschaft['lgnrExt'] != null) {
+                    Ceos_ID_SAP::updateOrCreate([
+                        'ID' => $liegenschaft->LiegenschaftsID,
+                        'TYPE' => 'LG_KORR_Nr',
+                        'VALUE' => $receivedLiegenschaft['lgnrExt'],
+                    ]);
+                }
 
                 //---------------- Adressen - GEBAEUDE -------------------------------
                 $adressen = $receivedLiegenschaft['adressen'];
                 // delete all adressen
+                //todo later we copy data from CEOS before delete
                 Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
-
-
                 foreach ($adressen as $adresse) {
                     $gebaeude = Ceos_GEBAEUDE::updateOrCreate(
                         [
@@ -183,7 +210,17 @@ class RE_01_01_Services
                             'User' => 0,
                         ]
                     );
+
+                    if ($adresse['tplnr'] != null) {
+
+                        Ceos_ID_SAP::updateOrCreate([
+                            'ID' => $gebaeude->GebaeudeID,
+                            'TYPE' => 'GEB_TPlatz',
+                            'VALUE' => $adresse['tplnr'],
+                        ]);
+                    }
                 }
+
 
                 //---------------- KUNDEN - VERWALTUNG -------------------------------
                 $kunden = $receivedLiegenschaft['kunden'];
@@ -217,8 +254,8 @@ class RE_01_01_Services
                             'User' => 0,
                         ]
                     );
-                }
 
+                }
                 //---------------- MIETOBJEKTE - WOHNEINHEIT -------------------------------
                 // delete all WOHNEINHEIT
                 Ceos_WOHNEINHEIT_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
@@ -232,15 +269,19 @@ class RE_01_01_Services
                             'User' => 0,
                         ]
                     );
+
+                    $gebaeude = Ceos_GEBAEUDE_TimeLine::where('GebaeudeNr', $mietobjekt['genrCeos'])
+                        ->where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                        ->first();
+                    //todo validierung $gebaeudeId
+
                     Ceos_WOHNEINHEIT_TimeLine::insertGetId(
                         [
                             'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                             'WohneinheitID' => $wohneinheit->WohneinheitID,
-                            //todo clarify
-                            'GebaeudeID' => $mietobjekt['genrCeos'],
-                            //todo clarify
-                            //'lfd. Adressnummer GE CEOS' => $mietobjekt['genrCeos'],
-                            //todo clarify
+                            //todo name should be fixed
+                            'lfd_Adressnummer_GE_CEOS' => $mietobjekt['genrCeos'],
+                            'GebaeudeID' => $gebaeude->GebaeudeID,
                             'WE_LfdNr' => $mietobjekt['menrCeos'],
                             'WE_Bezeichnung' => $mietobjekt['mLage'],
                             'Gewerblich_JN' => $mietobjekt['gewerblichJn'],
@@ -249,9 +290,33 @@ class RE_01_01_Services
                             'User' => 0,
                         ]
                     );
+                    if ($mietobjekt['tplnr'] != null) {
+                        Ceos_ID_SAP::updateOrCreate([
+                            'ID' => $wohneinheit->WohneinheitID,
+                            'TYPE' => 'WE_TPlatz',
+                            'VALUE' => $mietobjekt['tplnr'],
+                        ]);
+                    }
+                    if ($mietobjekt['korrnrHk'] != null) {
+                        Ceos_ID_SAP::updateOrCreate([
+                            'ID' => $wohneinheit->WohneinheitID,
+                            'TYPE' => 'WE_HK_KORR_Nr',
+                            'VALUE' => $mietobjekt['korrnrHk'],
+                        ]);
+                    }
+                    if ($mietobjekt['korrnrKw'] != null) {
+                        Ceos_ID_SAP::updateOrCreate([
+                            'ID' => $wohneinheit->WohneinheitID,
+                            'TYPE' => 'WE_KW_KORR_Nr',
+                            'VALUE' => $mietobjekt['korrnrKw'],
+                        ]);
+                    }
+
+
                 }
+
                 //---------------- MIETER_ MIETER -------------------------------
-                // delete all MIETER_
+                // delete all MIETER
                 Ceos_MIETER_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
 
                 $receivedMieters = $receivedLiegenschaft['mieter'];
@@ -264,14 +329,24 @@ class RE_01_01_Services
                             'User' => 0,
                         ]
                     );
-                    // todo clarify menrCeos -> FK:Ceos_MIETER_TimeLine.[lfd. Adressnummer ME CEOS] (Ceos_GEBAEUDEWOHNEINHEIT_TimeLine.WE_LfdNr)
+                    $gebaeude = Ceos_GEBAEUDE_TimeLine::where('GebaeudeNr', $receivedMieter['genrCeos'])
+                        ->where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                        ->first();
+
+                    $wohneinheit = Ceos_WOHNEINHEIT_TimeLine::where('WE_LfdNr', $receivedMieter['menrCeos'])
+                        ->where('GebaeudeID', $gebaeude->GebaeudeID)
+                        ->where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                        ->first();
+
                     Ceos_MIETER_TimeLine::insertGetId(
                         [
-                            'MieterID' => $mieter->MieterID,
                             'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
-                            /* genrCeos -> FK:Ceos_WOHNEINHEIT_TimeLine.[lfd. Adressnummer GE CEOS] (Ceos_GEBAEUDE_TimeLine.GebaeudeNr)*/
-                            //'GebaeudeNr' => $receivedMieter['genrCeos'],
-                            'WohneinheitID' => $receivedMieter['menrCeos'],
+                            'WohneinheitID' => $wohneinheit->WohneinheitID,
+                            'MieterID' => $mieter->MieterID,
+
+                            //todo should be fixed
+                            'lfd_Adressnummer_GE_CEOS' => $receivedMieter['genrCeos'],
+                            'lfd_Adressnummer_ME_CEOS' => $receivedMieter['menrCeos'],
                             'Mietvertragsnummer' => $receivedMieter['recnnr'],
                             'M_Name1' => $receivedMieter['mName'],
                             'M_Anrede' => $receivedMieter['mAnrede'],
@@ -281,8 +356,6 @@ class RE_01_01_Services
                         ]
                     );
                 }
-
-
                 //---------------- ABRECHNUNGSDATEN  -------------------------------
                 // delete all ABRECHNUNGEN
                 Ceos_ABRECHNUNG_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
@@ -304,11 +377,11 @@ class RE_01_01_Services
                             'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                             'DatumVon' => $receivedAbrechnung['datab'],
                             'DatumBis' => $receivedAbrechnung['datbi'],
-                            // todo why is date ?? 
-                            'Stichtag HKA' => $receivedAbrechnung['sttHka'],
-                            'Stichtag KWA' => $receivedAbrechnung['sttKwa'],
-                            'Stichtag NKA' => $receivedAbrechnung['sttNka'],
-                            'Stichtag STA' => $receivedAbrechnung['sttSta'],
+                            // todo ex: '1232' 12 Monat 31 tag und Jahr immer 1900
+                            'Stichtag_HKA' => $receivedAbrechnung['sttHka'],
+                            'Stichtag_KWA' => $receivedAbrechnung['sttKwa'],
+                            'Stichtag_NKA' => $receivedAbrechnung['sttNka'],
+                            'Stichtag_STA' => $receivedAbrechnung['sttSta'],
                             'Heizkostenabrechnung' => $receivedAbrechnung['hka'],
                             'Kaltwasserabrechnung' => $receivedAbrechnung['kwa'],
                             'Nebenkostenabrechnung' => $receivedAbrechnung['nka'],
@@ -318,14 +391,14 @@ class RE_01_01_Services
                             'DTA' => $receivedAbrechnung['dta'],
                             'BKB' => $receivedAbrechnung['bkb'],
                             'ServiceRWM' => $receivedAbrechnung['rwm'],
-                            'Abrechnung/Haus' => $receivedAbrechnung['hwabr'],
+                            'AbrechnungProHaus' => $receivedAbrechnung['hwabr'],
                             'Warmwasser' => $receivedAbrechnung['ww'],
                             'User' => 0,
                         ]
                     );
+
                 }
             }
-
         } catch (Throwable $e) {
             Log::error($e->getMessage());
             return null;
