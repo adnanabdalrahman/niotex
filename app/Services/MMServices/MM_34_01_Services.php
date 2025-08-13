@@ -58,7 +58,6 @@ class MM_34_01_Services
                 );
                 return null;
             }
-            //get Artikelnummer by $position->InterneArtikelnummer.
             $artikel = Artikel::find($position->InterneArtikelnummer);
 
             if ($artikel === null) {

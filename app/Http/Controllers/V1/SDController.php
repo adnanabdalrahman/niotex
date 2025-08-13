@@ -110,8 +110,6 @@ class SDController extends Controller
     public function sd_02_01_mietvertragsrechnungen(SD_0201_mietvertragsrechnungenRequest $request)
     {
         $validated = $request->validated();
-
-
         $resultDataArray = $this->sd0201Services->sd_0201_mietvertragsrechnungen($validated);
 
         if ($resultDataArray !== null) {

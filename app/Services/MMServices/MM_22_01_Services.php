@@ -40,11 +40,14 @@ class MM_22_01_Services
                 Log::error('mm_22_01_lagerbestaende Error Response');
                 return null;
             }
+            Log::info('mm_22_01_lagerbestaende recieved Response', $response);
             if (isset($response['d']['results'])) {
                 $responseData = [];
+
                 foreach ($response['d']['results'] as $result) {
                     $amount = ($result['Amount']);
-                    $artikel = Artikel::where('Artikelnummer', $artikelnummer)->first();
+                    $receivedArtikelnummer = $result['Material'];
+                    $artikel = Artikel::where('Artikelnummer', $receivedArtikelnummer)->first();
                     ArtikelLager::updateOrCreate(
                         [
                             'interneArtikelnummer' => $artikel->InterneArtikelnummer

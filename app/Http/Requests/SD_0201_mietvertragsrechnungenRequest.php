@@ -29,7 +29,6 @@ class SD_0201_mietvertragsrechnungenRequest extends FormRequest
         });
     }
 
-
     public function authorize(): bool
     {
         return true;

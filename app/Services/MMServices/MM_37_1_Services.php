@@ -26,8 +26,8 @@ class MM_37_1_Services
                 return null;
             }
 
-            $gueltigVon = Carbon::parse($data['header']['gueltigVon'])->format('Ymd');
-            $gueltigBis = Carbon::parse($data['header']['gueltigBis'])->format('Ymd');
+            $gueltigVon = Carbon::parse($data['header']['gueltigVon'])->format('Y-m-d');
+            $gueltigBis = Carbon::parse($data['header']['gueltigBis'])->format('Y-m-d');
             $artikelKundeIds = [];
             foreach ($data['positions'] as $position) {
                 //getInterneArtikelnummer
@@ -51,7 +51,7 @@ class MM_37_1_Services
                     'InterneAdressnummer' => $adresse->InterneAdressnummer,
                     'AkuArtikelBezeichnung1' => $position['materialkurztext'],
                     'NRPreisbasis' => $position['preismengeneinheit'],
-                    'AkuLetzterVK' => $position['preis'],
+                    'AkuLetzterVK' => (float)$position['preis'],
                     'AkuIndividualT1' => $gueltigVon,
                     'AkuIndividualT2' => $gueltigBis,
 
@@ -79,20 +79,20 @@ class MM_37_1_Services
 
                     if ($gueltigVon == $akuIndividualT1) {
                         // if same we should change only the Preis
-                        $artikelKunde->AkuLetzterVK = $position['preis'];
+                        $artikelKunde->AkuLetzterVK = (float)$position['preis'];
                         $artikelKunde->save();
                     } else {
                         // if not, check if AkuVKNeuDatum,AkuVKNeu Empty or not
                         if ($artikelKunde->AkuVKNeu === null) {
                             // if Empty => add Gültigab in AkuVKNeuDatum and New Preis(Preis) in AkuVKNeu
-                            $artikelKunde->AkuVKNeu = $position['preis'];
+                            $artikelKunde->AkuVKNeu = (float)$position['preis'];
                             $artikelKunde->AkuVKNeuDatum = $gueltigVon;
                             $artikelKunde->save();
                         } else {
                             // if not Empty => Move current AkuVKNeu To AkuLetzterVK and save new one in AkuVKNeu the update Gültig ab
-                            $artikelKunde->AkuLetzterVK = $artikelKunde->AkuVKNeu;
+                            $artikelKunde->AkuLetzterVK = (float)$artikelKunde->AkuVKNeu;
                             $artikelKunde->AkuIndividualT1 = $artikelKunde->AkuVKNeuDatum;
-                            $artikelKunde->AkuVKNeu = $position['preis'];
+                            $artikelKunde->AkuVKNeu = (float)$position['preis'];
                             $artikelKunde->AkuVKNeuDatum = $gueltigVon;
                             $artikelKunde->save();
                         }

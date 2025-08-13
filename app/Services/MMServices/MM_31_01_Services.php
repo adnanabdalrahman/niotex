@@ -8,7 +8,6 @@ use App\Models\Artikelgruppe;
 use App\Models\ArtikelLieferant;
 use App\Models\ArtikelUntergruppe;
 use App\Models\Basisempfindlichkeit;
-use App\Models\Produktgruppe;
 use App\Models\Warengruppe;
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -54,13 +53,7 @@ class MM_31_01_Services
             Log::error('Kein Artikelgruppe für diese Material ', $data);
             return null;
         }
-
-        //Validate Produktgruppe saved as it comes directly - NULL ACCEPTED
-        $validateProduktgruppe = Produktgruppe::where('KZProduktgruppe', $data['Produktgruppe'])->first();
-        if ($validateProduktgruppe === null) {
-            Log::info('Kein Produktgruppe für diese Material ', $data);
-        }
-
+        
         $artikelUntergruppe = ArtikelUntergruppe::where('KZUnterArtikelgruppe', $data['CEOSArtikeluntergruppe'])
             ->where('KZWarengruppe', $data['CEOSWarengruppe'])
             ->where('KZArtikelgruppe', $data['CEOSArtikelgruppe'])
@@ -102,7 +95,7 @@ class MM_31_01_Services
                 ['Artikelnummer' => $data['Material']],
                 [
                     'Artikelnummer' => $data['Material'],
-                    'ArtMatchcode' => $data['Materialkurztext'],
+                    'ArtMatchcode' => mb_substr($data['Materialkurztext'], 0, 20),
                     'ArtBezeichnung1' => $data['Materialkurztext'], // ArtMatchcode
                     'ArtBezeichnung2' => $data['Bezeichnung1'] . "|" . $data['Bezeichnung2'],
                     'KZArtMengeneinheit1' => $data['Basismengeneinheit'],
