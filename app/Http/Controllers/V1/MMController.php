@@ -170,7 +170,7 @@ class MMController extends Controller
                 [
                     'message' => 'mm_35_02_materialverbrauch erfolgreich gesendet',
                     'data' => $response
-                ], 202);
+                ]);
         }
         return response()->json(['message' => 'mm_35_02_materialverbrauch fehlgeschlagen'], 400);
     }
@@ -195,7 +195,7 @@ class MMController extends Controller
             return response()->json([
                 'message' => 'mm_33_01_a_NuLeistungsbestaetigung erfolgreich gesendet',
                 'data' => $response
-            ], 202);
+            ]);
         }
         return response()->json(['message' => 'mm_33_01_a_NuLeistungsbestaetigung fehlgeschlagen'], 400);
     }
@@ -221,7 +221,7 @@ class MMController extends Controller
             return response()->json([
                 'message' => 'mm_33_01_b_NuAuftragspaket erfolgreich gesendet',
                 'data' => $response
-            ], 202);
+            ]);
         }
         return response()->json(['message' => 'mm_33_01_b_NuAuftragspaket fehlgeschlagen'], 400);
     }

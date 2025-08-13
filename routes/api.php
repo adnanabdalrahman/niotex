@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\V1\BPController;
+use App\Http\Controllers\V1\COController;
 use App\Http\Controllers\V1\MMController;
 use App\Http\Controllers\V1\REController;
 use App\Http\Controllers\V1\SDController;
@@ -67,8 +68,7 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
 
                 //mm-33-01A: CEOSWEB-->CEOS-->SAP,  Liefer-/Leistungsbestätigung
                 Route::post('/3301a/leistungsbestaetigung', [MMController::class, 'mm_33_01_a_NuLeistungsbestaetigung']);
-
-
+                
                 //mm-33-01B: CEOSWEB-->CEOS-->SAP, NU-Auftragspaket
                 Route::post('/3301b/nuauftragspaket', [MMController::class, 'mm_33_01_b_NuAuftragspaket']);
 
@@ -93,6 +93,11 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
             Route::prefix('se')->group(function () {
                 //SE-26-01: CEOSWEB-->CEOS-->SAP , reparaturauftrag
                 Route::post('/2601/reparaturauftrag', [SEController::class, 'se_26_01_Reparaturauftrag']);
+            });
+
+            Route::prefix('co')->group(function () {
+                //SE-26-01: CEOSWEB-->CEOS-->SAP , reparaturauftrag
+                Route::post('/0101/zeiteinheiten ', [COController::class, 'co_01_01_Zeiteinheiten']);
             });
 
 

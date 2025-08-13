@@ -10,5 +10,6 @@ return [
     'mm352_path' => '/Z1ERP_MM_CEOS_STOCK_SRV/CEOSGoodsmovementHeaderSet',
     'sd0102_path' => '/Z1ERP_SD_CEOS_ORDER_SRV/CEOSOrderHeaderSet/',
     'sd0301_path' => '/Z1ERP_SD_CEOS_ORDER_SRV/CEOSServOrderHeaderSet/',
-    'se2601_path' => '/Z1ERP_SE_CEOS_ORDER_SRV/CEOSOrderHeaderSet/'
+    'se2601_path' => '/Z1ERP_SE_CEOS_ORDER_SRV/CEOSOrderHeaderSet/',
+    'co0101_path' => '/Z1ERP_CO_CEOS_TIME_SRV/CEOSTimeUnitsHeaderCollection/'
 ];

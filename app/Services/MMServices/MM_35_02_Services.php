@@ -85,7 +85,7 @@ class MM_35_02_Services
                 'Vbeln' => '',
                 'Posnr' => '',
                 'Slgnr' => $vorgang->VorIndividualC3,
-                'Vgart' => $vorgang->VorGruppe,
+                'Vgart' => 'M_RM',// $vorgang->VorGruppe,//todo clarify with Pantie er hat die lösung 12.08.2025.
                 "TourId" => (string)$requestData['tourId'],
             ];
         }

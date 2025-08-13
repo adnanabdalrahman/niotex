@@ -87,7 +87,7 @@ class MM_33_01_b_Services
                 "TourId" => (string)(int)$tourId,
                 'Lifnr' => $adresse->AdressNummer,
                 'Slgnr' => $vorgang->VorIndividualC3,
-                'Vgart' => $vorgang->VorGruppe,//todo 'M_RM',clarify with VIVAWEST $vorgang->VorGruppe, erklärt Vor_Gruppe
+                'Vgart' => 'M_RM', //$vorgang->VorGruppe,//todo clarify with Pantie er hat die lösung 12.08.2025.
                 'Vbeln' => '',
                 'Posnr' => '',
                 'PosInt' => $position->InternePositionsnummer,
