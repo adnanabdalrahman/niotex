@@ -66,12 +66,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWWJN($value)
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWohnFläche($value)
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWohneinheitID($value)
- * @property int|null $lfd. Adressnummer GE CEOS
- * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereLfd.AdressnummerGECEOS($value)
- * @property int|null $lfd. Adressnummer GE CEOS
- * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereLfd.AdressnummerGECEOS($value)
- * @property int|null $lfd. Adressnummer GE CEOS
- * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereLfd.AdressnummerGECEOS($value)
+ * @property int|null $lfd_Adressnummer_GE_CEOS
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereLfdAdressnummerGECEOS($value)
  * @mixin Eloquent
  */
 class Ceos_WOHNEINHEIT_TimeLine extends Model

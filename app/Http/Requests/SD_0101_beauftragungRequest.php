@@ -29,7 +29,7 @@ class SD_0101_beauftragungRequest extends FormRequest
             'header.vdatu' => 'required|date', // Wunschlieferdatum Vorgang.VorLieferung-WunschDatum
             'header.zzlgsnr' => 'nullable|string|max:9', // Liegenschaftsnummer Vorgang.VorIndividualC3
             'header.genrCeos' => 'nullable|integer',// Vorgang.VorIndividualD4
-            'header.txtZ012' => 'nullable|string', //Bemerkung zur Liegenschaft Vorgang2Text.VorNotiz
+            'header.txtZ012' => 'nullable|string', //Bemerkung zur Liegenschaft Vorgang2TextService.VorNotiz
             'header.txtZ013' => 'nullable|string',// Vorgang.VorStichwort für Reparaturaufträge Ausstattung / Austauschgrund
             'header.augru' => 'required|string',// Vorgruppe
 
@@ -64,5 +64,5 @@ class SD_0101_beauftragungRequest extends FormRequest
             'boolean' => 'Das Feld ":attribute" muss entweder true oder false sein.',
         ];
     }
-    
+
 }

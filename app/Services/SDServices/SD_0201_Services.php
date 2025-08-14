@@ -70,7 +70,7 @@ class SD_0201_Services
         $vorgangData['VorIndividualT1'] = $datumvon;
         $vorgangData['VorIndividualT2'] = $datumbis;
 
-        $vorgangData['VorIndividualC1'] = $header['vbeln'];
+        $vorgangData['VorIndividualC1'] = $header['vbeln'];// fakturanummer
         $vorgangData['VorDatumRechnung'] = $fkdat;
         $vorgangData['VorDatumAuftragseingang'] = $fkdat;
 

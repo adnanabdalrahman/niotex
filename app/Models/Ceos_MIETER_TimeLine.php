@@ -53,9 +53,12 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereVorauszahlungJN($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereWohneinheitID($value)
  * @property int|null $lfd. Adressnummer GE CEOS
- * @property int|null $lfd. Adressnummer ME CEOS
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereLfd.AdressnummerGECEOS($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereLfd.AdressnummerMECEOS($value)
+ * @property int|null $lfd_Adressnummer_GE_CEOS
+ * @property int|null $lfd_Adressnummer_ME_CEOS
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereLfdAdressnummerGECEOS($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereLfdAdressnummerMECEOS($value)
  * @mixin \Eloquent
  */
 class Ceos_MIETER_TimeLine extends Model

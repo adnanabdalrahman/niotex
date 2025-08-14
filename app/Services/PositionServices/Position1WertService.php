@@ -53,7 +53,7 @@ class Position1WertService
                     'PosRundungsfaktorVK' => $data['PosRundungsfaktorVK'] ?? 0,
                     'PosAbzugEK' => $data['PosAbzugEK'] ?? 0,
                     'MwstNummer' => $data['MwstNummer'] ?? 3,
-                    'PosMwstProzent' => $data['PosMwstProzent'] ?? 3,
+                    'PosMwstProzent' => $data['PosMwstProzent'] ?? 19,
                     'PosVerschnitt' => $data['PosVerschnitt'] ?? 0,
                     'PosDBEinzel' => $data['PosDBEinzel'] ?? $data['externEinzelPreis'] ?? 0,
                     'PosDBGesamt' => $data['PosDBGesamt'] ?? $data['externGesamtPreis'] ?? 0,
