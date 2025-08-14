@@ -79,7 +79,7 @@ class CO_01_01_Services
                     'SapKundenauftrag' => (string)$vorgang->VorIndividualC6,
                     'Mengeneinheit' => 'MIN',
                     'SapLiegenschaft' => (string)$vorgang->VorIndividualC3,
-                    'CeosAuftragsart' => "123", //todo clarify
+                    'CeosAuftragsart' => (string)$vorgang->VorGruppe, //todo clarify
                     'CeosUnterauftragsart' => "456",//todo clarify
                 ];
             }

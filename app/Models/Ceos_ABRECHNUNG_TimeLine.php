@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- *
+ * 
  *
  * @property int $ID
  * @property int $LiegenschaftsID
@@ -67,6 +67,12 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereTimeStamp($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereUser($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereWarmwasser($value)
+ * @property string|null $Stichtag_HKA
+ * @property string|null $Stichtag_KWA
+ * @property string|null $Stichtag_NKA
+ * @property string|null $Stichtag_STA
+ * @property int|null $AbrechnungProHaus
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereAbrechnungProHaus($value)
  * @mixin \Eloquent
  */
 class Ceos_ABRECHNUNG_TimeLine extends Model

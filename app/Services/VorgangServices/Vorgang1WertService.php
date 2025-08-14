@@ -1,0 +1,128 @@
+<?php
+
+namespace App\Services\VorgangServices;
+
+use App\Models\Vorgang1Wert;
+use Illuminate\Support\Facades\Log;
+use Throwable;
+
+class Vorgang1WertService
+{
+    protected string $interneVorgangsnummer;
+
+    public function __construct($interneVorgangsnummer)
+    {
+        $this->interneVorgangsnummer = $interneVorgangsnummer;
+    }
+
+    public function saveVorgang1Wert($data): ?Vorgang1Wert
+    {
+        try {
+            return Vorgang1Wert::updateOrCreate(
+                [
+                    'InterneVorgangsnummer' => $data['InterneVorgangsnummer'],
+                ],
+                [
+                    'VorRabattProzent' => $data['VorRabattProzent'] ?? 0,
+                    'VorZusRabattProzent' => $data['VorZusRabattProzent'] ?? 0,
+                    'VorAdrRabattProzent' => $data['VorAdrRabattProzent'] ?? 0,
+                    'VorNettowert' => $data['VorNettowert'] ?? 0,
+                    'VorNettowertMwst1' => $data['VorNettowertMwst1'] ?? 0,
+                    'VorNettowertMwst2' => $data['VorNettowertMwst2'] ?? NULL,
+                    'VorNettowertMwst3' => $data['VorNettowertMwst3'] ?? NULL,
+                    'VorMwstSatz1' => $data['VorMwstSatz1'] ?? NULL,
+                    'VorMwstSatz2' => $data['VorMwstSatz2'] ?? NULL,
+                    'VorMwstSatz3' => $data['VorMwstSatz3'] ?? NULL,
+                    'VorMwstSatzProzent1' => $data['VorMwstSatzProzent1'] ?? 3,
+                    'VorMwstSatzProzent2' => $data['VorMwstSatzProzent2'] ?? NULL,
+                    'VorMwstSatzProzent3' => $data['VorMwstSatzProzent3'] ?? NULL,
+                    'VorNettoMinusRabatt' => $data['VorNettoMinusRabatt'] ?? 0,
+                    'VorNettoPlusZusatzkosten' => $data['VorNettoPlusZusatzkosten'] ?? 0,
+                    'VorNettoAKonto' => $data['VorNettoAKonto'] ?? 0,
+                    'VorMwstAKonto' => $data['VorMwstAKonto'] ?? 0,
+                    'VorNettoMinusAKonto' => $data['VorNettoMinusAKonto'] ?? 0,
+                    'VorBruttowert' => $data['VorBruttowert'] ?? 0,
+                    'VorBruttowertBezahlt' => $data['VorBruttowertBezahlt'] ?? 0,
+                    'VorBruttowertZusatzkonto' => $data['VorBruttowertZusatzkonto'] ?? 0,
+                    'VorBruttowertSkonto' => $data['VorBruttowertSkonto'] ?? 0,
+                    'VorNettoEinkauf' => $data['VorNettoEinkauf'] ?? 0,
+                    'VorNettoEinkaufVT' => $data['VorNettoEinkaufVT'] ?? 0,
+                    'VorNettoEinkaufAKonto' => $data['VorNettoEinkaufAKonto'] ?? 0,
+                    'VorNettoEinkaufAKontoVT' => $data['VorNettoEinkaufAKontoVT'] ?? 0,
+                    'VorNettoEinkaufOhneNachkalk' => $data['VorNettoEinkaufOhneNachkalk'] ?? 0,
+                    'VorNettoEinkaufOhneNachkalkVT' => $data['VorNettoEinkaufOhneNachkalkVT'] ?? 0,
+                    'VorNettoEinkaufNachkalk' => $data['VorNettoEinkaufNachkalk'] ?? 0,
+                    'VorNettoEinkaufNachkalkVT' => $data['VorNettoEinkaufNachkalkVT'] ?? 0,
+                    'VorWertZusatzkosten1' => $data['VorWertZusatzkosten1'] ?? 0,
+                    'VorWertZusatzkosten2' => $data['VorWertZusatzkosten2'] ?? 0,
+                    'VorWertZusatzkosten3' => $data['VorWertZusatzkosten3'] ?? 0,
+                    'VorWertZusatzkosten4' => $data['VorWertZusatzkosten4'] ?? 0,
+                    'VorWertZusatzkosten5' => $data['VorWertZusatzkosten5'] ?? 0,
+                    'VorTextZusatzkosten4' => $data['VorTextZusatzkosten4'] ?? NULL,
+                    'VorTextZusatzkosten5' => $data['VorTextZusatzkosten5'] ?? NULL,
+                    'VorMwstSatzZusatzkosten1' => $data['VorMwstSatzZusatzkosten1'] ?? NULL,
+                    'VorMwstSatzZusatzkosten2' => $data['VorMwstSatzZusatzkosten2'] ?? NULL,
+                    'VorMwstSatzZusatzkosten3' => $data['VorMwstSatzZusatzkosten3'] ?? NULL,
+                    'VorMwstSatzZusatzkosten4' => $data['VorMwstSatzZusatzkosten4'] ?? NULL,
+                    'VorMwstSatzZusatzkosten5' => $data['VorMwstSatzZusatzkosten5'] ?? NULL,
+                    'VorMwstSatzProzentZusatzkosten1' => $data['VorMwstSatzProzentZusatzkosten1'] ?? 0,
+                    'VorMwstSatzProzentZusatzkosten2' => $data['VorMwstSatzProzentZusatzkosten2'] ?? 0,
+                    'VorMwstSatzProzentZusatzkosten3' => $data['VorMwstSatzProzentZusatzkosten3'] ?? 0,
+                    'VorMwstSatzProzentZusatzkosten4' => $data['VorMwstSatzProzentZusatzkosten4'] ?? 0,
+                    'VorMwstSatzProzentZusatzkosten5' => $data['VorMwstSatzProzentZusatzkosten5'] ?? 0,
+                    'VorKontoGruppeZusatzkosten1' => $data['VorKontoGruppeZusatzkosten1'] ?? NULL,
+                    'VorKontoGruppeZusatzkosten2' => $data['VorKontoGruppeZusatzkosten2'] ?? NULL,
+                    'VorKontoGruppeZusatzkosten3' => $data['VorKontoGruppeZusatzkosten3'] ?? NULL,
+                    'VorKontoGruppeZusatzkosten4' => $data['VorKontoGruppeZusatzkosten4'] ?? NULL,
+                    'VorKontoGruppeZusatzkosten5' => $data['VorKontoGruppeZusatzkosten5'] ?? NULL,
+                    'VorBruttowertOriginal' => $data['VorBruttowertOriginal'] ?? 0,
+                    'VorTextMwstOriginal1' => $data['VorTextMwstOriginal1'] ?? NULL,
+                    'VorTextMwstOriginal2' => $data['VorTextMwstOriginal2'] ?? NULL,
+                    'VorTextMwstOriginal3' => $data['VorTextMwstOriginal3'] ?? NULL,
+                    'VorTextMwstOriginal4' => $data['VorTextMwstOriginal4'] ?? NULL,
+                    'VorMwstwertOriginal1' => $data['VorMwstwertOriginal1'] ?? 0,
+                    'VorMwstwertOriginal2' => $data['VorMwstwertOriginal2'] ?? 0,
+                    'VorMwstwertOriginal3' => $data['VorMwstwertOriginal3'] ?? 0,
+                    'VorMwstwertOriginal4' => $data['VorMwstwertOriginal4'] ?? 0,
+                    'VorWHTWert1' => $data['VorWHTWert1'] ?? 0,
+                    'VorWHTWert2' => $data['VorWHTWert2'] ?? NULL,
+                    'VorWHTWert3' => $data['VorWHTWert3'] ?? NULL,
+                    'VorWHTProzent1' => $data['VorWHTProzent1'] ?? 0,
+                    'VorWHTProzent2' => $data['VorWHTProzent2'] ?? NULL,
+                    'VorWHTProzent3' => $data['VorWHTProzent3'] ?? NULL,
+                    'VorWHTKat1' => $data['VorWHTKat1'] ?? NULL,
+                    'VorWHTKat2' => $data['VorWHTKat2'] ?? NULL,
+                    'VorWHTKat3' => $data['VorWHTKat3'] ?? NULL,
+                    'VorNettowertRabattfaehig' => $data['VorNettowertRabattfaehig'] ?? 0,
+                    'VorRabattfaehigMwst1' => $data['VorRabattfaehigMwst1'] ?? 0,
+                    'VorRabattfaehigMwst2' => $data['VorRabattfaehigMwst2'] ?? NULL,
+                    'VorRabattfaehigMwst3' => $data['VorRabattfaehigMwst3'] ?? NULL,
+                    'VorGesamtrabatt' => $data['VorGesamtrabatt'] ?? 0,
+                    'VorPosRabattfaehigJN' => $data['VorPosRabattfaehigJN'] ?? 0,
+                    'VorRabattKumulativJN' => $data['VorRabattKumulativJN'] ?? 0,
+                    'VorPositionswertBrutto' => $data['VorPositionswertBrutto'] ?? 0,
+                    'VorRabattWert' => $data['VorRabattWert'] ?? 0,
+                    'VorSkontofaehigMwst1' => $data['VorSkontofaehigMwst1'] ?? 0,
+                    'VorSkontofaehigMwst2' => $data['VorSkontofaehigMwst2'] ?? NULL,
+                    'VorSkontofaehigMwst3' => $data['VorSkontofaehigMwst3'] ?? NULL,
+                    'VorSkontofaehigBrutto' => $data['VorSkontofaehigBrutto'] ?? 0,
+                    'VorSkontofaehigZusatzkosten1JN' => $data['VorSkontofaehigZusatzkosten1JN'] ?? 1,
+                    'VorSkontofaehigZusatzkosten2JN' => $data['VorSkontofaehigZusatzkosten2JN'] ?? 1,
+                    'VorSkontofaehigZusatzkosten3JN' => $data['VorSkontofaehigZusatzkosten3JN'] ?? 1,
+                    'VorSkontofaehigZusatzkosten4JN' => $data['VorSkontofaehigZusatzkosten4JN'] ?? 1,
+                    'VorSkontofaehigZusatzkosten5JN' => $data['VorSkontofaehigZusatzkosten5JN'] ?? 1,
+                ]
+            );
+
+
+        } catch (Throwable $e) {
+            Log::error('Failed to update/create Vorgang1Wert', [
+                'error' => $e->getMessage(),
+                'InterneVorgangsnummer' => $this->interneVorgangsnummer,
+            ]);
+            return null;
+        }
+    }
+
+
+}

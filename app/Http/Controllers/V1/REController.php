@@ -12,13 +12,17 @@ use Illuminate\Support\Facades\Log;
 class REController extends Controller
 {
     protected REServices\RE_01_01_Services $re0101Services;
+    protected REServices\MasterServices $masterServices;
 
-    public function __construct(REServices\RE_01_01_Services $re0101Services)
+    public function __construct(
+        REServices\RE_01_01_Services $re0101Services,
+        REServices\MasterServices    $masterServices)
     {
         $this->re0101Services = $re0101Services;
+        $this->masterServices = $masterServices;
     }
 
-    // RE-01-01: SAP-->CEOS, Liegenschaften
+
     public function re_01_01_Liegenschaften(RE_0101_LiegenschaftenRequest $request)
     {
         $validated = $request->validated();
@@ -35,6 +39,25 @@ class REController extends Controller
         return response()->json([
             'status' => 'Error',
             'message' => 're_01_01_Liegenschaften fehlgeschlagen',
+        ], 400);
+    }
+
+
+    // Take Liegenschaften Timeline and build Master
+    public function buildMaster()
+    {
+        $response = $this->masterServices->buildMaster();
+        if ($response !== null) {
+            $message = "buildMaster erfolgreich b";
+            Log::info($message);
+            return response()->json([
+                'status' => 'success',
+                'message' => $message,
+            ], 202);
+        }
+        return response()->json([
+            'status' => 'Error',
+            'message' => 'buildMaster fehlgeschlagen',
         ], 400);
     }
 
