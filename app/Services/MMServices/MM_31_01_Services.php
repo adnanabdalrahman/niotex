@@ -16,11 +16,6 @@ use Illuminate\Support\Facades\Log;
 class MM_31_01_Services
 {
 
-    public function __construct()
-    {
-
-    }
-
     /**
      * MM-31-1 Materialstammdaten
      * SAP -> CEOS
@@ -53,7 +48,7 @@ class MM_31_01_Services
             Log::error('Kein Artikelgruppe für diese Material ', $data);
             return null;
         }
-        
+
         $artikelUntergruppe = ArtikelUntergruppe::where('KZUnterArtikelgruppe', $data['CEOSArtikeluntergruppe'])
             ->where('KZWarengruppe', $data['CEOSWarengruppe'])
             ->where('KZArtikelgruppe', $data['CEOSArtikelgruppe'])

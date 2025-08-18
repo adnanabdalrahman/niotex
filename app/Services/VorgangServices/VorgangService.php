@@ -33,7 +33,7 @@ class VorgangService
                 Log::error("Kein nummernkreisVorgang für Vorgang gefunden");
                 return null;
             }
-            
+
             //---------------------------------------------------------------------------
             $vorgang = Vorgang::create([
                 'VorArt' => $data['VorArt'],
@@ -57,11 +57,6 @@ class VorgangService
                 'VorLieferanschriftAnsprechpartnerID' => $data['VorLieferanschriftAnsprechpartnerID'] ?? NULL,
                 'VorBetrefftextZeile1' => $data['VorBetrefftextZeile1'] ?? NULL,
                 'VorBetrefftextZeile2' => $data['VorBetrefftextZeile2'] ?? NULL,
-
-                'VorIndividualC1' => $data['VorIndividualC1'] ?? NULL,
-                'VorIndividualC2' => $data['VorIndividualC2'] ?? NULL,
-                'VorIndividualC3' => $data['VorIndividualC3'] ?? NULL,
-                'VorIndividualC7' => $data['VorIndividualC7'] ?? NULL,
 
                 'VorStichwort' => $data['VorStichwort'] ?? NULL,
 
@@ -202,9 +197,13 @@ class VorgangService
                 'VorGelangensbestaetigungAm' => $data['VorGelangensbestaetigungAm'] ?? NULL,
                 'VorGelangensbestaetigungDurch' => $data['VorGelangensbestaetigungDurch'] ?? NULL,
                 'VorGelangesbErhaltenAm' => $data['VorGelangesbErhaltenAm'] ?? NULL,
-                'VorIndividualC4' => $data['VorIndividualC4'] ?? NULL,
-                'VorIndividualC5' => $data['VorIndividualC5'] ?? NULL,
-                'VorIndividualC6' => $data['VorIndividualC6'] ?? NULL,
+                'VorIndividualC1' => $data['VorIndividualC1'] ?? NULL, // VBELN (fakturanummer)
+                'VorIndividualC2' => $data['VorIndividualC2'] ?? NULL, // Auart (Verkaufsbelegart)
+                'VorIndividualC3' => $data['VorIndividualC3'] ?? NULL, // Slgnr(Liegenschaftsnummer)
+                'VorIndividualC4' => $data['VorIndividualC4'] ?? NULL, // ReservNo
+                'VorIndividualC5' => $data['VorIndividualC5'] ?? NULL, // PoItem
+                'VorIndividualC6' => $data['VorIndividualC6'] ?? NULL, // PoNumber
+                'VorIndividualC7' => $data['VorIndividualC7'] ?? NULL, // Vorlagebeleg
                 'VorIndividualD5' => $data['VorIndividualD5'] ?? NULL,
                 'VorIndividualD6' => $data['VorIndividualD6'] ?? NULL,
                 'VorIndividualD7' => $data['VorIndividualD7'] ?? NULL,

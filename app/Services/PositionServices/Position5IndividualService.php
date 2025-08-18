@@ -17,13 +17,12 @@ class Position5IndividualService
 
     public function savePosition5Individual($data): ?Position5Individual
     {
-        //todo 'PosIndividualC7' => $data['VorGruppe'] . ' ' . $data['VorNummer'],
         try {
             return Position5Individual::updateOrCreate(
                 ['InternePositionsnummer' => $this->internePositionsnummer],
                 [
                     'InterneVorgangsnummer' => $data['InterneVorgangsnummer'],
-                    'PosIndividualD1' => $data['PosIndividualD1'] ?? null,//posnr
+                    'PosIndividualD1' => $data['PosIndividualD1'] ?? null,
                     'PosIndividualD2' => $data['PosIndividualD2'] ?? null,
                     'PosIndividualD3' => $data['PosIndividualD3'] ?? null,
                     'PosIndividualD4' => $data['PosIndividualD4'] ?? null,
@@ -33,13 +32,13 @@ class Position5IndividualService
                     'PosIndividualD8' => $data['PosIndividualD8'] ?? null,
                     'PosIndividualD9' => $data['PosIndividualD9'] ?? null,
                     'PosIndividualD10' => $data['PosIndividualD10'] ?? null,
-                    'PosIndividualC1' => $data['PosIndividualC1'] ?? null,//PoNumber
-                    'PosIndividualC2' => $data['PosIndividualC2'] ?? null,//PoItem
-                    'PosIndividualC3' => $data['PosIndividualC3'] ?? null,//kondm
-                    'PosIndividualC4' => $data['PosIndividualC4'] ?? null,
-                    'PosIndividualC5' => $data['PosIndividualC5'] ?? null,//kwmeng
+                    'PosIndividualC1' => $data['PosIndividualC1'] ?? null, // posnr
+                    'PosIndividualC2' => $data['PosIndividualC2'] ?? null, //Vgart
+                    'PosIndividualC3' => $data['PosIndividualC3'] ?? null,
+                    'PosIndividualC4' => $data['PosIndividualC4'] ?? null, // PosAtt
+                    'PosIndividualC5' => $data['PosIndividualC5'] ?? null, // kwmeng
                     'PosIndividualC6' => $data['PosIndividualC6'] ?? null,
-                    'PosIndividualC7' => $data['PosIndividualC7'] ?? null,//tourID
+                    'PosIndividualC7' => $data['PosIndividualC7'] ?? null,
                     'PosIndividualC8' => $data['PosIndividualC8'] ?? null,
                     'PosIndividualC9' => $data['PosIndividualC9'] ?? null,
                     'PosIndividualC10' => $data['PosIndividualC10'] ?? null,

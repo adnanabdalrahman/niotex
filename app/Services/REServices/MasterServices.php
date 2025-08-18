@@ -66,8 +66,8 @@ class MasterServices
                 $vorgangData['VorAuftraggeber'] = $adresse->InterneAdressnummer;
                 $vorgangData['VorIndividualD4'] = $adresse->VorIndividualD4 ?? ''; // GebäudeNr
                 $vorgangData['VorIndividualC3'] = $liegenschaft->Liegenschaftsnummer;
-                $vorgangData['VorIndividualT1'] = $liegenschaft->DatumVon;
-                $vorgangData['VorIndividualT2'] = $liegenschaft->DatumBis;
+                #$vorgangData['VorIndividualT1'] = $liegenschaft->DatumVon;
+                #$vorgangData['VorIndividualT2'] = $liegenschaft->DatumBis;
 
                 $vorgangData['VorArt'] = 'R';
                 $vorgangData['VorUnterArt'] = 'M';
@@ -186,7 +186,7 @@ class MasterServices
                 $positionData['KZArtikelgruppe'] = 'HK';
                 $positionData['KZWarengruppe'] = 'WK';
                 $positionData['InterneArtikelnummer'] = $liegenschaft->Heizung_JN ? 164834 : 164814;
-                $positionData['PosBezeichnung1'] = 'Heizungskosten';
+                $positionData['PosBezeichnung1'] = $liegenschaft->Heizung_JN ? 'Heizungskosten' : 'Kein Heizungskosten';
 
                 $positionService = new PositionServiceTable();
                 $position = $positionService->createPositionMaster($positionData);
@@ -543,7 +543,7 @@ class MasterServices
                 /* PositionWert */
                 $positionWert = new PositionWertService($internePositionsnummer);
                 $positionWert->savePositionWert($positionData);
-                
+
                 dd('done');
             }
 

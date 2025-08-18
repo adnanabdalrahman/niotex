@@ -7,6 +7,7 @@ use App\Models\Artikel;
 use App\Models\ArtikelKunde;
 use App\Models\Position;
 use App\Models\Position3Menge;
+use App\Models\Position5Individual;
 use App\Models\Preisbasis;
 use App\Models\Vorgang;
 use App\Services\PositionService;
@@ -17,7 +18,6 @@ use App\Services\PositionServices\PositionWertService;
 use App\Services\SapApiClient;
 use Exception;
 use Illuminate\Support\Facades\Log;
-
 
 class MM_33_01_b_Services
 {
@@ -52,7 +52,6 @@ class MM_33_01_b_Services
             return null;
         }
 
-        $tourId = '3025';
         // get all Positions
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
         if ($positions->isEmpty()) {
@@ -83,18 +82,21 @@ class MM_33_01_b_Services
             $position3Menge = Position3Menge::where('InternePositionsnummer', $position->InternePositionsnummer)
                 ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
                 ->first();
+            $position5Individual = Position5Individual::where('InternePositionsnummer', $position->InternePositionsnummer)
+                ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
+                ->first();
             $to_Items[] = [
-                "TourId" => (string)(int)$tourId,
+                "TourId" => (string)$requestData['tourId'],
                 'Lifnr' => $adresse->AdressNummer,
                 'Slgnr' => $vorgang->VorIndividualC3,
-                'Vgart' => 'M_RM', //$vorgang->VorGruppe,//todo clarify with Pantie er hat die lösung 12.08.2025.
+                'Vgart' => $position5Individual->PosIndividualC2,
                 'Vbeln' => '',
                 'Posnr' => '',
                 'PosInt' => $position->InternePositionsnummer,
                 'Material' => (string)(int)$artikel->Artikelnummer,
                 'ShortText' => $artikel->ArtBezeichnung1 ?? "",
                 "Quantity" => (string)(int)$position3Menge->PosMenge1,
-                "Peinh" => '1',//always 1 //todo clarify from pante
+                "Peinh" => '1',
                 "CeosData" => "X",
                 "Goodsmovement" => "",
                 "GoodsmvmtLine" => "",
@@ -105,7 +107,7 @@ class MM_33_01_b_Services
         }
 
         $sendData = [
-            "TourId" => (string)(int)$tourId,
+            "TourId" => (string)$requestData['tourId'],
             "Interface" => 'B',
             "Lifnr" => $adresse->AdressNummer,
             "to_items" => $to_Items
@@ -118,8 +120,9 @@ class MM_33_01_b_Services
 
         if (isset($result['d'])) {
             $receivedVorgangInfo = $result['d'];
-            $vorgang->VorIndividualC6 = $receivedVorgangInfo['PoNumber'];
+
             $vorgang->VorIndividualC5 = $receivedVorgangInfo['PoItem'];
+            $vorgang->VorIndividualC6 = $receivedVorgangInfo['PoNumber'];
             $vorgang->save();
         }
         if (isset($result['d']['to_items']['results'])) {
@@ -127,21 +130,13 @@ class MM_33_01_b_Services
             $receivedPositions = $result['d']['to_items']['results'];
             $notExistArrayAndCreated = [];
             $existArrayAndUpdated = [];
-            foreach ($receivedPositions as $key => $receivedPosition) {
-
+            foreach ($receivedPositions as $receivedPosition) {
                 $artikel = Artikel::where('Artikelnummer', $receivedPosition['Material'])->first();
-                $position = Position::where(
-                    'InternePositionsnummer', $receivedPosition['PosInt'],
-                )->first();
 
                 $positionData['InterneVorgangsnummer'] = $vorgang->InterneVorgangsnummer;
                 $positionData['VorNummer'] = $vorgang->VorNummer;
-                $positionData['PosIndividualD1'] = $receivedPosition['Posnr'];
-                $positionData['PosIndividualC1'] = $receivedPosition['PoNumber'];
-                $positionData['PosIndividualC2'] = $receivedPosition['PoItem'];
-                $positionData['PosIndividualC4'] = $receivedPosition['PoUnit'];
+                $positionData['PosIndividualC1'] = $receivedPosition['Posnr'];
                 $positionData['PosIndividualC5'] = $receivedPosition['Quantity'];
-                $positionData['PosIndividualC7'] = $vorgang->VorGruppe . ' ' . $vorgang->VorNummer;
 
                 $preisbasis = Preisbasis::where('NRPreisbasis', $receivedPosition['Peinh'])->first();
                 $positionData['NRPreisbasis'] = $receivedPosition['Peinh'];
@@ -150,27 +145,29 @@ class MM_33_01_b_Services
                 $positionData['PosMenge1'] = $receivedPosition['Quantity'];
                 $positionData['PosKZMengeneinheit1'] = 'LE';
 
-                $gesamtPreis = $receivedPosition['Netpr'] * $receivedPosition['Quantity'];
-                $positionData['externGesamtPreis'] = $gesamtPreis;
+                $gesamtNettoPreis = $receivedPosition['Netpr'] * $receivedPosition['Quantity'];
+                $positionData['externGesamtPreis'] = $gesamtNettoPreis;
                 $positionData['externEinzelPreis'] = $receivedPosition['Netpr'];
                 $positionData['externMenge'] = $receivedPosition['Quantity'];
 
+
                 if ($receivedPosition['PosInt'] != 0) {
+                    $position = Position::where(
+                        'InternePositionsnummer', $receivedPosition['PosInt'],
+                    )->first();
+
                     $position5Individual = new Position5IndividualService($position->InternePositionsnummer);
                     if ($position5Individual->savePosition5Individual($positionData) === null) {
                         return null;
                     }
 
-                    /* Position1Wert */
                     $position1Wert = new Position1WertService($position->InternePositionsnummer);
                     if ($position1Wert->savePosition1Wert($positionData) === null) {
                         return null;
                     }
 
-                    /* PositionWert */
                     $positionWert = new PositionWertService($position->InternePositionsnummer);
                     $positionWert->savePositionWert($positionData);
-
 
                     $position3Menge = new Position3MengeService($position->InternePositionsnummer);
                     if ($position3Menge->savePosition3Menge($positionData) === null) {
@@ -178,13 +175,12 @@ class MM_33_01_b_Services
                     }
                     $existArrayAndUpdated[] = $position->InternePositionsnummer;
 
-                    //todo bestätigung von Pantie
                     $dataArtikel = [
                         'InterneArtikelnummer' => $artikel->InterneArtikelnummer,
                         'InterneAdressnummer' => $adresse->InterneAdressnummer,
                         'AkuArtikelBezeichnung1' => $receivedPosition['ShortText'],
                         'NRPreisbasis' => $receivedPosition['Peinh'],
-                        'AkuLetzterVK' => $gesamtPreis,
+                        'AkuLetzterVK' => $gesamtNettoPreis,
                         //-----------------------------------------------------
                         'AkuLetzterRabattWert1' => 0,
                         'AkuLetzterRabattWert2' => 0,
@@ -196,7 +192,8 @@ class MM_33_01_b_Services
                     ];
 
                     $artikelKunde = ArtikelKunde::updateOrCreate(
-                        ['InterneArtikelnummer' => $artikel->InterneArtikelnummer,
+                        [
+                            'InterneArtikelnummer' => $artikel->InterneArtikelnummer,
                             'InterneAdressnummer' => $adresse->InterneAdressnummer
                         ],
                         $dataArtikel

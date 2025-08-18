@@ -18,9 +18,7 @@ class BP_01_01_Services
     {
         // check if Adresse exist in CEOS
         // check Lov => 1/0
-
         // if not exist, create new Material
-
         /*
         Geschaeftspartnernummer INT     => INT  AdrFibunummer
         DebitorenKreditorennummer      => INT  AdressNummer
@@ -54,8 +52,6 @@ class BP_01_01_Services
         try {
             //Vorname + Nachname
             //$AdrFirmenbezeichnung1 = mb_substr($data['Vorname'] . " " . $data['Nachname'], 0, 40);
-
-            $streetArray = $this->splitStreet($data['Strasse']);
 
             if ($data['Loeschvormerkung'] !== null && $data['Loeschvormerkung'] !== "0") {
                 $data['Loeschvormerkung'] = 1;
@@ -99,14 +95,13 @@ class BP_01_01_Services
                     'AdrFactoringJN' => 0,
                     'AdrMahnSperreJN' => 0,
                     'NRAnrede' => $data['Anrede'],
-                    'NRTitel' => $data['Titel'], // todo
+                    'NRTitel' => $data['Titel'],
                     'AdrFirmenbezeichnung1' => mb_substr($data['Name1'], 0, 40),
                     'AdrFirmenbezeichnung2' => mb_substr($data['Name2'], 0, 40),
                     'AdrFirmenbezeichnung3' => mb_substr($data['Name3'], 0, 40),
                     'AdrMatchcode' => $data['Suchbegriff1'],
-                    'AdrStrasse' => $streetArray['strasse'],
-                    'AdrStrasse2' => $streetArray['strasse2'],
-                    'AdrStrasse3' => $streetArray['hausnummer'],
+                    'AdrStrasse' => mb_substr($data['Strasse'], 0, 39),
+                    'AdrStrasse2' => mb_substr($data['Strasse'], 39),
                     'AdrPLZ' => $data['Postleitzahl'],
                     'AdrOrt' => $data['Ort'],
                     'KZLand' => $data['Land'],
@@ -157,23 +152,19 @@ class BP_01_01_Services
     {
         // Strasse + Hausnummer
         // Extract Hausnummer from the end using regex (e.g., "Musterstraße 123a")
-        preg_match('/^(.*?)[\s,]+(\d+\w*)$/', $receivedStreet, $matches);
+        // preg_match('/^(.*?)[\s,]+(\d+\w*)$/', $receivedStreet, $matches);
 
-        if ($matches) {
-            $street = $matches[1];           // Street name without Hausnummer
-            $hausnummer = $matches[2];       // Hausnummer
-        } else {
-            // No Hausnummer found, use as-is
-            $street = $receivedStreet;
-            $hausnummer = '';
-        }
+
+        // No Hausnummer found, use as-is
+        $street = $receivedStreet;
+        $hausnummer = '';
         return [
-            'strasse' => mb_substr($street, 0, 39),
+            'strasse' => mb_substr($receivedStreet, 0, 39),
             'strasse2' => mb_substr($street, 39),
             'hausnummer' => $hausnummer,
         ];
     }
-    
+
 }
 
 

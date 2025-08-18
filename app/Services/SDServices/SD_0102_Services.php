@@ -153,8 +153,7 @@ class SD_0102_Services
                     'Vorgn' => (string)$vorgang->VorNummer,
                     'Vbeln' => (string)$vorgang->VorIndividualC1,
                     'VorgnInt' => (string)$vorgang->InterneVorgangsnummer,
-                    //'Kondm' => (string)$position5Individual->PosIndividualC3, //nicht mehr benötigt
-                    'Posnr' => (string)(int)$position5Individual->PosIndividualD1,
+                    'Posnr' => (string)(int)$position5Individual->PosIndividualC1,
                     'Kwmeng' => (string)$position3Menge->PosMenge1,
                     'Vrkme' => (string)$vrkme,
                     'TxtZ002' => (string)$position2Text->PosZusatztextLieferschein,

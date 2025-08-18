@@ -11,10 +11,6 @@ use Illuminate\Support\Facades\Log;
 
 class MM_37_1_Services
 {
-    public function __construct()
-    {
-
-    }
 
     public function mm_37_1_NuLeistungspositionen($data): ?array
     {
@@ -26,8 +22,8 @@ class MM_37_1_Services
                 return null;
             }
 
-            $gueltigVon = Carbon::parse($data['header']['gueltigVon'])->format('Y-m-d');
-            $gueltigBis = Carbon::parse($data['header']['gueltigBis'])->format('Y-m-d');
+            $gueltigVon = Carbon::parse($data['header']['gueltigVon'])->format('Ymd');
+            $gueltigBis = Carbon::parse($data['header']['gueltigBis'])->format('Ymd');
             $artikelKundeIds = [];
             foreach ($data['positions'] as $position) {
                 //getInterneArtikelnummer
@@ -43,13 +39,12 @@ class MM_37_1_Services
                     $artikel->ArtAltJN = 1;
                     $artikel->save();
                 }
-
                 $dataArtikel = [
                     'AkuBestellnummer' => $position['kontraktnummer'],
                     'AkuArtikelBezeichnung2' => $position['kontraktposition'],
                     'InterneArtikelnummer' => $artikel->InterneArtikelnummer,
                     'InterneAdressnummer' => $adresse->InterneAdressnummer,
-                    'AkuArtikelBezeichnung1' => $position['materialkurztext'],
+                    'AkuArtikelBezeichnung1' => mb_substr($position['materialkurztext'], 0, 39),
                     'NRPreisbasis' => $position['preismengeneinheit'],
                     'AkuLetzterVK' => (float)$position['preis'],
                     'AkuIndividualT1' => $gueltigVon,
@@ -69,6 +64,7 @@ class MM_37_1_Services
                 $artikelKunde = ArtikelKunde::where('InterneArtikelnummer', $artikel->InterneArtikelnummer)
                     ->where('InterneAdressnummer', $adresse->InterneAdressnummer)
                     ->first();
+
                 //check if exist before or not :
                 if ($artikelKunde === null) {
                     //No => create new one.
@@ -76,28 +72,22 @@ class MM_37_1_Services
                 } else {
                     //yes =>  check if Gültigab(AkuIndividualT1) tha same or not
                     $akuIndividualT1 = Carbon::parse($artikelKunde->AkuIndividualT1)->format('Ymd');
-
                     if ($gueltigVon == $akuIndividualT1) {
                         // if same we should change only the Preis
                         $artikelKunde->AkuLetzterVK = (float)$position['preis'];
-                        $artikelKunde->save();
                     } else {
                         // if not, check if AkuVKNeuDatum,AkuVKNeu Empty or not
-                        if ($artikelKunde->AkuVKNeu === null) {
-                            // if Empty => add Gültigab in AkuVKNeuDatum and New Preis(Preis) in AkuVKNeu
-                            $artikelKunde->AkuVKNeu = (float)$position['preis'];
-                            $artikelKunde->AkuVKNeuDatum = $gueltigVon;
-                            $artikelKunde->save();
-                        } else {
+                        if ($artikelKunde->AkuVKNeu !== null) {
                             // if not Empty => Move current AkuVKNeu To AkuLetzterVK and save new one in AkuVKNeu the update Gültig ab
                             $artikelKunde->AkuLetzterVK = (float)$artikelKunde->AkuVKNeu;
-                            $artikelKunde->AkuIndividualT1 = $artikelKunde->AkuVKNeuDatum;
-                            $artikelKunde->AkuVKNeu = (float)$position['preis'];
-                            $artikelKunde->AkuVKNeuDatum = $gueltigVon;
-                            $artikelKunde->save();
+                            $akuVKNeuDatum = Carbon::parse($artikelKunde->AkuVKNeuDatum)->format('Ymd');
+                            $artikelKunde->AkuIndividualT1 = $akuVKNeuDatum;
                         }
+                        $artikelKunde->AkuVKNeu = (float)$position['preis'];
+                        $artikelKunde->AkuVKNeuDatum = $gueltigVon;
 
                     }
+                    $artikelKunde->save();
                 }
                 $artikelKundeIds[] = $artikelKunde->ArtikelKundeID;
             }

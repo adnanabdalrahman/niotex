@@ -35,7 +35,7 @@ class RE_0101_LiegenschaftenRequest extends FormRequest
             '*.liegenschaft.opk' => 'nullable|in:0,1',
             '*.liegenschaft.opkAb' => 'nullable|date',
             '*.liegenschaft.uvir' => 'nullable|in:0,1',
-            '*.liegenschaft.uvirAb' => 'required|date',
+            '*.liegenschaft.uvirAb' => 'nullable|date',
             '*.liegenschaft.mdf' => 'nullable|numeric|digits_between:1,2',
             '*.liegenschaft.mdfBis' => 'nullable|date',
             '*.liegenschaft.lgnrExt' => 'nullable|string|max:20',
