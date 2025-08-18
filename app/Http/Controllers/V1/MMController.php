@@ -189,6 +189,7 @@ class MMController extends Controller
         $data = $request->validate([
             'Vorgangnummer' => 'required',
             'VorGruppe' => 'required',
+            'tourId' => 'required',
         ]);
         $response = $this->mm331aServices->mm_33_01_a_NuLeistungsbestaetigung($data);
         if ($response !== null) {
@@ -214,6 +215,8 @@ class MMController extends Controller
         $data = $request->validate([
             'Vorgangnummer' => 'required',
             'VorGruppe' => 'required',
+            'tourId' => 'required',
+            'tourDate' => 'required',
         ]);
         $response = $this->mm331bServices->mm_33_01_b_NuAuftragspaket($data);
 

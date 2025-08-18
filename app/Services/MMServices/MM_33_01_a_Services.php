@@ -6,6 +6,7 @@ use App\Models\Adresse;
 use App\Models\Artikel;
 use App\Models\Position;
 use App\Models\Position3Menge;
+use App\Models\Position5Individual;
 use App\Models\Vorgang;
 use App\Services\SapApiClient;
 use Exception;
@@ -23,6 +24,7 @@ class MM_33_01_a_Services
 
 
     /**
+     * CEOSWEB-->CEOS-->SAP
      * @throws Exception
      */
     public function mm_33_01_a_NuLeistungsbestaetigung($requestData): ?array
@@ -43,8 +45,6 @@ class MM_33_01_a_Services
             Log::error("mm_33_01_a_NuLeistungsbestaetigung Kein Adresse für Vorgang gefunden");
             return null;
         }
-
-        $tourId = '3025';
 
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
         if ($positions->isEmpty()) {
@@ -72,18 +72,22 @@ class MM_33_01_a_Services
             $position3Menge = Position3Menge::where('InternePositionsnummer', $position->InternePositionsnummer)
                 ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
                 ->first();
+            $position5Individual = Position5Individual::where('InternePositionsnummer', $position->InternePositionsnummer)
+                ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
+                ->first();
+
             $to_Items[] = [
-                'TourId' => (string)(int)$tourId,
+                'TourId' => (string)$requestData['tourId'],
                 'Lifnr' => $adresse->AdressNummer,
                 'Slgnr' => $vorgang->VorIndividualC3,
-                'Vgart' => "M_RM", //$vorgang->VorGruppe,//todo clarify with Pantie er hat die lösung 12.08.2025.
+                'Vgart' => $position5Individual->PosIndividualC2,
                 'Vbeln' => '',
                 'Posnr' => '',
                 'Material' => (string)(int)$artikel->Artikelnummer,
                 'ShortText' => $artikel->ArtBezeichnung1 ?? "",
                 "Quantity" => (string)(int)$position3Menge->PosMenge1,
                 //"Netpr" => $artikelKunde->AkuLetzterVK,
-                "Peinh" => '1',//always 1 //todo clarify from pante
+                "Peinh" => '1',
                 "CeosData" => "X",
                 "Goodsmovement" => "",
                 "GoodsmvmtLine" => "",
@@ -94,7 +98,7 @@ class MM_33_01_a_Services
         }
 
         $requestData = [
-            "TourId" => (string)(int)$tourId,
+            "TourId" => (string)$requestData['tourId'],
             "Interface" => 'A',
             "Lifnr" => $adresse->AdressNummer,
             "PoNumber" => $vorgang->VorIndividualC6 ?? "",

@@ -3,6 +3,7 @@
 namespace App\Services\COServices;
 
 use App\Models\Position;
+use App\Models\Position1Wert;
 use App\Models\Position3Menge;
 use App\Models\Position5Individual;
 use App\Models\Vorgang;
@@ -69,25 +70,38 @@ class CO_01_01_Services
                 $position5Individual = Position5Individual::where
                 ('InternePositionsnummer', $position->InternePositionsnummer)->first();
 
-                $sapKundenauftragspos = $position5Individual->PosIndividualD1;
-
+                $posNr = $position5Individual->PosIndividualC1; //
+                //todo in trello Summieren
                 $data['to_TimeUnits'][] = [
                     'Richtzeiteinheiten' => (string)$richtzeiteinheiten,
-                    'SapKundenauftragspos' => (string)$sapKundenauftragspos,
+                    'SapKundenauftragspos' => (string)$posNr,
                     'Belegdatum' => $belegDatum,
                     'Buchungsdatum' => date('Y-m-d'),
-                    'SapKundenauftrag' => (string)$vorgang->VorIndividualC6,
+                    'SapKundenauftrag' => '',
                     'Mengeneinheit' => 'MIN',
                     'SapLiegenschaft' => (string)$vorgang->VorIndividualC3,
-                    'CeosAuftragsart' => (string)$vorgang->VorGruppe, //todo clarify
-                    'CeosUnterauftragsart' => "456",//todo clarify
+                    'CeosAuftragsart' => (string)$position5Individual->PosIndividualC2,
+                    'CeosUnterauftragsart' => $vorgang->VorGruppe . ' ' . $vorgang->VorNummer,
                 ];
             }
             Log::info('co_01_01_Zeiteinheiten Sent data', $data);
             $result = app(SapApiClient::class)->post($this->co0101_path, $data);
             if ($result !== null) {
                 Log::info('co_01_01_Zeiteinheiten received data: ', $result);
+
+                $vorgang->VorStatus = 100300;
+                $vorgang->save();
+
+                $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
+                foreach ($positions as $position) {
+                    $position1wert = Position1wert::where('InternePositionsnummer', $position->InternePositionsnummer)->first();
+                    $position1wert->PosPreisProME2 = 1;
+                    $position1wert->save();
+                }
+
             }
+
+
         } catch (Throwable $e) {
             Log::error($e->getMessage());
             return null;

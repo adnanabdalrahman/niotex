@@ -6,6 +6,7 @@ use App\Models\Adresse;
 use App\Models\Artikel;
 use App\Models\Position;
 use App\Models\Position3Menge;
+use App\Models\Position5Individual;
 use App\Models\Vorgang;
 use App\Services\SapApiClient;
 use Carbon\Carbon;
@@ -75,6 +76,9 @@ class MM_35_02_Services
             $position3Menge = Position3Menge::where('InternePositionsnummer', $position->InternePositionsnummer)
                 ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
                 ->first();
+            $position5Individual = Position5Individual::where('InternePositionsnummer', $position->InternePositionsnummer)
+                ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
+                ->first();
             $to_Items[] = [
                 'Material' => (string)(int)$artikel->Artikelnummer,
                 "MoveType" => "261",
@@ -85,7 +89,7 @@ class MM_35_02_Services
                 'Vbeln' => '',
                 'Posnr' => '',
                 'Slgnr' => $vorgang->VorIndividualC3,
-                'Vgart' => 'M_RM',// $vorgang->VorGruppe,//todo clarify with Pantie er hat die lösung 12.08.2025.
+                'Vgart' => $position5Individual->PosIndividualC2,
                 "TourId" => (string)$requestData['tourId'],
             ];
         }
@@ -96,9 +100,6 @@ class MM_35_02_Services
             "to_Items" => $to_Items
         ];
         Log::info("mm_35_02_materialverbrauch sent Data", $requestData);
-        $response = app(SapApiClient::class)->post($this->mm352_path, $requestData);
-        return $response;
+        return app(SapApiClient::class)->post($this->mm352_path, $requestData);
     }
-
-
 }

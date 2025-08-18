@@ -182,7 +182,7 @@ class SD_0201_Services
             }
             $positionData['InterneVorgangsnummer'] = $vorgang['InterneVorgangsnummer'];
             $positionData['VorNummer'] = $vorgang['VorNummer'];
-            $positionData['PosIndividualD1'] = $position['posnr'];
+            $positionData['PosIndividualC1'] = $position['posnr'];
             $positionData['PosKZMengeneinheit1'] = 'ST';
             $positionData['PosMenge1'] = $position['fkimg'];
             $positionData['PosMwstProzent'] = $mwstSatzProzentPosition;

@@ -105,7 +105,7 @@ class MM_34_01_Services
             if ($reservNo !== null) {
                 $reservNo = ltrim($reservNo, '0');
                 $vorgang->VorStatus = 100220;
-                $vorgang->VorIndividualD6 = (int)$reservNo;
+                $vorgang->VorIndividualC4 = $reservNo;
                 $vorgang->save();
                 return [
                     'reservNo' => $reservNo,

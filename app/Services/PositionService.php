@@ -62,7 +62,7 @@ class PositionService
                 'InternePositionsnummer' => $internePositionsnummer,
                 'InterneVorgangsnummer' => $data['InterneVorgangsnummer'],
                 'vorgn' => $data['VorNummer'],
-                'posnr' => $data['PosIndividualD1'],
+                'posnr' => $data['PosIndividualC1'],
             ];
         } catch (Throwable $e) {
             Log::error('Create Position' . $e->getMessage());

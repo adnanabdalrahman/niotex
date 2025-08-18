@@ -128,9 +128,7 @@ class SD_0101_Services
 
             $positionData['InterneVorgangsnummer'] = $vorgangDataArray['InterneVorgangsnummer'];
             $positionData['VorNummer'] = $vorgangDataArray['VorNummer'];
-
-            $positionData['PosIndividualC3'] = $position['kondm'];
-            $positionData['PosIndividualD1'] = $position['posnr'];
+            $positionData['PosIndividualC1'] = $position['posnr'];
             $positionData['PosZusatztextLieferschein'] = $position['txtZ002'];
             $positionData['PosZusatztext'] = $position['txtZ009'];
             $positionData['PosNotiz'] = $position['txtZ010'];
