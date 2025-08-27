@@ -145,7 +145,8 @@ class SD_03_01_Services
             }
 
         } catch (Throwable $e) {
-            Log::error($e->getMessage());
+            dd($e->getMessage());
+            //Log::error($e->getMessage());
             return null;
         }
         Log::info('sd-03-01 received data: ', $result);

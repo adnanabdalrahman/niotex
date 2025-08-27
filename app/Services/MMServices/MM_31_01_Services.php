@@ -30,6 +30,7 @@ class MM_31_01_Services
        HIBEzuHAWA3 => String (18)
         */
 
+
         //trim Artikelnummer
         $data['Material'] = ltrim($data['Material'], '0');
 
