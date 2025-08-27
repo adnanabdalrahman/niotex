@@ -44,11 +44,12 @@ class REController extends Controller
 
 
     // Take Liegenschaften Timeline and build Master
-    public function buildMaster()
+
+    public function buildMasterForLiegenschaft($liegenschaftsId)
     {
-        $response = $this->masterServices->buildMaster();
+        $response = $this->masterServices->buildMasterForLiegenschaft($liegenschaftsId);
         if ($response !== null) {
-            $message = "buildMaster erfolgreich b";
+            $message = "buildMaster erfolgreich erstellt";
             Log::info($message);
             return response()->json([
                 'status' => 'success',
@@ -60,5 +61,24 @@ class REController extends Controller
             'message' => 'buildMaster fehlgeschlagen',
         ], 400);
     }
+
+    public function buildAllMaster($liegenschaft)
+    {
+
+        $response = $this->masterServices->buildAllMaster();
+        if ($response !== null) {
+            $message = "buildMaster erfolgreich erstellt";
+            Log::info($message);
+            return response()->json([
+                'status' => 'success',
+                'message' => $message,
+            ], 202);
+        }
+        return response()->json([
+            'status' => 'Error',
+            'message' => 'buildMaster fehlgeschlagen',
+        ], 400);
+    }
+
 
 }

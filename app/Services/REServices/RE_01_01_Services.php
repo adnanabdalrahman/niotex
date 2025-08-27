@@ -16,6 +16,7 @@ use App\Models\Ceos_VERWALTUNG;
 use App\Models\Ceos_VERWALTUNG_TimeLine;
 use App\Models\Ceos_WOHNEINHEIT;
 use App\Models\Ceos_WOHNEINHEIT_TimeLine;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -150,8 +151,16 @@ class RE_01_01_Services
                         'User' => 0,
                     ]
                 );
-                $fullHash = '9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2df5a9963a96f8ba17f65d4df9ee06b6fe24b6f5df4cbcd1bbac5c3a0b653f9a4c2fdeebb8f5a2c';
+                if ($liegenschaft->wasRecentlyCreated) {
+                    // created
+                    dd("A new record was created.");
+                } else {
+                    // updated
+                    dd("An existing record was updated.");
+                }
 
+                $fullHash = '9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2df5a9963a96f8ba17f65d4df9ee06b6fe24b6f5df4cbcd1bbac5c3a0b653f9a4c2fdeebb8f5a2c';
+                $abrechnungsdaten = $receivedLiegenschaft['abrechnungsdaten'];
                 //todo clarify if update or delete and insert
                 $liegenschaftTimeLine = Ceos_LIEGENSCHAFT_TimeLine::updateOrCreate(
                     [
@@ -169,6 +178,10 @@ class RE_01_01_Services
                         'Mdf_Bis' => $receivedLiegenschaft['mdfBis'],
                         'DatumVon' => $receivedLiegenschaft['validfrom'],
                         'DatumBis' => $receivedLiegenschaft['validto'],
+                        'Heizung_JN' => $abrechnungsdaten[0]['hka'],
+                        'Kaltwasser_JN' => $abrechnungsdaten[0]['kwa'],
+                        'Betriebskosten_JN' => $abrechnungsdaten[0]['nka'],
+                        'Stromkosten_JN' => $abrechnungsdaten[0]['sta'],
                         'User' => 0,
                         //todo should be deleted
                         'FULL_HASH' => \DB::raw("CONVERT(varbinary(64), 0x{$fullHash})"),
@@ -360,7 +373,6 @@ class RE_01_01_Services
                 // delete all ABRECHNUNGEN
                 Ceos_ABRECHNUNG_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
 
-                $abrechnungsdaten = $receivedLiegenschaft['abrechnungsdaten'];
                 foreach ($abrechnungsdaten as $receivedAbrechnung) {
                     $abrechnung = Ceos_ABRECHNUNG::updateOrCreate(
                         [
@@ -377,9 +389,8 @@ class RE_01_01_Services
                             'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                             'DatumVon' => $receivedAbrechnung['datab'],
                             'DatumBis' => $receivedAbrechnung['datbi'],
-                            // todo ex: '1232' 12 Monat 31 tag und Jahr immer 1900
-                            'Stichtag_HKA' => $receivedAbrechnung['sttHka'],
-                            'Stichtag_KWA' => $receivedAbrechnung['sttKwa'],
+                            'Stichtag_HKA' => $this->formatTo1900Date($receivedAbrechnung['sttHka']),
+                            'Stichtag_KWA' => $this->formatTo1900Date($receivedAbrechnung['sttKwa']),
                             'Stichtag_NKA' => $receivedAbrechnung['sttNka'],
                             'Stichtag_STA' => $receivedAbrechnung['sttSta'],
                             'Heizkostenabrechnung' => $receivedAbrechnung['hka'],
@@ -400,9 +411,27 @@ class RE_01_01_Services
                 }
             }
         } catch (Throwable $e) {
-            Log::error($e->getMessage());
+            Log::error($e);
             return null;
         }
         return ['message' => true];
+    }
+
+
+    function formatTo1900Date(string $md): ?string
+    {
+        if (!preg_match('/^\d{4}$/', $md)) {
+            return null;
+        }
+        $month = substr($md, 0, 2);
+        $day = substr($md, 2, 2);
+        $date = "1900-{$month}-{$day}";
+
+        try {
+            return Carbon::createFromFormat('Y-m-d', $date)->format('Y-m-d');
+        } catch (Throwable $e) {
+            Log::error('invalid month/day :' . $e->getMessage());
+            return null;
+        }
     }
 }

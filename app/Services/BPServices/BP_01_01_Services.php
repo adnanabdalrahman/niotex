@@ -67,6 +67,7 @@ class BP_01_01_Services
 
             if ($data['Sperrkennzeichen'] !== null && $data['Sperrkennzeichen'] !== "0") {
                 $data['Sperrkennzeichen'] = 1;
+                $data['Loeschvormerkung'] = 1;
             } else {
                 $data['Sperrkennzeichen'] = 0;
             }
@@ -116,7 +117,7 @@ class BP_01_01_Services
                     'AdrLiefersperreJN' => $data['Sperrkennzeichen'],
                     'KZAdressgruppe' => $kundengruppe1,
                     'AdrAltJN' => $data['Loeschvormerkung'],
-                    'ADRindividualC1' => $data['Suchbegriff2'],
+                    //'ADRindividualC1' => $data['Suchbegriff2'],
                     'ADRindividualC2' => $data['UVIMailadresse'],
                     'ADRindividualC3' => $data['PDFMailadresse'],
                 ]

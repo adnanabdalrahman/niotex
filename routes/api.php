@@ -94,9 +94,9 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
 
         Route::prefix('master')->group(function () {
             //SE-26-01: CEOSWEB-->CEOS-->SAP , reparaturauftrag
-            Route::get('/build ', [REController::class, 'buildMaster']);
+            Route::get('/buildall/', [REController::class, 'buildAllMaster']);
+            Route::get('/buildforliegenschaft/{liegenschaftsId} ', [REController::class, 'buildMasterForLiegenschaft']);
+
         });
-
-
     });
 });

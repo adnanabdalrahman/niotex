@@ -54,7 +54,6 @@ class MMController extends Controller
 
     public function mm_31_1_Materialstammdaten(MM_3101_materialStammdatenRequest $request): JsonResponse
     {
-        Log::info('Received Payload for mm_31_1_Materialstammdaten:', $request->all());
         $validated = $request->validated();
         $artikelNummer = ltrim($validated['Material'], '0');
 
@@ -134,7 +133,7 @@ class MMController extends Controller
                 'status' => 'success',
                 'message' => $message,
                 'data' => $response
-            ], 202);
+            ]);
         } else {
             return response()->json([
                 'status' => 'Error',
@@ -216,7 +215,6 @@ class MMController extends Controller
             'Vorgangnummer' => 'required',
             'VorGruppe' => 'required',
             'tourId' => 'required',
-            'tourDate' => 'required',
         ]);
         $response = $this->mm331bServices->mm_33_01_b_NuAuftragspaket($data);
 
@@ -249,7 +247,7 @@ class MMController extends Controller
                 'status' => 'success',
                 'message' => 'Menge erfolgreich gespeichert',
                 'data' => $response
-            ], 202);
+            ]);
         }
         return response()->json(['message' => 'Menge speichern fehlgeschlagen'], 400);
     }

@@ -43,7 +43,7 @@ class MM_35_02_Services
             );
             return null;
         }
-        $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
+        $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorLieferanschrift)->first();
         if ($adresse === null) {
             Log::error("mm_35_02_materialverbrauch Kein Adresse für Vorgang gefunden");
             return null;
