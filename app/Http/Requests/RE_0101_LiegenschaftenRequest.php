@@ -62,6 +62,7 @@ class RE_0101_LiegenschaftenRequest extends FormRequest
             '*.liegenschaft.kunden.*.kdart' => 'nullable|string|max:3',
             '*.liegenschaft.kunden.*.abrfirst' => 'nullable|date',
             '*.liegenschaft.kunden.*.abrlast' => 'nullable|date',
+            '*.liegenschaft.kunden.*.vtrCeos' => 'nullable|numeric',
 
             // Mietobjekte
             '*.liegenschaft.mietobjekte' => 'required|array',
@@ -77,14 +78,14 @@ class RE_0101_LiegenschaftenRequest extends FormRequest
             '*.liegenschaft.mietobjekte.*.validto' => 'required|date',
 
             // Mieter
-            '*.liegenschaft.mieter' => 'required|array',
-            '*.liegenschaft.mieter.*.genrCeos' => 'required|numeric',
-            '*.liegenschaft.mieter.*.menrCeos' => 'required|numeric',
+            '*.liegenschaft.mieter' => 'nullable|array',
+            '*.liegenschaft.mieter.*.genrCeos' => 'required_with:*.liegenschaft.mieter.*.datumEinzug|nullable|numeric',
+            '*.liegenschaft.mieter.*.menrCeos' => 'required_with:*.liegenschaft.mieter.*.datumEinzug|nullable|numeric',
             '*.liegenschaft.mieter.*.recnnr' => 'nullable|string',
             '*.liegenschaft.mieter.*.mName' => 'nullable|string',
             '*.liegenschaft.mieter.*.mAnrede' => 'nullable|string',
-            '*.liegenschaft.mieter.*.datumEinzug' => 'required|date',
-            '*.liegenschaft.mieter.*.datumAuszug' => 'required|date',
+            '*.liegenschaft.mieter.*.datumEinzug' => 'nullable|date|required_with:*.liegenschaft.mieter.*.datumAuszug',
+            '*.liegenschaft.mieter.*.datumAuszug' => 'nullable|date|required_with:*.liegenschaft.mieter.*.datumEinzug',
 
             // Abrechnungsdaten
             '*.liegenschaft.abrechnungsdaten' => 'required|array',

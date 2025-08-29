@@ -62,7 +62,7 @@ class REController extends Controller
         ], 400);
     }
 
-    public function buildAllMaster($liegenschaft)
+    public function buildAllMaster()
     {
 
         $response = $this->masterServices->buildAllMaster();

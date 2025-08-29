@@ -8,6 +8,7 @@ use App\Models\Artikelgruppe;
 use App\Models\ArtikelLieferant;
 use App\Models\ArtikelUntergruppe;
 use App\Models\Basisempfindlichkeit;
+use App\Models\Ceos_HIBE2HAWA;
 use App\Models\Warengruppe;
 use Exception;
 use Illuminate\Support\Facades\Log;
@@ -15,29 +16,24 @@ use Illuminate\Support\Facades\Log;
 
 class MM_31_01_Services
 {
-
     /**
      * MM-31-1 Materialstammdaten
      * SAP -> CEOS
      */
     public function mm_31_01_materialstammdaten($data): ?array
     {
-
-        /*
-       todo
-       HIBEzuHAWA1 =>  String (18)
-       HIBEzuHAWA2 => String (18)
-       HIBEzuHAWA3 => String (18)
-        */
-
-
+        //validate HibeZuHawa
+        $hawaInternArtikelNummerArray = $this->validateHibeZuHawa($data);
+        if ($hawaInternArtikelNummerArray === null) {
+            return null;
+        }
         //trim Artikelnummer
         $data['Material'] = ltrim($data['Material'], '0');
 
         //Validate Warengruppe
         $validateWarengruppe = Warengruppe::where('KZWarengruppe', $data['CEOSWarengruppe'])->first();
         if ($validateWarengruppe === null) {
-            Log::error('Kein Warengruppe für diese Material ', $data);
+            Log::error('mm_31_01_materialstammdaten Kein Warengruppe für diese Material ', $data);
             return null;
         }
 
@@ -46,7 +42,7 @@ class MM_31_01_Services
             ->where('KZWarengruppe', $data['CEOSWarengruppe'])
             ->first();
         if ($validateArtikelGruppe === null) {
-            Log::error('Kein Artikelgruppe für diese Material ', $data);
+            Log::error('mm_31_01_materialstammdaten Kein Artikelgruppe für diese Material ', $data);
             return null;
         }
 
@@ -120,7 +116,18 @@ class MM_31_01_Services
                     'ArtVerkaufsfaehigJN' => $data['ArtVerkaufsfaehigJN'],
                 ]
             );
-            $interneArtikelNummer = $artikel['InterneArtikelnummer'];
+            if (!empty($hawaInternArtikelNummerArray)) {
+                $HIBEzuHAWA = Ceos_HIBE2HAWA::where('HIBE', $artikel->InterneArtikelnummer)->first()
+                    ?? new Ceos_HIBE2HAWA();
+                $HIBEzuHAWA->HIBE = $artikel->InterneArtikelnummer;
+                foreach ($hawaInternArtikelNummerArray as $key => $hawaInternArtikelNummer) {
+                    $prop = 'HAWA0' . $key + 1;
+                    $HIBEzuHAWA->$prop = $hawaInternArtikelNummer;
+                }
+                $HIBEzuHAWA->save();
+            }
+
+
         } catch (Exception $e) {
             Log::error(
                 'mm_31_01_materialstammdaten Save Artikel Error:' . $e->getMessage(),
@@ -132,9 +139,9 @@ class MM_31_01_Services
         // add Basisempfindlichkeit
         try {
             Basisempfindlichkeit::updateOrCreate(
-                ['InterneArtikelNummer' => $interneArtikelNummer],
+                ['InterneArtikelNummer' => $artikel->InterneArtikelnummer],
                 [
-                    'InterneArtikelNummer' => $interneArtikelNummer,
+                    'InterneArtikelNummer' => $artikel->InterneArtikelnummer,
                     'BasisempfindlichkeitSkala' => $data['Basisempfindlichkeit'],
                 ]
             );
@@ -163,11 +170,11 @@ class MM_31_01_Services
                 ArtikelLieferant::updateOrCreate(
                     [
                         'InterneAdressnummer' => $interneAdressnummer,
-                        'InterneArtikelnummer' => $interneArtikelNummer
+                        'InterneArtikelnummer' => $artikel->InterneArtikelnummer
                     ],
                     [
                         'InterneAdressnummer' => $interneAdressnummer,
-                        'InterneArtikelnummer' => $interneArtikelNummer,
+                        'InterneArtikelnummer' => $artikel->InterneArtikelnummer,
                         'AliBestellnummer' => $data['Herstellerteilenummer'],
                         'AliLetzterEK' => 0,
                         'AliLetzteMenge1' => 0,
@@ -190,11 +197,33 @@ class MM_31_01_Services
         }
 
         return [
-            'interneArtikelnummer' => $interneArtikelNummer,
+            'interneArtikelnummer' => $artikel->InterneArtikelnummer,
             'Material' => $data['Material'],
         ];
     }
 
-    //MM_34_01 Umlagerungsreservierung
 
+    public function validateHibeZuHawa($data): ?array
+    {
+        $HibeZuHawaArray = [
+            $data['CEOSHIBEzuHAWA1'],
+            $data['CEOSHIBEzuHAWA2'],
+            $data['CEOSHIBEzuHAWA3']
+        ];
+        $hawaInternArtikelNummerArray = [];
+        foreach ($HibeZuHawaArray as $key => $HIBEzuHawa) {
+            if ($HIBEzuHawa !== NULL) {
+                $hawaArtikel = Artikel::where('Artikelnummer', $HIBEzuHawa)->first();
+                if ($hawaArtikel === null) {
+                    Log::error('mm_31_01_materialstammdaten - Kein Material für diese  Hawa gefunden', [$HIBEzuHawa]);
+                    return null;
+                }
+                $hawaInternArtikelNummerArray[$key] = $hawaArtikel->InterneArtikelnummer;
+
+            }
+        }
+        return $hawaInternArtikelNummerArray;
+    }
+
+    //todo what id SAP want to delete HibeZuHawa ? should if "" delete it (current logic dosen't delete)
 }
