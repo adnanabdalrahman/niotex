@@ -17,6 +17,7 @@ use App\Models\Ceos_VERWALTUNG_TimeLine;
 use App\Models\Ceos_WOHNEINHEIT;
 use App\Models\Ceos_WOHNEINHEIT_TimeLine;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -151,18 +152,12 @@ class RE_01_01_Services
                         'User' => 0,
                     ]
                 );
-                if ($liegenschaft->wasRecentlyCreated) {
-                    // created
-                    dd("A new record was created.");
-                } else {
-                    // updated
-                    dd("An existing record was updated.");
-                }
 
                 $fullHash = '9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2df5a9963a96f8ba17f65d4df9ee06b6fe24b6f5df4cbcd1bbac5c3a0b653f9a4c2fdeebb8f5a2c';
                 $abrechnungsdaten = $receivedLiegenschaft['abrechnungsdaten'];
+                $kunden = $receivedLiegenschaft['kunden'];
                 //todo clarify if update or delete and insert
-                $liegenschaftTimeLine = Ceos_LIEGENSCHAFT_TimeLine::updateOrCreate(
+                Ceos_LIEGENSCHAFT_TimeLine::updateOrCreate(
                     [
                         'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                     ],
@@ -175,6 +170,7 @@ class RE_01_01_Services
                         'UviReady_JN' => $receivedLiegenschaft['uvir'],
                         'UviReady_Ab' => $receivedLiegenschaft['uvirAb'],
                         'Mdf' => $receivedLiegenschaft['mdf'],
+                        'Vertreter' => $kunden[0]['vtrCeos'],
                         'Mdf_Bis' => $receivedLiegenschaft['mdfBis'],
                         'DatumVon' => $receivedLiegenschaft['validfrom'],
                         'DatumBis' => $receivedLiegenschaft['validto'],
@@ -184,22 +180,26 @@ class RE_01_01_Services
                         'Stromkosten_JN' => $abrechnungsdaten[0]['sta'],
                         'User' => 0,
                         //todo should be deleted
-                        'FULL_HASH' => \DB::raw("CONVERT(varbinary(64), 0x{$fullHash})"),
+                        'FULL_HASH' => DB::raw("CONVERT(varbinary(64), 0x$fullHash)"),
                     ]
                 );
+
+
                 if ($receivedLiegenschaft['lgnrExt'] != null) {
-                    Ceos_ID_SAP::updateOrCreate([
-                        'ID' => $liegenschaft->LiegenschaftsID,
-                        'TYPE' => 'LG_KORR_Nr',
-                        'VALUE' => $receivedLiegenschaft['lgnrExt'],
-                    ]);
+                    Ceos_ID_SAP::updateOrCreate(
+                        [
+                            'ID' => $liegenschaft->LiegenschaftsID,
+                            'TYPE' => 'LG_KORR_Nr',
+                        ],
+                        [
+                            'VALUE' => $receivedLiegenschaft['lgnrExt'],
+                        ]
+                    );
                 }
 
                 //---------------- Adressen - GEBAEUDE -------------------------------
                 $adressen = $receivedLiegenschaft['adressen'];
-                // delete all adressen
-                //todo later we copy data from CEOS before delete
-                Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
+
                 foreach ($adressen as $adresse) {
                     $gebaeude = Ceos_GEBAEUDE::updateOrCreate(
                         [
@@ -209,7 +209,9 @@ class RE_01_01_Services
                             'User' => 0,
                         ]
                     );
-                    $gebaeudeTimeLineID = Ceos_GEBAEUDE_TimeLine::insertGetId(
+                    // delete all adressen
+                    Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
+                    Ceos_GEBAEUDE_TimeLine::insertGetId(
                         [
                             'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                             'GebaeudeID' => $gebaeude->GebaeudeID,
@@ -225,20 +227,20 @@ class RE_01_01_Services
                     );
 
                     if ($adresse['tplnr'] != null) {
-
-                        Ceos_ID_SAP::updateOrCreate([
-                            'ID' => $gebaeude->GebaeudeID,
-                            'TYPE' => 'GEB_TPlatz',
-                            'VALUE' => $adresse['tplnr'],
-                        ]);
+                        Ceos_ID_SAP::updateOrCreate(
+                            [
+                                'ID' => $gebaeude->GebaeudeID,
+                                'TYPE' => 'GEB_TPlatz',
+                            ],
+                            [
+                                'VALUE' => $adresse['tplnr'],
+                            ]
+                        );
                     }
                 }
 
 
                 //---------------- KUNDEN - VERWALTUNG -------------------------------
-                $kunden = $receivedLiegenschaft['kunden'];
-                // delete all Kunden
-                Ceos_VERWALTUNG_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
                 foreach ($kunden as $kunde) {
                     $verwaltung = Ceos_VERWALTUNG::updateOrCreate(
                         [
@@ -254,7 +256,9 @@ class RE_01_01_Services
                         Log::error('re_01_01_Liegenschaften Kein Adresse gefunden');
                         return null;
                     }
-                    $verwaltungTimeline = Ceos_VERWALTUNG_TimeLine::insertGetId(
+                    // delete all Kunden
+                    Ceos_VERWALTUNG_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
+                    Ceos_VERWALTUNG_TimeLine::insertGetId(
                         [
                             'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                             'VerwaltungID' => $verwaltung->VerwaltungID,
@@ -270,8 +274,6 @@ class RE_01_01_Services
 
                 }
                 //---------------- MIETOBJEKTE - WOHNEINHEIT -------------------------------
-                // delete all WOHNEINHEIT
-                Ceos_WOHNEINHEIT_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
                 $mietobjekte = $receivedLiegenschaft['mietobjekte'];
                 foreach ($mietobjekte as $mietobjekt) {
                     $wohneinheit = Ceos_WOHNEINHEIT::updateOrCreate(
@@ -286,13 +288,15 @@ class RE_01_01_Services
                     $gebaeude = Ceos_GEBAEUDE_TimeLine::where('GebaeudeNr', $mietobjekt['genrCeos'])
                         ->where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
                         ->first();
-                    //todo validierung $gebaeudeId
-
+                    if ($gebaeude === null) {
+                        return null;
+                    }
+                    // delete all WOHNEINHEIT
+                    Ceos_WOHNEINHEIT_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
                     Ceos_WOHNEINHEIT_TimeLine::insertGetId(
                         [
                             'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                             'WohneinheitID' => $wohneinheit->WohneinheitID,
-                            //todo name should be fixed
                             'lfd_Adressnummer_GE_CEOS' => $mietobjekt['genrCeos'],
                             'GebaeudeID' => $gebaeude->GebaeudeID,
                             'WE_LfdNr' => $mietobjekt['menrCeos'],
@@ -304,28 +308,41 @@ class RE_01_01_Services
                         ]
                     );
                     if ($mietobjekt['tplnr'] != null) {
-                        Ceos_ID_SAP::updateOrCreate([
-                            'ID' => $wohneinheit->WohneinheitID,
-                            'TYPE' => 'WE_TPlatz',
-                            'VALUE' => $mietobjekt['tplnr'],
-                        ]);
+                        Ceos_ID_SAP::updateOrCreate(
+                            [
+                                'ID' => $wohneinheit->WohneinheitID,
+                                'TYPE' => 'WE_TPlatz',
+                            ],
+                            [
+                                'VALUE' => $mietobjekt['tplnr'],
+                            ]
+                        );
                     }
+
+
                     if ($mietobjekt['korrnrHk'] != null) {
-                        Ceos_ID_SAP::updateOrCreate([
-                            'ID' => $wohneinheit->WohneinheitID,
-                            'TYPE' => 'WE_HK_KORR_Nr',
-                            'VALUE' => $mietobjekt['korrnrHk'],
-                        ]);
+                        Ceos_ID_SAP::updateOrCreate(
+                            [
+                                'ID' => $wohneinheit->WohneinheitID,
+                                'TYPE' => 'WE_HK_KORR_Nr',
+                            ],
+                            [
+                                'VALUE' => $mietobjekt['korrnrHk'],
+                            ]
+                        );
                     }
                     if ($mietobjekt['korrnrKw'] != null) {
-                        Ceos_ID_SAP::updateOrCreate([
-                            'ID' => $wohneinheit->WohneinheitID,
-                            'TYPE' => 'WE_KW_KORR_Nr',
-                            'VALUE' => $mietobjekt['korrnrKw'],
-                        ]);
+
+                        Ceos_ID_SAP::updateOrCreate(
+                            [
+                                'ID' => $wohneinheit->WohneinheitID,
+                                'TYPE' => 'WE_KW_KORR_Nr',
+                            ],
+                            [
+                                'VALUE' => $mietobjekt['korrnrKw'],
+                            ]
+                        );
                     }
-
-
                 }
 
                 //---------------- MIETER_ MIETER -------------------------------
@@ -356,8 +373,6 @@ class RE_01_01_Services
                             'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                             'WohneinheitID' => $wohneinheit->WohneinheitID,
                             'MieterID' => $mieter->MieterID,
-
-                            //todo should be fixed
                             'lfd_Adressnummer_GE_CEOS' => $receivedMieter['genrCeos'],
                             'lfd_Adressnummer_ME_CEOS' => $receivedMieter['menrCeos'],
                             'Mietvertragsnummer' => $receivedMieter['recnnr'],
@@ -369,10 +384,8 @@ class RE_01_01_Services
                         ]
                     );
                 }
-                //---------------- ABRECHNUNGSDATEN  -------------------------------
-                // delete all ABRECHNUNGEN
-                Ceos_ABRECHNUNG_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
 
+                //---------------- ABRECHNUNGSDATEN  -------------------------------
                 foreach ($abrechnungsdaten as $receivedAbrechnung) {
                     $abrechnung = Ceos_ABRECHNUNG::updateOrCreate(
                         [
@@ -382,6 +395,8 @@ class RE_01_01_Services
                             'User' => 0,
                         ]
                     );
+                    // delete all ABRECHNUNGEN
+                    Ceos_ABRECHNUNG_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
 
                     Ceos_ABRECHNUNG_TimeLine::insertGetId(
                         [
@@ -391,8 +406,8 @@ class RE_01_01_Services
                             'DatumBis' => $receivedAbrechnung['datbi'],
                             'Stichtag_HKA' => $this->formatTo1900Date($receivedAbrechnung['sttHka']),
                             'Stichtag_KWA' => $this->formatTo1900Date($receivedAbrechnung['sttKwa']),
-                            'Stichtag_NKA' => $receivedAbrechnung['sttNka'],
-                            'Stichtag_STA' => $receivedAbrechnung['sttSta'],
+                            'Stichtag_NKA' => $this->formatTo1900Date($receivedAbrechnung['sttNka']),
+                            'Stichtag_STA' => $this->formatTo1900Date($receivedAbrechnung['sttNka']),
                             'Heizkostenabrechnung' => $receivedAbrechnung['hka'],
                             'Kaltwasserabrechnung' => $receivedAbrechnung['kwa'],
                             'Nebenkostenabrechnung' => $receivedAbrechnung['nka'],
@@ -417,15 +432,17 @@ class RE_01_01_Services
         return ['message' => true];
     }
 
-
-    function formatTo1900Date(string $md): ?string
+    function formatTo1900Date($md): ?string
     {
+        if ($md === null || $md === '') {
+            return null;
+        }
         if (!preg_match('/^\d{4}$/', $md)) {
             return null;
         }
         $month = substr($md, 0, 2);
         $day = substr($md, 2, 2);
-        $date = "1900-{$month}-{$day}";
+        $date = "1900-$month-$day";
 
         try {
             return Carbon::createFromFormat('Y-m-d', $date)->format('Y-m-d');

@@ -33,16 +33,15 @@ class MM_3101_materialStammdatenRequest extends FormRequest
             'CEOSWarengruppe' => 'required|string|max:4',
             'CEOSArtikelgruppe' => 'required|string|max:10',
             'CEOSArtikeluntergruppe' => 'nullable|string|max:10',
-            'MappingHIBE_HAWA1' => 'nullable|string|max:18',
-            'MappingHIBE_HAWA2' => 'nullable|string|max:18',
-            'MappingHIBE_HAWA3' => 'nullable|string|max:18',
+            'CEOSHIBEzuHAWA1' => 'nullable|string|max:18',
+            'CEOSHIBEzuHAWA2' => 'nullable|string|max:18',
+            'CEOSHIBEzuHAWA3' => 'nullable|string|max:18',
             'Produktgruppe' => 'nullable|string|max:4',
             'Basisempfindlichkeit' => 'required|numeric',
             'Hersteller' => 'nullable|string|max:10',
             'Herstellerteilenummer' => 'nullable|string|max:40',
             'EANNummerSAP' => 'nullable|string|max:16',
             'Langtext' => 'nullable|string|max:1000',
-            //todo Matchcode not exist in Doc
             'Matchcode' => 'nullable|string|max:100',
         ];
     }

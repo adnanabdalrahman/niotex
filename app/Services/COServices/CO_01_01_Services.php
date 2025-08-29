@@ -21,7 +21,6 @@ class CO_01_01_Services
     {
         $this->baseUrl = config('sap.base_url');
         $this->co0101_path = config('sap.co0101_path');
-
     }
 
 
@@ -31,10 +30,6 @@ class CO_01_01_Services
      */
     public function co_01_01_Zeiteinheiten($request): ?array
     {
-        /*
-         "CeosAuftragsart":"123", ??
-         "CeosUnterauftragsart":"456" ??
-         */
         try {
             $data = [];
             $vorgang = Vorgang::where('InterneVorgangsnummer', $request['InterneVorgangsnummer'])->first();
@@ -70,8 +65,7 @@ class CO_01_01_Services
                 $position5Individual = Position5Individual::where
                 ('InternePositionsnummer', $position->InternePositionsnummer)->first();
 
-                $posNr = $position5Individual->PosIndividualC1; //
-                //todo in trello Summieren
+                $posNr = $position5Individual->PosIndividualC1;
                 $data['to_TimeUnits'][] = [
                     'Richtzeiteinheiten' => (string)$richtzeiteinheiten,
                     'SapKundenauftragspos' => (string)$posNr,
@@ -84,12 +78,33 @@ class CO_01_01_Services
                     'CeosUnterauftragsart' => $vorgang->VorGruppe . ' ' . $vorgang->VorNummer,
                 ];
             }
+            $grouped = [];
+            foreach ($data['to_TimeUnits'] as $item) {
+                $key = $item['SapKundenauftragspos'] . '|' .
+                    $item['Belegdatum'] . '|' .
+                    $item['Buchungsdatum'] . '|' .
+                    $item['SapKundenauftrag'] . '|' .
+                    $item['Mengeneinheit'] . '|' .
+                    $item['SapLiegenschaft'] . '|' .
+                    $item['CeosAuftragsart'] . '|' .
+                    $item['CeosUnterauftragsart'];
+
+                if (!isset($grouped[$key])) {
+                    $grouped[$key] = $item;
+                } else {
+                    $grouped[$key]['Richtzeiteinheiten'] = (string)(
+                        (int)$grouped[$key]['Richtzeiteinheiten'] + (int)$item['Richtzeiteinheiten']
+                    );
+                }
+            }
+
+            $data['to_TimeUnits'] = array_values($grouped);
             Log::info('co_01_01_Zeiteinheiten Sent data', $data);
             $result = app(SapApiClient::class)->post($this->co0101_path, $data);
             if ($result !== null) {
                 Log::info('co_01_01_Zeiteinheiten received data: ', $result);
 
-                $vorgang->VorStatus = 100300;
+                $vorgang->VorStatus = 100425;
                 $vorgang->save();
 
                 $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
@@ -98,16 +113,11 @@ class CO_01_01_Services
                     $position1wert->PosPreisProME2 = 1;
                     $position1wert->save();
                 }
-
             }
-
-
         } catch (Throwable $e) {
             Log::error($e->getMessage());
             return null;
         }
-
-        //todo change status also Preis pro ME2 to all Positions
         return $result;
     }
 
