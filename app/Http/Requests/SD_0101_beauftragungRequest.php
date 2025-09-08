@@ -34,17 +34,19 @@ class SD_0101_beauftragungRequest extends FormRequest
             'header.augru' => 'required|string',// Vorgruppe
 
             'positions' => 'required|array|min:1',
-            'positions.*.kwmeng' => 'required|numeric',
-            'positions.*.kwmengO' => 'nullable|numeric',
-            'positions.*.posnr' => 'required|integer',
             'positions.*.matnr' => 'required|string|max:18',
+            'positions.*.kondm' => 'nullable|string|max:2',
+            'positions.*.kwmeng' => 'required|numeric',
             'positions.*.vrkme' => 'required|string|max:6',
-            'positions.*.posErl' => 'nullable|Boolean', // 1 erledigt ,2 teilweise erledigt
-//            'positions.*.Kontierungsobjekt' => 'required|string|max:12',
+            'positions.*.kwmengO' => 'nullable|numeric',
+            'positions.*.aufnr' => 'required|string|max:18',
             'positions.*.txtZ002' => 'nullable|string',
-//            'positions.*.Vorgangsnummer' => 'nullable|integer',
             'positions.*.txtZ009' => 'nullable|string',
             'positions.*.txtZ010' => 'nullable|string',
+            'positions.*.posnr' => 'required|integer',
+            'positions.*.posErl' => 'nullable|Boolean', // 1 erledigt ,2 teilweise erledigt
+//          'positions.*.Kontierungsobjekt' => 'required|string|max:12',
+//          'positions.*.Vorgangsnummer' => 'nullable|integer',
             'positions.*.montagedatum' => 'nullable|string',
         ];
     }

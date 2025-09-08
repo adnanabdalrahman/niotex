@@ -15,7 +15,6 @@ use Throwable;
 
 class SDController extends Controller
 {
-
     protected SDServices\SD_0101_Services $sd0101Services;
     protected SDServices\SD_0102_Services $sd0102Services;
     protected SDServices\SD_0201_Services $sd0201Services;
@@ -36,8 +35,6 @@ class SDController extends Controller
         $this->sd0201Services = $sd0201Services;
         $this->sd0301Services = $sd0301Services;
         $this->sd0302Services = $sd0302Services;
-
-
     }
 
     // SD-01-01: SAP-->CEOS, in SAP wird ein Kundenauftrag angelegt -
@@ -54,31 +51,23 @@ class SDController extends Controller
     public function sd_0101_beauftragung(SD_0101_beauftragungRequest $request)
     {
         $validated = $request->validated();
-        $vorgangDataArray = $this->sd0101Services->sd_0101_beauftragung_vorgang($validated['header']);
+        $vorgangDataArray = $this->sd0101Services->sd_0101_beauftragung($validated);
         if ($vorgangDataArray !== null) {
-            $positionsNrArray = $this->sd0101Services->sd_0101_beauftragung_positions($validated['positions'], $vorgangDataArray);
-            if ($positionsNrArray !== null) {
-                Log::info('sd_0101_beauftragung Beauftragung erfolgreich empfangen', [
-                    'header' => $vorgangDataArray,
-                    'positions' => $positionsNrArray
-                ]);
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Beauftragung erfolgreich empfangen',
-                    'data' => [
-                        'header' => $vorgangDataArray,
-                        'positions' => $positionsNrArray
-                    ],
-                ], 202);
-            }
+            Log::info('sd_0101_beauftragung Beauftragung erfolgreich empfangen', [
+                'header' => $vorgangDataArray,
+            ]);
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Beauftragung erfolgreich empfangen',
+                'data' => $vorgangDataArray,
+            ], 202);
         }
         return response()->json([
             'status' => 'Error',
             'message' => 'Beauftragung fehlgeschlagen',
         ], 400);
     }
-
-
+    
     // SD-01-02: CEOS-->SAP, beauftragung Rückmeldung
     public function sd_01_02_beauftragungRueckmeldung(Request $request)
     {
@@ -173,8 +162,6 @@ class SDController extends Controller
             'message' => 'sd_02_01_mietvertragsrechnungen Beauftragung fehlgeschlagen',
         ], 400);
     }
-
-
 }
 
 

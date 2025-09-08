@@ -19,12 +19,12 @@ use Throwable;
 class SD_0102_Services
 {
     protected string $sd0102_path;
-    protected array $vorGruppe;
+    protected array $vorgruppeMapping;
 
     public function __construct()
     {
         $this->sd0102_path = config('sap.sd0102_path');
-        $this->vorGruppe = config('vorgruppe');
+        $this->vorgruppeMapping = config('vorgruppeMapping');
     }
 
     /**
@@ -58,7 +58,10 @@ class SD_0102_Services
             $data['Zzlgsnr'] = (string)$vorgang->VorIndividualC3;
             $data['GenrCeos'] = (string)(int)$vorgang->VorIndividualD4;
             $data['TxtZ013'] = (string)$vorgang->VorStichwort;
-            $data['Augru'] = array_search($vorgang->VorGruppe, $this->vorGruppe);
+
+
+            $vorGruppeKey = array_search($vorgang->vorgruppe, $this->vorgruppeMapping);
+            $data['Augru'] = substr($vorGruppeKey, 0, 3);
 
             $vorgang2Text = DB::connection('sqlsrv2')->table('cis.Vorgang2Text')
                 ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->first();
@@ -144,8 +147,6 @@ class SD_0102_Services
                 } else {
                     $vrkme = $position3Menge->PosKZMengeneinheit1;
                 }
-
-
                 $data['to_Items'][] = [
                     'Matnr' => $artikel->Artikelnummer,
                     'PosErl' => (string)$posErl,

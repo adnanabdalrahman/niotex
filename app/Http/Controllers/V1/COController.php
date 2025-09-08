@@ -5,7 +5,9 @@ namespace App\Http\Controllers\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CO_0101_ZeiteinheitenRequest;
 use App\Services\COServices;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class COController extends Controller
 {
@@ -17,6 +19,15 @@ class COController extends Controller
     }
 
     // CO-01-01: CEOS --> SAP, Zeiteinheiten
+
+    /**
+     * SD-01-01 Beauftragung
+     * Sap --> CEOS.
+     *
+     * @param CO_0101_ZeiteinheitenRequest $request
+     * @return JsonResponse
+     * @throws Throwable
+     */
     public function co_01_01_Zeiteinheiten(CO_0101_ZeiteinheitenRequest $request)
     {
         $validated = $request->validated();

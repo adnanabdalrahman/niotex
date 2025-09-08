@@ -21,7 +21,7 @@ class SD_0201_Services
     public function __construct()
     {
 
-        $this->vorGruppe = config('vorgruppe');
+        $this->vorGruppe = config('vorgruppeMapping');
         $this->mwstSatzProzentArray = [
             7 => 2,
             19 => 3,

@@ -18,7 +18,6 @@ class SD_03_01_Services
 {
     protected string $sd0301_path;
     protected string $baseUrl;
-    protected array $vorGruppe;
     protected array $mwstSatzProzentArray;
 
     public function __construct()
@@ -26,14 +25,12 @@ class SD_03_01_Services
         $this->baseUrl = config('sap.base_url');
 
         $this->sd0301_path = config('sap.sd0301_path');
-        $this->vorGruppe = config('vorgruppe');
         $this->mwstSatzProzentArray = [
             7 => 2,
             19 => 3,
             0 => 4,
         ];
     }
-
 
     /**
      * CEOSWeb -> CEOS --> SAP
@@ -145,8 +142,7 @@ class SD_03_01_Services
             }
 
         } catch (Throwable $e) {
-            dd($e->getMessage());
-            //Log::error($e->getMessage());
+            Log::error($e->getMessage());
             return null;
         }
         Log::info('sd-03-01 received data: ', $result);

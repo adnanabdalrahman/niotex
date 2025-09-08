@@ -34,7 +34,7 @@ class BP_01_03_Services
                     'NRAnrede' => $data['Anrede'],
                     'AnsVorname' => $data['Vorname'],
                     'AnsNachname' => $data['Nachname'],
-                    'AnsPrivatStrasse' => $data['Strasse'], // todo 40 CHAR in DB maybe split Hnr
+                    'AnsPrivatStrasse' => mb_substr($data['Strasse'], 0, 39),
                     'AnsPrivatOrt' => $data['Postleitzahl'] . " " . $data['Ort'],
                     'AnsPrivatTelefon' => $data['Telefon'],
                     'AnsMobiltelefon' => $data['Mobiltelefon'],

@@ -113,7 +113,6 @@ class RE_01_01_Services
      *
      */
 
-
     /*
 
      ID              - Type            - Value
@@ -134,9 +133,7 @@ class RE_01_01_Services
 
     public function re_01_01_Liegenschaften($receivedLiegenschaften): ?array
     {
-        //todo delete all if Error happens
         try {
-
             //---------------- LIEGENSCHAFT -------------------------------
             foreach ($receivedLiegenschaften as $liegenschaft) {
                 $receivedLiegenschaft = $liegenschaft['liegenschaft'];
@@ -176,7 +173,7 @@ class RE_01_01_Services
                         'Betriebskosten_JN' => $abrechnungsdaten[0]['nka'],
                         'Stromkosten_JN' => $abrechnungsdaten[0]['sta'],
                         'User' => 0,
-                        //todo should be deleted
+                        //todo should be deleted or nullable
                         'FULL_HASH' => DB::raw("CONVERT(varbinary(64), 0x$fullHash)"),
                     ]
                 );
@@ -238,7 +235,7 @@ class RE_01_01_Services
 
 
                 //---------------- KUNDEN - VERWALTUNG -------------------------------
-                // delete all Kunden Timline
+                // delete all Kunden Timeline
                 Ceos_VERWALTUNG_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
 
                 foreach ($kunden as $kunde) {
@@ -429,6 +426,11 @@ class RE_01_01_Services
                 }
             }
         } catch (Throwable $e) {
+
+
+            //todo delete all if Error happens
+
+
             Log::error($e);
             return null;
         }

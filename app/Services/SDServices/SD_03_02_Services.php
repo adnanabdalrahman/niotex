@@ -16,13 +16,11 @@ use Illuminate\Support\Facades\Log;
 
 class SD_03_02_Services
 {
-    protected array $vorGruppe;
 
     protected array $mwstSatzProzentArray;
 
     public function __construct()
     {
-        $this->vorGruppe = config('vorgruppe');
         $this->mwstSatzProzentArray = [
             7 => 2,
             19 => 3,
