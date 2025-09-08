@@ -21,7 +21,7 @@ class SD_0101_Services
     protected string $sd0102_path;
     protected string $sd0301_path;
 
-    protected array $vorGruppe;
+    protected array $vorgruppeMapping;
 
     protected array $auth;
 
@@ -36,7 +36,7 @@ class SD_0101_Services
         ];
         $this->sd0102_path = config('sap.sd0102_path');
         $this->sd0301_path = config('sap.sd0301_path');
-        $this->vorGruppe = config('vorgruppe');
+        $this->vorgruppeMapping = config('vorgruppeMapping');
         $this->mwstSatzProzentArray = [
             7 => 2,
             19 => 3,
@@ -49,7 +49,7 @@ class SD_0101_Services
      * SD-01-01 Beauftragung
      * @throws Throwable
      */
-    public function sd_0101_beauftragung_vorgang($requestData): ?array
+    public function sd_0101_beauftragung($requestData): ?array
     {
         // todo Important Adresse.Sperrkennzeichen ist 1 (gesperrt) darf keinen Auftrag anlegen.
         /*
@@ -63,7 +63,9 @@ class SD_0101_Services
             'txtZ013' → Vorgang.VorStichwort für Reparaturaufträge Ausstattung / Austauschgrund
         */
         return DB::transaction(function () use (&$requestData) {
-            $adresse = Adresse::where('AdressNummer', $requestData['kunnr'])->first();
+            $header = $requestData['header'];
+            $positions = $requestData['positions'];
+            $adresse = Adresse::where('AdressNummer', $header['kunnr'])->first();
             if ($adresse !== null) {
                 if ($adresse->AdrLiefersperreJN == "1") {
                     throw new AdresseGesperrtException($adresse->AdressNummer);
@@ -73,92 +75,89 @@ class SD_0101_Services
                 $data['VorRechnungsanschrift'] = $adresse->InterneAdressnummer;
                 $data['VorSammelRechnungsanschrift'] = $adresse->InterneAdressnummer;
             } else {
-                throw new AdresseNotFoundException($requestData['vbeln'], $requestData['kunnr']);
+                throw new AdresseNotFoundException($header['vbeln'], $header['kunnr']);
             }
+            $materialGruppe = substr($positions[0]['aufnr'], 0, 2);
+
+            $vorGruppe = isset($this->vorgruppeMapping[$header['augru'] . $materialGruppe]) ?
+                $this->vorgruppeMapping[$header['augru'] . $materialGruppe] : 'RE';
 
             //vdatu
-            $data['VorLieferungWunschDatum'] = Carbon::parse($requestData['vdatu'])->format('Ymd');
-            $data['VorStichwort'] = $requestData['txtZ013'] ?? 'MONTAGEAUFTRAG';
-            $data['VorIndividualC1'] = $requestData['vbeln'];
-            $data['VorIndividualC2'] = $requestData['auart'];
-            $data['VorIndividualC3'] = $requestData['zzlgsnr'];
-            $data['VorIndividualD4'] = $requestData['genrCeos'];// GebäudeNr
+            $data['VorLieferungWunschDatum'] = Carbon::parse($header['vdatu'])->format('Ymd');
+            $data['VorStichwort'] = $header['txtZ013'] ?? 'MONTAGEAUFTRAG';
+            $data['VorIndividualC1'] = $header['vbeln'];
+            $data['VorIndividualC2'] = $header['auart'];
+            $data['VorIndividualC3'] = $header['zzlgsnr'];
+            $data['VorIndividualD4'] = $header['genrCeos'];// GebäudeNr
 
-            $data['VorNotiz'] = $requestData['txtZ012'];
+            $data['VorNotiz'] = $header['txtZ012'];
             $data['VorArt'] = 'A';
             $data['VorUnterArt'] = 'R';  // char 1
-            $data['VorGruppe'] = $this->vorGruppe[$requestData['augru']]; //  -- Montage/Liefer/Rechnung: 'RE' / Vertr ge: 'WIE' ? / Rahmenauftr ge: 'AB'
+            $data['VorGruppe'] = $vorGruppe;
             $data['VNkArt'] = '100000';
             $data['VorStatus'] = '100100'; //-- 100000 Nicht gedruckt / 100010 Angebot / 100100 Auftragsbestätigung
 
             $vorgang = new VorgangService();
             $vorgang = $vorgang->createVorgang($data);
-            if ($vorgang !== null) {
-                return [
-                    'InterneVorgangsnummer' => $vorgang['InterneVorgangsnummer'],
-                    'VorNummer' => $vorgang['VorNummer'],
-                    'Verkaufsbeleg' => $requestData['vbeln'],
-                ];
+            if ($vorgang === null) {
+                //todo add Throw Error Here
+                Log::error('sd_0101_beauftragung_vorgang creation Failed');
+                return null;
             }
-            Log::error('sd_0101_beauftragung_vorgang creation Failed');
+
+            //todo important delete all position if one fails also vorgang
+            $positionsArray = [];
+            foreach ($positions as $key => $position) {
+                $artikelNummer = ltrim($position['matnr'], '0');
+                $artikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
+                if ($artikel === null) {
+                    Log::error(
+                        "Material für Position nicht gefunden",
+                        [
+                            'Material' => $artikelNummer,
+                            'Vorgangnummer' => $vorgang['VorNummer']
+                        ]
+                    );
+                    return null;
+                }
+
+                $positionData['InterneVorgangsnummer'] = $vorgang['InterneVorgangsnummer'];
+                $positionData['VorNummer'] = $vorgang['VorNummer'];
+                $positionData['PosIndividualC1'] = $position['posnr'];
+                $positionData['PosZusatztextLieferschein'] = $position['txtZ002'];
+                $positionData['PosZusatztext'] = $position['txtZ009'];
+                $positionData['PosNotiz'] = $position['txtZ010'];
+                $positionData['PosMenge1'] = $position['kwmeng'];
+                $positionData['PosKZMengeneinheit1'] = $position['vrkme'];
+                $positionData['PosIndividualC5'] = $position['kwmeng'];
+                $positionData['externMenge'] = $position['kwmeng'];
+                $positionData['current_date'] = date('Ymd');
+                $carbonMontagedatum = Carbon::parse((string)$position['montagedatum']);
+                $montagedatum = $carbonMontagedatum->format('Ymd');
+                $positionData['PosIndividualT3'] = $montagedatum;
+
+                $preisbasis = Preisbasis::where('NRPreisbasis', $artikel->NRPreisbasis)->first();
+                $positionData['NRPreisbasis'] = $artikel->NRPreisbasis;
+                $positionData['PosPreisfaktor'] = $preisbasis->Preisfaktor;
+
+                $positionData['PosNummer'] = $key + 1;
+                $positionData['PosNummernText'] = $key + 1;
+                $positions = new PositionService();
+                $createdPosition = $positions->createPosition($positionData, $artikel);
+                if ($createdPosition !== null) {
+                    $positionsArray[] = $createdPosition;
+                }
+            }
+            if (!empty($positionsArray)) {
+                return $positionsArray;
+            }
+            Log::error('sd_0101_beauftragung_positions Positions Creation Failed');
             return null;
         });
 
     }
 
-    public function sd_0101_beauftragung_positions($positions, $vorgangDataArray): ?array
-    {
-        //todo important delete all position if one fails also vorgang
-        $vorgangsnummer = $vorgangDataArray['VorNummer'];
 
-        $positionsArray = [];
-        foreach ($positions as $key => $position) {
-            $artikelNummer = ltrim($position['matnr'], '0');
-            $artikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
-            if ($artikel === null) {
-                Log::error(
-                    "Material für Position nicht gefunden",
-                    [
-                        'Material' => $artikelNummer,
-                        'Vorgangnummer' => $vorgangsnummer
-                    ]
-                );
-                return null;
-            }
-
-            $positionData['InterneVorgangsnummer'] = $vorgangDataArray['InterneVorgangsnummer'];
-            $positionData['VorNummer'] = $vorgangDataArray['VorNummer'];
-            $positionData['PosIndividualC1'] = $position['posnr'];
-            $positionData['PosZusatztextLieferschein'] = $position['txtZ002'];
-            $positionData['PosZusatztext'] = $position['txtZ009'];
-            $positionData['PosNotiz'] = $position['txtZ010'];
-            $positionData['PosMenge1'] = $position['kwmeng'];
-            $positionData['PosKZMengeneinheit1'] = $position['vrkme'];
-            $positionData['PosIndividualC5'] = $position['kwmeng'];
-            $positionData['externMenge'] = $position['kwmeng'];
-            $positionData['current_date'] = date('Ymd');
-            $carbonMontagedatum = Carbon::parse((string)$position['montagedatum']);
-            $montagedatum = $carbonMontagedatum->format('Ymd');
-            $positionData['PosIndividualT3'] = $montagedatum;
-
-            $preisbasis = Preisbasis::where('NRPreisbasis', $artikel->NRPreisbasis)->first();
-            $positionData['NRPreisbasis'] = $artikel->NRPreisbasis;
-            $positionData['PosPreisfaktor'] = $preisbasis->Preisfaktor;
-
-            $positionData['PosNummer'] = $key + 1;
-            $positionData['PosNummernText'] = $key + 1;
-            $positions = new PositionService();
-            $createdPosition = $positions->createPosition($positionData, $artikel);
-            if ($createdPosition !== null) {
-                $positionsArray[] = $createdPosition;
-            }
-        }
-        if (!empty($positionsArray)) {
-            return $positionsArray;
-        }
-        Log::error('sd_0101_beauftragung_positions Positions Creation Failed');
-        return null;
-    }
 }
 
 

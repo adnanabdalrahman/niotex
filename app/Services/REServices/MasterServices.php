@@ -44,7 +44,6 @@ class MasterServices
     {
         //todo delete all if Error happens
         try {
-            //todo get all Liegenschaften in timeline
             $liegenschaften = Ceos_LIEGENSCHAFT_TimeLine::get();
             $vorgangData = [];
             foreach ($liegenschaften as $liegenschaft) {
@@ -80,7 +79,6 @@ class MasterServices
                 $vorgangData['VorLieferanschrift'] = $adresse->InterneAdressnummer;
                 $vorgangData['VorRechnungsanschrift'] = $adresse->InterneAdressnummer;
                 $vorgangData['VorSammelRechnungsanschrift'] = $adresse->InterneAdressnummer;
-
 
                 $currentVorgang = Vorgang::where(
                     'VorIndividualC3', $liegenschaft->Liegenschaftsnummer)
@@ -126,8 +124,9 @@ class MasterServices
                 Position6Stueckliste::where('InterneVorgangsnummer', $interneVorgangsnummer)->delete();
                 Position7Zusatz::where('InterneVorgangsnummer', $interneVorgangsnummer)->delete();
                 PositionWert::where('InterneVorgangsnummer', $interneVorgangsnummer)->delete();
-                // ------------------------  1 Gesamtliegenschaft ------------------------------------------
 
+
+                // ------------------------  1 Gesamtliegenschaft ------------------------------------------
                 $positionData['InterneVorgangsnummer'] = $interneVorgangsnummer;
                 $positionData['PosEbene'] = 0;
                 $positionData['PosNummer'] = 1;

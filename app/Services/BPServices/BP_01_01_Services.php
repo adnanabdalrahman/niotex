@@ -50,9 +50,6 @@ class BP_01_01_Services
         PDF_Mailadresse                 => Varchar(80)
     */
         try {
-            //Vorname + Nachname
-            //$AdrFirmenbezeichnung1 = mb_substr($data['Vorname'] . " " . $data['Nachname'], 0, 40);
-
             if ($data['Loeschvormerkung'] !== null && $data['Loeschvormerkung'] !== "0") {
                 $data['Loeschvormerkung'] = 1;
             } else {
@@ -82,7 +79,6 @@ class BP_01_01_Services
                 $kundengruppe1 = $data['Kundengruppe1'];
             }
 
-            // Insert into users' table
             $adresse = Adresse::updateOrCreate(
                 ['AdressNummer' => $data['DebitorenKreditorennummer']],
                 [
@@ -135,7 +131,6 @@ class BP_01_01_Services
                 }
 
             }
-
         } catch (Throwable $e) {
             Log::error(
                 ' Error ' . $e->getMessage(),
@@ -148,24 +143,6 @@ class BP_01_01_Services
             'Adresse' => $data['DebitorenKreditorennummer'],
         ];
     }
-
-    public function splitStreet($receivedStreet): array
-    {
-        // Strasse + Hausnummer
-        // Extract Hausnummer from the end using regex (e.g., "Musterstraße 123a")
-        // preg_match('/^(.*?)[\s,]+(\d+\w*)$/', $receivedStreet, $matches);
-
-
-        // No Hausnummer found, use as-is
-        $street = $receivedStreet;
-        $hausnummer = '';
-        return [
-            'strasse' => mb_substr($receivedStreet, 0, 39),
-            'strasse2' => mb_substr($street, 39),
-            'hausnummer' => $hausnummer,
-        ];
-    }
-
 }
 
 

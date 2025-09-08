@@ -2,6 +2,8 @@
 
 namespace App\Services\COServices;
 
+use App\Exceptions\Position3MengeNotFound;
+use App\Exceptions\VorgangNotFound;
 use App\Models\Position;
 use App\Models\Position1Wert;
 use App\Models\Position3Menge;
@@ -30,6 +32,7 @@ class CO_01_01_Services
      */
     public function co_01_01_Zeiteinheiten($request): ?array
     {
+        global $e;
         try {
             $data = [];
             $vorgang = Vorgang::where('InterneVorgangsnummer', $request['InterneVorgangsnummer'])->first();
@@ -38,7 +41,7 @@ class CO_01_01_Services
                     "co_01_01_Zeiteinheiten Kein Vorgang gefunden",
                     ['InterneVorgangsnummer' => $request['InterneVorgangsnummer']]
                 );
-                return null;
+                throw new VorgangNotFound($request['InterneVorgangsnummer']);
             }
 
             $belegDatum = Carbon::parse($vorgang->VorAnlageAm)->format('Y-m-d');
@@ -47,10 +50,10 @@ class CO_01_01_Services
             $positions = Position::where('InterneVorgangsnummer', $request['InterneVorgangsnummer'])->get();
 
             foreach ($positions as $position) {
-
                 $position3Menge = Position3Menge::where
                 ('InternePositionsnummer', $position->InternePositionsnummer)->first();
                 if (is_null($position3Menge)) {
+                    throw new Position3MengeNotFound($request['InterneVorgangsnummer'], $position->InternePositionsnummer);
                     Log::error(
                         "co_01_01_Zeiteinheiten Position3Menge nicht gefunden",
                         [
