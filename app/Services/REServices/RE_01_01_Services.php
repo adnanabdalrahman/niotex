@@ -17,7 +17,6 @@ use App\Models\Ceos_VERWALTUNG_TimeLine;
 use App\Models\Ceos_WOHNEINHEIT;
 use App\Models\Ceos_WOHNEINHEIT_TimeLine;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -146,8 +145,6 @@ class RE_01_01_Services
                         'User' => 0,
                     ]
                 );
-
-                $fullHash = '9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2df5a9963a96f8ba17f65d4df9ee06b6fe24b6f5df4cbcd1bbac5c3a0b653f9a4c2fdeebb8f5a2c';
                 $abrechnungsdaten = $receivedLiegenschaft['abrechnungsdaten'];
                 $kunden = $receivedLiegenschaft['kunden'];
                 //todo clarify if update or delete and insert
@@ -168,16 +165,9 @@ class RE_01_01_Services
                         'Mdf_Bis' => $receivedLiegenschaft['mdfBis'],
                         'DatumVon' => $receivedLiegenschaft['validfrom'],
                         'DatumBis' => $receivedLiegenschaft['validto'],
-                        'Heizung_JN' => $abrechnungsdaten[0]['hka'],
-                        'Kaltwasser_JN' => $abrechnungsdaten[0]['kwa'],
-                        'Betriebskosten_JN' => $abrechnungsdaten[0]['nka'],
-                        'Stromkosten_JN' => $abrechnungsdaten[0]['sta'],
                         'User' => 0,
-                        //todo should be deleted or nullable
-                        'FULL_HASH' => DB::raw("CONVERT(varbinary(64), 0x$fullHash)"),
                     ]
                 );
-
 
                 if ($receivedLiegenschaft['lgnrExt'] != null) {
                     Ceos_ID_SAP::updateOrCreate(
@@ -193,7 +183,8 @@ class RE_01_01_Services
 
                 //---------------- Adressen - GEBAEUDE -------------------------------
                 $adressen = $receivedLiegenschaft['adressen'];
-
+                // delete all adressen
+                Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
                 foreach ($adressen as $adresse) {
                     $gebaeude = Ceos_GEBAEUDE::updateOrCreate(
                         [
@@ -203,8 +194,6 @@ class RE_01_01_Services
                             'User' => 0,
                         ]
                     );
-                    // delete all adressen
-                    Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
                     Ceos_GEBAEUDE_TimeLine::insertGetId(
                         [
                             'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
@@ -249,9 +238,11 @@ class RE_01_01_Services
                     );
                     $adressnummer = ltrim($kunde['kunnr'], '0');
                     $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
-                    if ($adresse == null) {
-                        Log::error('re_01_01_Liegenschaften Kein Adresse gefunden');
+                    if ($adresse === null) {
+                        Log::error('re_01_01_Liegenschaften Kein Adresse gefunden',
+                            ['adressnummer' => $adressnummer]);
                         return null;
+
                     }
                     Ceos_VERWALTUNG_TimeLine::insertGetId(
                         [
@@ -286,6 +277,10 @@ class RE_01_01_Services
                         ->where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
                         ->first();
                     if ($gebaeude === null) {
+                        Log::error('re_01_01_Liegenschaften Kein Gebaeude', [
+                            'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
+                            'GebaeudeNr' => $mietobjekt['genrCeos'],
+                        ]);
                         return null;
                     }
 
@@ -408,30 +403,25 @@ class RE_01_01_Services
                             'Stichtag_KWA' => $this->formatTo1900Date($receivedAbrechnung['sttKwa']),
                             'Stichtag_NKA' => $this->formatTo1900Date($receivedAbrechnung['sttNka']),
                             'Stichtag_STA' => $this->formatTo1900Date($receivedAbrechnung['sttNka']),
-                            'Heizkostenabrechnung' => $receivedAbrechnung['hka'],
-                            'Kaltwasserabrechnung' => $receivedAbrechnung['kwa'],
-                            'Nebenkostenabrechnung' => $receivedAbrechnung['nka'],
-                            'Stromabrechnung' => $receivedAbrechnung['sta'],
+                            'Heizung_JN' => $receivedAbrechnung['hka'],
+                            'Kaltwasser_JN' => $receivedAbrechnung['kwa'],
+                            'Betriebskosten_JN' => $receivedAbrechnung['nka'],
+                            'Stromkosten_JN' => $receivedAbrechnung['sta'],
                             'Ablesung' => $receivedAbrechnung['abl'],
                             'Selbstableser' => $receivedAbrechnung['selbstableserJn'],
                             'DTA' => $receivedAbrechnung['dta'],
                             'BKB' => $receivedAbrechnung['bkb'],
                             'ServiceRWM' => $receivedAbrechnung['rwm'],
                             'AbrechnungProHaus' => $receivedAbrechnung['hwabr'],
-                            'Warmwasser' => $receivedAbrechnung['ww'],
+                            'Warmwasser_JN' => $receivedAbrechnung['ww'],
                             'User' => 0,
                         ]
                     );
-
                 }
             }
         } catch (Throwable $e) {
-
-
             //todo delete all if Error happens
-
-
-            Log::error($e);
+            Log::error($e->getMessage());
             return null;
         }
         return ['message' => true];
