@@ -149,7 +149,14 @@ class SD_0101_Services
                 }
             }
             if (!empty($positionsArray)) {
-                return $positionsArray;
+                return [
+                    'header' => [
+                        'InterneVorgangsnummer' => $vorgang['InterneVorgangsnummer'],
+                        'VorNummer' => $vorgang['VorNummer'],
+                        'Verkaufsbeleg' => $header['vbeln'],
+                    ],
+                    'positions' => $positionsArray,
+                ];
             }
             Log::error('sd_0101_beauftragung_positions Positions Creation Failed');
             return null;

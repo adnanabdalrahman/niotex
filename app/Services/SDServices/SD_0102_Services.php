@@ -60,7 +60,7 @@ class SD_0102_Services
             $data['TxtZ013'] = (string)$vorgang->VorStichwort;
 
 
-            $vorGruppeKey = array_search($vorgang->vorgruppe, $this->vorgruppeMapping);
+            $vorGruppeKey = array_search($vorgang->VorGruppe, $this->vorgruppeMapping);
             $data['Augru'] = substr($vorGruppeKey, 0, 3);
 
             $vorgang2Text = DB::connection('sqlsrv2')->table('cis.Vorgang2Text')

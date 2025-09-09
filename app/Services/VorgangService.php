@@ -233,7 +233,7 @@ class VorgangService
 
                 $createdVorgang = Vorgang::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->first();
                 if ($createdVorgang === null) {
-                    Log::error('Trigger deleted the Record' . $vorgang->InterneVorgangsnummer);
+                    Log::error('Trigger deleted the Vorgang InterneVorgangsnummer: ' . $vorgang->InterneVorgangsnummer);
                     return null;
                 }
 
