@@ -6,6 +6,8 @@ use App\Exceptions\AdresseGesperrtException;
 use App\Exceptions\AdresseNotFoundException;
 use App\Models\Adresse;
 use App\Models\Artikel;
+use App\Models\Ceos_GEBAEUDE_TimeLine;
+use App\Models\Ceos_LIEGENSCHAFT_TimeLine;
 use App\Models\Preisbasis;
 use App\Services\PositionService;
 use App\Services\VorgangService;
@@ -63,6 +65,8 @@ class SD_0101_Services
             'txtZ013' → Vorgang.VorStichwort für Reparaturaufträge Ausstattung / Austauschgrund
         */
         return DB::transaction(function () use (&$requestData) {
+
+
             $header = $requestData['header'];
             $positions = $requestData['positions'];
             $adresse = Adresse::where('AdressNummer', $header['kunnr'])->first();
@@ -89,6 +93,18 @@ class SD_0101_Services
             $data['VorIndividualC2'] = $header['auart'];
             $data['VorIndividualC3'] = $header['zzlgsnr'];
             $data['VorIndividualD4'] = $header['genrCeos'];// GebäudeNr
+
+            //todo get Adress from Liegenschaft Gebäude
+            //get LiegenschaftsID
+            $liegenschaft = Ceos_LIEGENSCHAFT_TimeLine::where('Liegenschaftsnummer', $header['zzlgsnr'])->first();
+            if ($liegenschaft !== null) {
+                $gebaeude = Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                    ->where('GebaeudeNr', $header['genrCeos'])->first();
+                if ($gebaeude !== null) {
+                    $data['VorBetrefftextZeile1'] = $gebaeude->LG_Strasse;
+                    $data['VorBetrefftextZeile2'] = $gebaeude->LG_PLZ . ' ' . $gebaeude->LG_Ort;
+                }
+            }
 
             $data['VorNotiz'] = $header['txtZ012'];
             $data['VorArt'] = 'A';

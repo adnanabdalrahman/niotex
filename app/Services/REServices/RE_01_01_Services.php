@@ -136,10 +136,9 @@ class RE_01_01_Services
             //---------------- LIEGENSCHAFT -------------------------------
             foreach ($receivedLiegenschaften as $liegenschaft) {
                 $receivedLiegenschaft = $liegenschaft['liegenschaft'];
-
                 $liegenschaft = Ceos_LIEGENSCHAFT::updateOrCreate(
                     [
-                        'LG_FOREIGN_ID' => $receivedLiegenschaft['mdmId']
+                        'Liegenschaftsnummer' => $receivedLiegenschaft['slgnr']
                     ],
                     [
                         'User' => 0,
@@ -154,6 +153,7 @@ class RE_01_01_Services
                     ],
                     [
                         'Liegenschaftsnummer' => $receivedLiegenschaft['slgnr'],
+                        'MDM' => $receivedLiegenschaft['mdmId'],
                         'Fernablesung_JN' => $receivedLiegenschaft['fern'],
                         'Fernablesung_Ab' => $receivedLiegenschaft['fernAb'],
                         'OnlinePortal_JN' => $receivedLiegenschaft['opk'],
@@ -180,15 +180,22 @@ class RE_01_01_Services
                         ]
                     );
                 }
+                // delete all adressen (Gebäude)
+                Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
+                // delete all Kunden Timeline
+                Ceos_VERWALTUNG_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
+                // delete all WOHNEINHEIT
+                Ceos_WOHNEINHEIT_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
+                // delete all MIETER
+                Ceos_MIETER_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
+
 
                 //---------------- Adressen - GEBAEUDE -------------------------------
                 $adressen = $receivedLiegenschaft['adressen'];
-                // delete all adressen
-                Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
                 foreach ($adressen as $adresse) {
                     $gebaeude = Ceos_GEBAEUDE::updateOrCreate(
                         [
-                            'GEB_FOREIGN_ID' => $adresse['mdmId']
+                            'GEB_COMP_API_ID' => $receivedLiegenschaft['slgnr'] . '-' . $adresse['genrCeos']
                         ],
                         [
                             'User' => 0,
@@ -198,6 +205,7 @@ class RE_01_01_Services
                         [
                             'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                             'GebaeudeID' => $gebaeude->GebaeudeID,
+                            'MDM' => $adresse['mdmId'],
                             'DatumVon' => $adresse['validfrom'],
                             'DatumBis' => $adresse['validto'],
                             'GebaeudeNr' => $adresse['genrCeos'],
@@ -223,10 +231,79 @@ class RE_01_01_Services
                 }
 
 
-                //---------------- KUNDEN - VERWALTUNG -------------------------------
-                // delete all Kunden Timeline
-                Ceos_VERWALTUNG_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
+                //---------------- create WE 0   -------------------------------
+                $wohneinheit = Ceos_WOHNEINHEIT::updateOrCreate(
+                    [
+                        'WE_COMP_API_ID' => $receivedLiegenschaft['slgnr'] . '-' . 0 . '-' . 0,
+                    ],
+                    [
+                        'User' => 0,
+                    ]
+                );
 
+                $gebaeude = Ceos_GEBAEUDE_TimeLine::where('GebaeudeNr', 0)
+                    ->where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                    ->first();
+                if ($gebaeude === null) {
+                    Log::error('re_01_01_Liegenschaften Kein Gebaeude', [
+                        'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
+                        'GebaeudeNr' => 0,
+                    ]);
+                    return null;
+                }
+                Ceos_WOHNEINHEIT_TimeLine::insertGetId(
+                    [
+                        'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
+                        'WohneinheitID' => $wohneinheit->WohneinheitID,
+                        'lfd_Adressnummer_GE_CEOS' => 0,
+                        'GebaeudeID' => $gebaeude->GebaeudeID,
+                        'MDM' => NULL,
+                        'WE_LfdNr' => 0,
+                        'WE_Bezeichnung' => 'Allgemein',
+                        'Gewerblich_JN' => 0,
+                        'DatumVon' => Carbon::now()->format('Ymd'),
+                        'DatumBis' => '99991231',
+                        'User' => 0,
+                    ]
+                );
+
+
+                //---------------- create MIETER 0   -------------------------------
+                $mieter = Ceos_MIETER::updateOrCreate(
+                    [
+                        'MI_COMP_API_ID' => $receivedLiegenschaft['slgnr'] . '-' . 0 . '-' . 0,
+                    ],
+                    [
+                        'User' => 0,
+                    ]
+                );
+
+                $gebaeude = Ceos_GEBAEUDE_TimeLine::where('GebaeudeNr', 0)
+                    ->where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                    ->first();
+
+                $wohneinheit = Ceos_WOHNEINHEIT_TimeLine::where('WE_LfdNr', 0)
+                    ->where('GebaeudeID', $gebaeude->GebaeudeID)
+                    ->where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                    ->first();
+                Ceos_MIETER_TimeLine::insertGetId(
+                    [
+                        'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
+                        'WohneinheitID' => $wohneinheit->WohneinheitID,
+                        'MieterID' => $mieter->MieterID,
+                        'lfd_Adressnummer_GE_CEOS' => 0,
+                        'lfd_Adressnummer_ME_CEOS' => 0,
+                        'Mietvertragsnummer' => NULL,
+                        'M_Name1' => 'Allgemein',
+                        'M_Anrede' => NULL,
+                        'DatumVon' => Carbon::now()->format('Ymd'),
+                        'DatumBis' => '99991231',
+                        'User' => 0,
+                    ]
+                );
+
+
+                //---------------- KUNDEN - VERWALTUNG -------------------------------
                 foreach ($kunden as $kunde) {
                     $verwaltung = Ceos_VERWALTUNG::updateOrCreate(
                         [
@@ -259,14 +336,13 @@ class RE_01_01_Services
                     );
 
                 }
+
                 //---------------- MIETOBJEKTE - WOHNEINHEIT -------------------------------
                 $mietobjekte = $receivedLiegenschaft['mietobjekte'];
-                // delete all WOHNEINHEIT
-                Ceos_WOHNEINHEIT_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
                 foreach ($mietobjekte as $mietobjekt) {
                     $wohneinheit = Ceos_WOHNEINHEIT::updateOrCreate(
                         [
-                            'WE_FOREIGN_ID' => $mietobjekt['mdmIdMe']
+                            'WE_COMP_API_ID' => $receivedLiegenschaft['slgnr'] . '-' . $mietobjekt['genrCeos'] . '-' . $mietobjekt['menrCeos'],
                         ],
                         [
                             'User' => 0,
@@ -290,6 +366,7 @@ class RE_01_01_Services
                             'WohneinheitID' => $wohneinheit->WohneinheitID,
                             'lfd_Adressnummer_GE_CEOS' => $mietobjekt['genrCeos'],
                             'GebaeudeID' => $gebaeude->GebaeudeID,
+                            'MDM' => $mietobjekt['mdmIdMe'],
                             'WE_LfdNr' => $mietobjekt['menrCeos'],
                             'WE_Bezeichnung' => $mietobjekt['mLage'],
                             'Gewerblich_JN' => $mietobjekt['gewerblichJn'],
@@ -335,19 +412,13 @@ class RE_01_01_Services
                         );
                     }
                 }
+
                 //---------------- MIETER_ MIETER -------------------------------
-
-
                 $receivedMieters = $receivedLiegenschaft['mieter'];
-
-                // delete all MIETER
-                Ceos_MIETER_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)->delete();
                 foreach ($receivedMieters as $receivedMieter) {
                     $mieter = Ceos_MIETER::updateOrCreate(
                         [
-                            'MI_FOREIGN_ID' => $receivedLiegenschaft['mdmId'] .
-                                $receivedMieter['genrCeos'] .
-                                $receivedMieter['menrCeos']
+                            'MI_COMP_API_ID' => $receivedMieter['recnnr']
                         ],
                         [
                             'User' => 0,
@@ -385,7 +456,7 @@ class RE_01_01_Services
                 foreach ($abrechnungsdaten as $receivedAbrechnung) {
                     $abrechnung = Ceos_ABRECHNUNG::updateOrCreate(
                         [
-                            'ABR_FOREIGN_ID' => $liegenschaft->LiegenschaftsID
+                            'ABR_COMP_API_ID' => $receivedLiegenschaft['slgnr']
                         ],
                         [
                             'User' => 0,
