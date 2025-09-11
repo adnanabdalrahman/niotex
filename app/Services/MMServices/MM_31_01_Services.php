@@ -117,6 +117,7 @@ class MM_31_01_Services
                 ]
             );
             if (!empty($hawaInternArtikelNummerArray)) {
+                //todo update not success
                 $HIBEzuHAWA = Ceos_HIBE2HAWA::where('HIBE', $artikel->InterneArtikelnummer)->first()
                     ?? new Ceos_HIBE2HAWA();
                 $HIBEzuHAWA->HIBE = $artikel->InterneArtikelnummer;
