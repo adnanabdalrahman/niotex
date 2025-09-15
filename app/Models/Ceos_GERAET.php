@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_GERAET whereGeraeteID($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_GERAET whereTimeStamp($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_GERAET whereUser($value)
+ * @property string|null $GER_COMP_API_ID
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_GERAET whereGERCOMPAPIID($value)
  * @mixin \Eloquent
  */
 class Ceos_GERAET extends Model

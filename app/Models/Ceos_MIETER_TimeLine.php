@@ -59,6 +59,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $lfd_Adressnummer_ME_CEOS
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereLfdAdressnummerGECEOS($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereLfdAdressnummerMECEOS($value)
+ * @property int|null $MDM
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMDM($value)
  * @mixin \Eloquent
  */
 class Ceos_MIETER_TimeLine extends Model

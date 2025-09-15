@@ -68,6 +68,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWohneinheitID($value)
  * @property int|null $lfd_Adressnummer_GE_CEOS
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereLfdAdressnummerGECEOS($value)
+ * @property int|null $MDM
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereMDM($value)
  * @mixin Eloquent
  */
 class Ceos_WOHNEINHEIT_TimeLine extends Model

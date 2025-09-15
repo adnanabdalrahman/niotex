@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_KOSTEN whereKostenID($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_KOSTEN whereTimeStamp($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_KOSTEN whereUser($value)
+ * @property string $KOS_COMP_API_ID
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_KOSTEN whereKOSCOMPAPIID($value)
  * @mixin \Eloquent
  */
 class Ceos_KOSTEN extends Model

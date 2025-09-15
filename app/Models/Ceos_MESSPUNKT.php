@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MESSPUNKT whereMesspunktID($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MESSPUNKT whereTimeStamp($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MESSPUNKT whereUser($value)
+ * @property string|null $MP_COMP_API_ID
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MESSPUNKT whereMPCOMPAPIID($value)
  * @mixin \Eloquent
  */
 class Ceos_MESSPUNKT extends Model

@@ -23,6 +23,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Ceos_LIEGENSCHAFT whereLiegenschaftsID($value)
  * @method static Builder<static>|Ceos_LIEGENSCHAFT whereTimeStamp($value)
  * @method static Builder<static>|Ceos_LIEGENSCHAFT whereUser($value)
+ * @property string $Liegenschaftsnummer
+ * @method static Builder<static>|Ceos_LIEGENSCHAFT whereLiegenschaftsnummer($value)
  * @mixin \Eloquent
  */
 class Ceos_LIEGENSCHAFT extends Model

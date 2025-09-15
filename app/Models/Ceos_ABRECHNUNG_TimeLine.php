@@ -73,6 +73,18 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $Stichtag_STA
  * @property int|null $AbrechnungProHaus
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereAbrechnungProHaus($value)
+ * @property int|null $Heizung_JN
+ * @property int|null $Warmwasser_JN
+ * @property int|null $Kaltwasser_JN
+ * @property int|null $Betriebskosten_JN
+ * @property int|null $Stromkosten_JN
+ * @property int|null $MDM
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereBetriebskostenJN($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereHeizungJN($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereKaltwasserJN($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereMDM($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereStromkostenJN($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereWarmwasserJN($value)
  * @mixin \Eloquent
  */
 class Ceos_ABRECHNUNG_TimeLine extends Model

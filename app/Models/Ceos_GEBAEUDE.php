@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Ceos_GEBAEUDE whereGebaeudeID($value)
  * @method static Builder<static>|Ceos_GEBAEUDE whereTimeStamp($value)
  * @method static Builder<static>|Ceos_GEBAEUDE whereUser($value)
+ * @property string $GEB_COMP_API_ID
+ * @method static Builder<static>|Ceos_GEBAEUDE whereGEBCOMPAPIID($value)
  * @mixin Eloquent
  */
 class Ceos_GEBAEUDE extends Model

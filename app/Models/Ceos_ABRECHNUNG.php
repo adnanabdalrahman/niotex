@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG whereDateStamp($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG whereTimeStamp($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG whereUser($value)
+ * @property string $ABR_COMP_API_ID
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG whereABRCOMPAPIID($value)
  * @mixin \Eloquent
  */
 class Ceos_ABRECHNUNG extends Model
