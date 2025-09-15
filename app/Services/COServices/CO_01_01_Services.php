@@ -2,7 +2,6 @@
 
 namespace App\Services\COServices;
 
-use App\Exceptions\Position3MengeNotFound;
 use App\Exceptions\VorgangNotFound;
 use App\Models\Position;
 use App\Models\Position1Wert;
@@ -48,12 +47,12 @@ class CO_01_01_Services
 
             //---------------------------------------------------------------------------------------------
             $positions = Position::where('InterneVorgangsnummer', $request['InterneVorgangsnummer'])->get();
-
+            $successPositions = [];
             foreach ($positions as $position) {
                 $position3Menge = Position3Menge::where
                 ('InternePositionsnummer', $position->InternePositionsnummer)->first();
                 if (is_null($position3Menge)) {
-                    throw new Position3MengeNotFound($request['InterneVorgangsnummer'], $position->InternePositionsnummer);
+                    //throw new Position3MengeNotFound($request['InterneVorgangsnummer'], $position->InternePositionsnummer);
                     Log::error(
                         "co_01_01_Zeiteinheiten Position3Menge nicht gefunden",
                         [
@@ -68,6 +67,23 @@ class CO_01_01_Services
                 $position5Individual = Position5Individual::where
                 ('InternePositionsnummer', $position->InternePositionsnummer)->first();
 
+                if ($position5Individual->PosIndividualC2 == "") {
+                    //todo change with one report
+                    Log::warning('Kein CeosAuftragsart gefunden', [
+                        'InternePositionsnummer' => $position->InternePositionsnummer,
+                    ]);
+                    continue;
+                }
+
+                if ($position5Individual->PosIndividualT4 != "") {
+                    //todo change with one report
+                    Log::warning('schon gesendet', [
+                        'InternePositionsnummer' => $position->InternePositionsnummer,
+                    ]);
+                    continue;
+                }
+
+                $successPositions[] = $position->InternePositionsnummer;
                 $posNr = $position5Individual->PosIndividualC1;
                 $data['to_TimeUnits'][] = [
                     'Richtzeiteinheiten' => (string)$richtzeiteinheiten,
@@ -82,16 +98,13 @@ class CO_01_01_Services
                 ];
             }
             $grouped = [];
+            if (empty($data)) {
+                //todo change with one report
+                Log::warning('kein Passendende Positionen zum senden');
+                return null;
+            }
             foreach ($data['to_TimeUnits'] as $item) {
-                $key = $item['SapKundenauftragspos'] . '|' .
-                    $item['Belegdatum'] . '|' .
-                    $item['Buchungsdatum'] . '|' .
-                    $item['SapKundenauftrag'] . '|' .
-                    $item['Mengeneinheit'] . '|' .
-                    $item['SapLiegenschaft'] . '|' .
-                    $item['CeosAuftragsart'] . '|' .
-                    $item['CeosUnterauftragsart'];
-
+                $key = $item['CeosAuftragsart'];
                 if (!isset($grouped[$key])) {
                     $grouped[$key] = $item;
                 } else {
@@ -106,15 +119,17 @@ class CO_01_01_Services
             $result = app(SapApiClient::class)->post($this->co0101_path, $data);
             if ($result !== null) {
                 Log::info('co_01_01_Zeiteinheiten received data: ', $result);
-
-                $vorgang->VorStatus = 100425;
+                $vorgang->VorStatus = 100425; //Auftrag erledigt
                 $vorgang->save();
-
-                $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
-                foreach ($positions as $position) {
-                    $position1wert = Position1wert::where('InternePositionsnummer', $position->InternePositionsnummer)->first();
+                foreach ($successPositions as $internePositionsnummer) {
+                    $position1wert = Position1wert::where('InternePositionsnummer', $internePositionsnummer)->first();
                     $position1wert->PosPreisProME2 = 1;
                     $position1wert->save();
+
+                    $position5Individual = Position5Individual::where
+                    ('InternePositionsnummer', $internePositionsnummer)->first();
+                    $position5Individual->PosIndividualT4 = date('Ymd');
+                    $position5Individual->save();
                 }
             }
         } catch (Throwable $e) {
@@ -123,7 +138,6 @@ class CO_01_01_Services
         }
         return $result;
     }
-
 }
 
 

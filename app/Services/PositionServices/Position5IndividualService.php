@@ -45,7 +45,7 @@ class Position5IndividualService
                     'PosIndividualT1' => $data['PosIndividualT1'] ?? null,
                     'PosIndividualT2' => $data['PosIndividualT2'] ?? null,
                     'PosIndividualT3' => $data['PosIndividualT3'] ?? null,//Montagedatum
-                    'PosIndividualT4' => $data['PosIndividualT4'] ?? null,
+                    'PosIndividualT4' => $data['PosIndividualT4'] ?? null,//CO_0101 send date
                     'PosIndividualT5' => $data['PosIndividualT5'] ?? null,
                     'PosIndividualT6' => $data['PosIndividualT6'] ?? null,
                     'PosIndividualCombo1' => $data['PosIndividualCombo1'] ?? null,

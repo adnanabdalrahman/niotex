@@ -417,6 +417,9 @@ class RE_01_01_Services_v1
 
                 //---------------- MIETER_ MIETER -------------------------------
                 $receivedMieters = $receivedLiegenschaft['mieter'];
+               if ($receivedMieter['recnnr'] === null) {
+                   continue;
+               }
                 foreach ($receivedMieters as $receivedMieter) {
                     $mieter = Ceos_MIETER::updateOrCreate(
                         [
