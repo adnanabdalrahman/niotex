@@ -15,5 +15,4 @@ return [
     'NA1SR' => 'M_NR',
     'ENASV' => 'E',
     'UVISV' => 'U',
-
 ];

@@ -24,6 +24,7 @@ class SD_0101_Services
     protected string $sd0301_path;
 
     protected array $vorgruppeMapping;
+    protected array $vorgruppeSKTMapping;
 
     protected array $auth;
 
@@ -39,6 +40,7 @@ class SD_0101_Services
         $this->sd0102_path = config('sap.sd0102_path');
         $this->sd0301_path = config('sap.sd0301_path');
         $this->vorgruppeMapping = config('vorgruppeMapping');
+        $this->vorgruppeSKTMapping = config('vorgruppeSKTMapping');
         $this->mwstSatzProzentArray = [
             7 => 2,
             19 => 3,
@@ -92,6 +94,7 @@ class SD_0101_Services
             $data['VorIndividualC1'] = $header['vbeln'];
             $data['VorIndividualC2'] = $header['auart'];
             $data['VorIndividualC3'] = $header['zzlgsnr'];
+            $data['VorIndividualC7'] = $this->vorgruppeSKTMapping[$header['augru']];
             $data['VorIndividualD4'] = $header['genrCeos'];// GebäudeNr
 
             //todo get Adress from Liegenschaft Gebäude
