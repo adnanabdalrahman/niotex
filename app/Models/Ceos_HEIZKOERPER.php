@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_HEIZKOERPER whereHeizkoerperID($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_HEIZKOERPER whereTimeStamp($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_HEIZKOERPER whereUser($value)
+ * @property string|null $HEI_COMP_API_ID
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_HEIZKOERPER whereHEICOMPAPIID($value)
  * @mixin \Eloquent
  */
 class Ceos_HEIZKOERPER extends Model

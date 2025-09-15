@@ -42,6 +42,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Ceos_GEBAEUDE_TimeLine whereTestInfo($value)
  * @method static Builder<static>|Ceos_GEBAEUDE_TimeLine whereTimeStamp($value)
  * @method static Builder<static>|Ceos_GEBAEUDE_TimeLine whereUser($value)
+ * @property int|null $MDM
+ * @method static Builder<static>|Ceos_GEBAEUDE_TimeLine whereMDM($value)
  * @mixin Eloquent
  */
 class Ceos_GEBAEUDE_TimeLine extends Model

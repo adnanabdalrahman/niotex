@@ -146,6 +146,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereWWTemperatur($value)
  * @method static Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereWWVerbrauchskosten($value)
  * @method static Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereWarmwasserJN($value)
+ * @property int|null $MDM
+ * @method static Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereMDM($value)
  * @mixin Eloquent
  */
 class Ceos_LIEGENSCHAFT_TimeLine extends Model

@@ -26,20 +26,34 @@ class REController extends Controller
     public function re_01_01_Liegenschaften(RE_0101_LiegenschaftenRequest $request)
     {
         $validated = $request->validated();
-        $response = $this->re0101Services->re_01_01_Liegenschaften($validated);
-        if ($response !== null) {
-            Log::info('re_01_01_Liegenschaften Received Data: ', $response);
-            $message = "Liegenschaften erfolgreich empfangen";
-            Log::info($message);
+
+        // Service now returns a report instead of just true/null
+        $report = $this->re0101Services->re_01_01_Liegenschaften($validated);
+
+        if (empty($report['success']) && !empty($report['failed'])) {
+            // everything failed
             return response()->json([
-                'status' => 'success',
-                'message' => $message,
-            ], 202);
+                'status' => 'error',
+                'message' => 'Alle Liegenschaften fehlgeschlagen',
+                'report' => $report,
+            ], 400);
         }
+
+        if (!empty($report['failed'])) {
+            // partial success
+            return response()->json([
+                'status' => 'partial',
+                'message' => 'Einige Liegenschaften wurden nicht importiert',
+                'report' => $report,
+            ], 207); // 207 Multi-Status is good for mixed results
+        }
+
+        // all success
         return response()->json([
-            'status' => 'Error',
-            'message' => 're_01_01_Liegenschaften fehlgeschlagen',
-        ], 400);
+            'status' => 'success',
+            'message' => 'Alle Liegenschaften erfolgreich importiert',
+            'report' => $report,
+        ], 202);
     }
 
 

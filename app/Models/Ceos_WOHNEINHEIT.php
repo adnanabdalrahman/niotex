@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_WOHNEINHEIT whereUser($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_WOHNEINHEIT whereWEFOREIGNID($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_WOHNEINHEIT whereWohneinheitID($value)
+ * @property string $WE_COMP_API_ID
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_WOHNEINHEIT whereWECOMPAPIID($value)
  * @mixin \Eloquent
  */
 class Ceos_WOHNEINHEIT extends Model
