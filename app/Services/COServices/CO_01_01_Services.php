@@ -23,8 +23,7 @@ class CO_01_01_Services
         $this->baseUrl = config('sap.base_url');
         $this->co0101_path = config('sap.co0101_path');
     }
-
-
+    
     /**
      * CEOSWeb -> CEOS --> SAP
      * CO-01-01 Dienstleistungsrechnung

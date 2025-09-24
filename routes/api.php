@@ -17,11 +17,9 @@ Route::middleware([VerifySapToken::class])->group(function () {
             //mm-31-1: SAP-->CEOS, Materialstammdaten
             Route::post('/3101/materialstammdaten', [MMController::class, 'mm_31_1_Materialstammdaten']);
 
-
             //mm-37-1: SAP-->CEOS, NU zugelassene Leistungspositionen
             Route::post('/3701/nuleistungspositionen', [MMController::class, 'mm_37_1_NuLeistungspositionen']);
         });
-
 
         Route::prefix('bp')->group(function () {
             //bp-01-01: SAP-->CEOS, Geschäftspartner
@@ -30,7 +28,6 @@ Route::middleware([VerifySapToken::class])->group(function () {
             //bp-01-03: SAP –> CEOS Kundenstammdaten Verwalter
             Route::post('/0103/verwalter', [BPController::class, 'bp_01_03_Verwalter']);
         });
-
 
         Route::prefix('sd')->group(function () {
             //SD-01-01: SAP-->CEOS, Beauftragung

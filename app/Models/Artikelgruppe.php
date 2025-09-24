@@ -45,7 +45,7 @@ class Artikelgruppe extends Model
 
     public $timestamps = false;
     public $incrementing = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Artikelgruppe';
     protected $guarded = [];
     protected $primaryKey = ['KZArtikelgruppe', 'KZArtikelgruppe'];

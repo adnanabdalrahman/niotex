@@ -13,7 +13,7 @@ class MssqlController extends Controller
     {
         try {
             // Fetch products from the second database using DB::connection
-            $products = DB::connection('sqlsrv2')->select("SELECT * FROM products");
+            $products = DB::connection('sqlsrv')->select("SELECT * FROM products");
 
             return response()->json([
                 'success' => true,

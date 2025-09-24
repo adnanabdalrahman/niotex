@@ -70,7 +70,7 @@ class Position4Lieferung extends Model
 {
     public $timestamps = false;
     public $incrementing = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Position4Lieferung';
     protected $guarded = [];
     protected $primaryKey = 'InternePositionsnummer';

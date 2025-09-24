@@ -88,7 +88,7 @@ class Position3Menge extends Model
 {
     public $timestamps = false;
     public $incrementing = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Position3Menge';
     protected $guarded = [];
     protected $primaryKey = 'InternePositionsnummer';

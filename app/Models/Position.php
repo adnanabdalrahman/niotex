@@ -101,7 +101,7 @@ use Illuminate\Database\Eloquent\Model;
 class Position extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Position';
     protected $guarded = [];
     protected $primaryKey = 'InternePositionsnummer';

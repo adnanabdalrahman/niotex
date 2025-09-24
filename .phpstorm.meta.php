@@ -888,15 +888,15 @@ namespace PHPSTORM_META {
             'database.connections.sqlsrv.charset' => 'string',
             'database.connections.sqlsrv.prefix' => 'string',
             'database.connections.sqlsrv.prefix_indexes' => 'boolean',
-            'database.connections.sqlsrv2.driver' => 'string',
-            'database.connections.sqlsrv2.host' => 'string',
-            'database.connections.sqlsrv2.port' => 'string',
-            'database.connections.sqlsrv2.database' => 'string',
-            'database.connections.sqlsrv2.username' => 'string',
-            'database.connections.sqlsrv2.password' => 'string',
-            'database.connections.sqlsrv2.charset' => 'string',
-            'database.connections.sqlsrv2.prefix' => 'string',
-            'database.connections.sqlsrv2.prefix_indexes' => 'boolean',
+            'database.connections.sqlsrv.driver' => 'string',
+            'database.connections.sqlsrv.host' => 'string',
+            'database.connections.sqlsrv.port' => 'string',
+            'database.connections.sqlsrv.database' => 'string',
+            'database.connections.sqlsrv.username' => 'string',
+            'database.connections.sqlsrv.password' => 'string',
+            'database.connections.sqlsrv.charset' => 'string',
+            'database.connections.sqlsrv.prefix' => 'string',
+            'database.connections.sqlsrv.prefix_indexes' => 'boolean',
             'database.migrations.table' => 'string',
             'database.migrations.update_date_on_publish' => 'boolean',
             'database.redis.client' => 'string',
@@ -1332,15 +1332,15 @@ namespace PHPSTORM_META {
             'database.connections.sqlsrv.charset' => 'string',
             'database.connections.sqlsrv.prefix' => 'string',
             'database.connections.sqlsrv.prefix_indexes' => 'boolean',
-            'database.connections.sqlsrv2.driver' => 'string',
-            'database.connections.sqlsrv2.host' => 'string',
-            'database.connections.sqlsrv2.port' => 'string',
-            'database.connections.sqlsrv2.database' => 'string',
-            'database.connections.sqlsrv2.username' => 'string',
-            'database.connections.sqlsrv2.password' => 'string',
-            'database.connections.sqlsrv2.charset' => 'string',
-            'database.connections.sqlsrv2.prefix' => 'string',
-            'database.connections.sqlsrv2.prefix_indexes' => 'boolean',
+            'database.connections.sqlsrv.driver' => 'string',
+            'database.connections.sqlsrv.host' => 'string',
+            'database.connections.sqlsrv.port' => 'string',
+            'database.connections.sqlsrv.database' => 'string',
+            'database.connections.sqlsrv.username' => 'string',
+            'database.connections.sqlsrv.password' => 'string',
+            'database.connections.sqlsrv.charset' => 'string',
+            'database.connections.sqlsrv.prefix' => 'string',
+            'database.connections.sqlsrv.prefix_indexes' => 'boolean',
             'database.migrations.table' => 'string',
             'database.migrations.update_date_on_publish' => 'boolean',
             'database.redis.client' => 'string',
@@ -1776,15 +1776,15 @@ namespace PHPSTORM_META {
             'database.connections.sqlsrv.charset' => 'string',
             'database.connections.sqlsrv.prefix' => 'string',
             'database.connections.sqlsrv.prefix_indexes' => 'boolean',
-            'database.connections.sqlsrv2.driver' => 'string',
-            'database.connections.sqlsrv2.host' => 'string',
-            'database.connections.sqlsrv2.port' => 'string',
-            'database.connections.sqlsrv2.database' => 'string',
-            'database.connections.sqlsrv2.username' => 'string',
-            'database.connections.sqlsrv2.password' => 'string',
-            'database.connections.sqlsrv2.charset' => 'string',
-            'database.connections.sqlsrv2.prefix' => 'string',
-            'database.connections.sqlsrv2.prefix_indexes' => 'boolean',
+            'database.connections.sqlsrv.driver' => 'string',
+            'database.connections.sqlsrv.host' => 'string',
+            'database.connections.sqlsrv.port' => 'string',
+            'database.connections.sqlsrv.database' => 'string',
+            'database.connections.sqlsrv.username' => 'string',
+            'database.connections.sqlsrv.password' => 'string',
+            'database.connections.sqlsrv.charset' => 'string',
+            'database.connections.sqlsrv.prefix' => 'string',
+            'database.connections.sqlsrv.prefix_indexes' => 'boolean',
             'database.migrations.table' => 'string',
             'database.migrations.update_date_on_publish' => 'boolean',
             'database.redis.client' => 'string',
@@ -2094,7 +2094,7 @@ namespace PHPSTORM_META {
     override(\optional(0), type(0));
 
             registerArgumentsSet('auth', );
-        registerArgumentsSet('configs', 
+        registerArgumentsSet('configs',
 'app.name','app.env','app.debug','app.url','app.frontend_url',
 'app.asset_url','app.timezone','app.locale','app.fallback_locale','app.faker_locale',
 'app.cipher','app.key','app.previous_keys','app.maintenance.driver','app.maintenance.store',
@@ -2127,9 +2127,9 @@ namespace PHPSTORM_META {
 'database.connections.pgsql.database','database.connections.pgsql.username','database.connections.pgsql.password','database.connections.pgsql.charset','database.connections.pgsql.prefix',
 'database.connections.pgsql.prefix_indexes','database.connections.pgsql.search_path','database.connections.pgsql.sslmode','database.connections.sqlsrv.driver','database.connections.sqlsrv.url',
 'database.connections.sqlsrv.host','database.connections.sqlsrv.port','database.connections.sqlsrv.database','database.connections.sqlsrv.username','database.connections.sqlsrv.password',
-'database.connections.sqlsrv.charset','database.connections.sqlsrv.prefix','database.connections.sqlsrv.prefix_indexes','database.connections.sqlsrv2.driver','database.connections.sqlsrv2.host',
-'database.connections.sqlsrv2.port','database.connections.sqlsrv2.database','database.connections.sqlsrv2.username','database.connections.sqlsrv2.password','database.connections.sqlsrv2.charset',
-'database.connections.sqlsrv2.prefix','database.connections.sqlsrv2.prefix_indexes','database.migrations.table','database.migrations.update_date_on_publish','database.redis.client',
+'database.connections.sqlsrv.charset','database.connections.sqlsrv.prefix','database.connections.sqlsrv.prefix_indexes','database.connections.sqlsrv.driver','database.connections.sqlsrv.host',
+'database.connections.sqlsrv.port','database.connections.sqlsrv.database','database.connections.sqlsrv.username','database.connections.sqlsrv.password','database.connections.sqlsrv.charset',
+'database.connections.sqlsrv.prefix','database.connections.sqlsrv.prefix_indexes','database.migrations.table','database.migrations.update_date_on_publish','database.redis.client',
 'database.redis.options.cluster','database.redis.options.prefix','database.redis.default.url','database.redis.default.host','database.redis.default.username',
 'database.redis.default.password','database.redis.default.port','database.redis.default.database','database.redis.cache.url','database.redis.cache.host',
 'database.redis.cache.username','database.redis.cache.password','database.redis.cache.port','database.redis.cache.database','filesystems.default',
@@ -2184,11 +2184,11 @@ namespace PHPSTORM_META {
 'hashing.bcrypt.rounds','hashing.bcrypt.verify','hashing.argon.memory','hashing.argon.threads','hashing.argon.time',
 'hashing.argon.verify','hashing.rehash_on_login','view.paths','view.compiled','tinker.commands',
 'tinker.alias','tinker.dont_alias',);
-        registerArgumentsSet('middleware', 
+        registerArgumentsSet('middleware',
 'web','api',);
-        registerArgumentsSet('routes', 
+        registerArgumentsSet('routes',
 'openapi.default.specification','storage.local',);
-        registerArgumentsSet('views', 
+        registerArgumentsSet('views',
 'welcome','laravel-exceptions-renderer::components.card','laravel-exceptions-renderer::components.context','laravel-exceptions-renderer::components.editor','laravel-exceptions-renderer::components.header',
 'laravel-exceptions-renderer::components.icons.chevron-down','laravel-exceptions-renderer::components.icons.chevron-up','laravel-exceptions-renderer::components.icons.computer-desktop','laravel-exceptions-renderer::components.icons.moon','laravel-exceptions-renderer::components.icons.sun',
 'laravel-exceptions-renderer::components.layout','laravel-exceptions-renderer::components.navigation','laravel-exceptions-renderer::components.theme-switcher','laravel-exceptions-renderer::components.trace','laravel-exceptions-renderer::components.trace-and-editor',
@@ -2197,7 +2197,7 @@ namespace PHPSTORM_META {
 'laravel-exceptions::minimal','notifications::email','pagination::bootstrap-4','pagination::bootstrap-5','pagination::default',
 'pagination::semantic-ui','pagination::simple-bootstrap-4','pagination::simple-bootstrap-5','pagination::simple-default','pagination::simple-tailwind',
 'pagination::tailwind',);
-        registerArgumentsSet('translations', 
+        registerArgumentsSet('translations',
 'auth.failed','auth.password','auth.throttle','pagination.previous','pagination.next',
 'passwords.reset','passwords.sent','passwords.throttled','passwords.token','passwords.user',
 'validation.accepted','validation.accepted_if','validation.active_url','validation.after','validation.after_or_equal',
@@ -2227,7 +2227,7 @@ namespace PHPSTORM_META {
 'validation.size.numeric','validation.size.string','validation.starts_with','validation.string','validation.timezone',
 'validation.unique','validation.uploaded','validation.uppercase','validation.url','validation.ulid',
 'validation.uuid','validation.custom.attribute-name.rule-name',);
-        registerArgumentsSet('env', 
+        registerArgumentsSet('env',
 'APP_NAME','APP_ENV','APP_KEY','APP_DEBUG','APP_TIMEZONE',
 'APP_URL','APP_LOCALE','APP_FALLBACK_LOCALE','APP_FAKER_LOCALE','APP_MAINTENANCE_DRIVER',
 'PHP_CLI_SERVER_WORKERS','BCRYPT_ROUNDS','LOG_CHANNEL','LOG_STACK','LOG_DEPRECATIONS_CHANNEL',
@@ -2241,7 +2241,7 @@ namespace PHPSTORM_META {
 'AWS_ACCESS_KEY_ID','AWS_SECRET_ACCESS_KEY','AWS_DEFAULT_REGION','AWS_BUCKET','AWS_USE_PATH_STYLE_ENDPOINT',
 'VITE_APP_NAME','SAP_API_TOKEN','CEOS_WEB_API_TOKEN','SAP_API_BASE_URL','SAP_CLIENT_ID',
 'SAP_CLIENT_SECRET',);
-        
+
                 expectedArguments(\Illuminate\Support\Facades\Gate::has(), 0, argumentsSet('auth'));
     expectedArguments(\Illuminate\Support\Facades\Gate::allows(), 0, argumentsSet('auth'));
     expectedArguments(\Illuminate\Support\Facades\Gate::denies(), 0, argumentsSet('auth'));
@@ -2305,5 +2305,5 @@ namespace PHPSTORM_META {
                 expectedArguments(\Illuminate\Contracts\Translation\Translator::get(), 0, argumentsSet('translations'));
                 expectedArguments(\env(), 0, argumentsSet('env'));
                 expectedArguments(\Illuminate\Support\Env::get(), 0, argumentsSet('env'));
-            
+
 }

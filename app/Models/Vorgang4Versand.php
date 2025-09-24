@@ -53,7 +53,7 @@ use Illuminate\Database\Eloquent\Model;
 class Vorgang4Versand extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Vorgang4Versand';
     protected $primaryKey = 'InterneVorgangsnummer';
     protected $guarded = [];

@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Eloquent;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
  *
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine query()
+ *
+ * @method static Builder<static>|Ceos_MIETER_TimeLine newModelQuery()
+ * @method static Builder<static>|Ceos_MIETER_TimeLine newQuery()
+ * @method static Builder<static>|Ceos_MIETER_TimeLine query()
  * @property int $ID
  * @property int $WohneinheitID
  * @property int $MieterID
@@ -31,42 +33,39 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $TimeStamp
  * @property string|null $Test_Info
  * @property int $LiegenschaftsID
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereBemerkungIntern($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereDateStamp($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereDatumBis($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereDatumVon($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereID($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereLfd.AdressnummerGECEOS($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereLiegenschaftsID($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMAnrede($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMEigentuemernummer($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMKundeneigeneNutzerNr($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMName1($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMName2($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMPersonen($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMWSTJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMieterID($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMietvertragsnummer($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereTestInfo($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereTimeStamp($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereUser($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereVorauszahlungJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereWohneinheitID($value)
- * @property int|null $lfd. Adressnummer GE CEOS
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereLfd.AdressnummerGECEOS($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereLfd.AdressnummerMECEOS($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereBemerkungIntern($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereDateStamp($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereDatumBis($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereDatumVon($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereID($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereLfd.AdressnummerGECEOS($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereLiegenschaftsID($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMAnrede($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMEigentuemernummer($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMKundeneigeneNutzerNr($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMName1($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMName2($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMPersonen($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMWSTJN($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMieterID($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMietvertragsnummer($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereTestInfo($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereTimeStamp($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereUser($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereVorauszahlungJN($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereWohneinheitID($value)
  * @property int|null $lfd_Adressnummer_GE_CEOS
  * @property int|null $lfd_Adressnummer_ME_CEOS
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereLfdAdressnummerGECEOS($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereLfdAdressnummerMECEOS($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereLfdAdressnummerGECEOS($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereLfdAdressnummerMECEOS($value)
  * @property int|null $MDM
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMDM($value)
- * @mixin \Eloquent
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMDM($value)
+ * @mixin Eloquent
  */
 class Ceos_MIETER_TimeLine extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Ceos_MIETER_TimeLine';
     protected $primaryKey = 'ID';
     protected $guarded = [];

@@ -28,7 +28,7 @@ and supports authentication, validation, and error handling.
 
 3. Create and configure the `.env` file:
    ```sh
-   cp .env.example .env
+   cp .env.backup .env
    ```
    Update database credentials and other environment settings.
 
@@ -160,6 +160,28 @@ change Route
 
 ## New Feature
 
-1 - sd/0101/beauftragung
-
 php artisan ide-helper:models --write
+
+# Basic worker (runs until manually stopped)
+
+php artisan queue:work
+
+# With specific options
+
+php artisan queue:work --queue=slack,default --tries=3 --timeout=60 --sleep=3
+
+# Daemon mode (for production-like environment)
+
+php artisan queue:work --daemon
+
+# Process specific queue only
+
+php artisan queue:work --queue=slack
+
+# With maximum time limit
+
+php artisan queue:work --max-time=3600
+
+
+
+

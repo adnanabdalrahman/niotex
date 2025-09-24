@@ -113,7 +113,7 @@ use Illuminate\Database\Eloquent\Model;
 class Ansprechpartner extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Ansprechpartner';
     protected $primaryKey = 'AnsprechpartnerID';
     protected $guarded = [];

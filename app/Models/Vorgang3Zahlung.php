@@ -73,7 +73,7 @@ use Illuminate\Database\Eloquent\Model;
 class Vorgang3Zahlung extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Vorgang3Zahlung';
     protected $primaryKey = 'InterneVorgangsnummer';
     protected $guarded = [];

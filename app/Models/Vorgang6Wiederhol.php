@@ -31,7 +31,7 @@ use Illuminate\Database\Eloquent\Model;
 class Vorgang6Wiederhol extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Vorgang6Wiederhol';
     protected $primaryKey = 'InterneVorgangsnummer';
     protected $guarded = [];

@@ -4,9 +4,11 @@ namespace App\Services\SEServices;
 
 use App\Models\Adresse;
 use App\Models\Artikel;
+use App\Models\Position;
+use App\Models\Position2Text;
+use App\Models\Position3Menge;
 use App\Models\Vorgang;
 use App\Services\SapApiClient;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -54,8 +56,7 @@ class SE_26_01_Services
             $data['VorgnInt'] = (string)$vorgang->InterneVorgangsnummer;
 
             //---------------------------------------------------------------------------------------------
-            $positions = DB::connection('sqlsrv2')->table('cis.Position')
-                ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->get();
+            $positions = Position::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->get();
             $positionArray = [];
             foreach ($positions as $position) {
 
@@ -72,8 +73,7 @@ class SE_26_01_Services
                     return null;
                 }
 
-                $position3Menge = DB::connection('sqlsrv2')->table('cis.Position3Menge')
-                    ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
+                $position3Menge = Position3Menge::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
                     ->where('InternePositionsnummer', $position->InternePositionsnummer)
                     ->first();
                 if (is_null($position3Menge)) {
@@ -86,8 +86,7 @@ class SE_26_01_Services
                     );
                     return null;
                 }
-                $position2Text = DB::connection('sqlsrv2')->table('cis.Position2Text')
-                    ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
+                $position2Text = Position2Text::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
                     ->where('InternePositionsnummer', $position->InternePositionsnummer)
                     ->first();
                 if (is_null($position2Text)) {
@@ -119,6 +118,7 @@ class SE_26_01_Services
             $data['to_Items'] = $positionArray;
             Log::info('se-26-01 Sent data', $data);
             $result = app(SapApiClient::class)->post($this->se2601_path, $data);
+            Log::info('se-26-01 Received data', $result);
             if ($result === null ||
                 !isset($result['d']['Status']) ||
                 $result['d']['Status'] === "error") {
@@ -126,16 +126,16 @@ class SE_26_01_Services
                 return null;
             }
             //Storno
-            if ($result['d']['Vbeln'] == $result['d']['Zuonr']) {
-                $vorgang->VorStatus = 100430;
-                $vorgang->save();
+            if ((isset($result['d']['Vbeln']) && isset($result['d']['Zuonr']))) {
+                if ($result['d']['Vbeln'] == $result['d']['Zuonr']) {
+                    $vorgang->VorStatus = 100430;
+                    $vorgang->save();
+                }
             }
-
-
+            return $result;
         } catch (Throwable $e) {
             Log::error($e->getMessage());
             return null;
         }
-        return $result;
     }
 }

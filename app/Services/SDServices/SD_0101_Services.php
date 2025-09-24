@@ -67,8 +67,6 @@ class SD_0101_Services
             'txtZ013' → Vorgang.VorStichwort für Reparaturaufträge Ausstattung / Austauschgrund
         */
         return DB::transaction(function () use (&$requestData) {
-
-
             $header = $requestData['header'];
             $positions = $requestData['positions'];
             $adresse = Adresse::where('AdressNummer', $header['kunnr'])->first();

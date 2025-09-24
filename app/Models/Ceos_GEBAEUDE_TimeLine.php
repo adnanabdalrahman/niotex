@@ -49,7 +49,7 @@ use Illuminate\Database\Eloquent\Model;
 class Ceos_GEBAEUDE_TimeLine extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Ceos_GEBAEUDE_TimeLine';
     protected $primaryKey = 'ID';
     protected $guarded = [];

@@ -100,7 +100,7 @@ class Position5Individual extends Model
 {
     public $timestamps = false;
     public $incrementing = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Position5Individual';
     protected $guarded = [];
     protected $primaryKey = 'InternePositionsnummer';

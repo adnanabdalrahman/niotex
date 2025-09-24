@@ -36,7 +36,7 @@ use Illuminate\Database\Eloquent\Model;
 class Vorgang2Text extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Vorgang2Text';
     protected $primaryKey = 'InterneVorgangsnummer';
     protected $guarded = [];

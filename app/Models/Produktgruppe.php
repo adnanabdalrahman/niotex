@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\Model;
 class Produktgruppe extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Produktgruppe';
     protected $primaryKey = 'KZProduktgruppe';
     protected $guarded = [];

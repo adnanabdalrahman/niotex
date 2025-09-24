@@ -10,9 +10,9 @@ use App\Models\Position2Text;
 use App\Models\Position3Menge;
 use App\Models\Position5Individual;
 use App\Models\Vorgang;
+use App\Models\Vorgang2Text;
 use App\Services\SapApiClient;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -63,8 +63,7 @@ class SD_0102_Services
             $vorGruppeKey = array_search($vorgang->VorGruppe, $this->vorgruppeMapping);
             $data['Augru'] = substr($vorGruppeKey, 0, 3);
 
-            $vorgang2Text = DB::connection('sqlsrv2')->table('cis.Vorgang2Text')
-                ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->first();
+            $vorgang2Text = Vorgang2Text::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->first();
 
             $vorNotiz = (string)$vorgang2Text?->VorNotiz;
             $data['TxtZ012'] = $vorNotiz;

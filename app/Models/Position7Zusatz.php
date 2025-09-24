@@ -74,7 +74,7 @@ class Position7Zusatz extends Model
 {
     public $timestamps = false;
     public $incrementing = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Position7Zusatz';
     protected $guarded = [];
     protected $primaryKey = 'InternePositionsnummer';

@@ -4,13 +4,13 @@ namespace App\Services\SDServices;
 
 use App\Models\Adresse;
 use App\Models\Artikel;
+use App\Models\Position;
 use App\Models\Position2Text;
 use App\Models\Position3Menge;
 use App\Models\Position5Individual;
 use App\Models\Vorgang;
 use App\Services\SapApiClient;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -66,8 +66,7 @@ class SD_03_01_Services
             $carbonAbrBis = Carbon::parse((string)$vorgang->VorIndividualT2);
             $data['AbrBis'] = $carbonAbrBis->format('Ymd');
             //---------------------------------------------------------------------------------------------
-            $positions = DB::connection('sqlsrv2')->table('cis.Position')
-                ->where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->get();
+            $positions = Position::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->get();
 
             foreach ($positions as $position) {
                 $artikel = Artikel::where('InterneArtikelnummer', $position->InterneArtikelnummer)->first();

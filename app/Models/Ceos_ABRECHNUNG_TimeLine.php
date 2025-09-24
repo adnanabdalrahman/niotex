@@ -90,7 +90,7 @@ use Illuminate\Database\Eloquent\Model;
 class Ceos_ABRECHNUNG_TimeLine extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Ceos_ABRECHNUNG_TimeLine';
     protected $primaryKey = 'ID';
     protected $guarded = [];

@@ -173,7 +173,7 @@ use Illuminate\Database\Eloquent\Model;
 class VorgangWert extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.VorgangWert';
     protected $primaryKey = 'InterneVorgangsnummer';
     protected $guarded = [];

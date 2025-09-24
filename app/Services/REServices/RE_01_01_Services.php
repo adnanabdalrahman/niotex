@@ -303,6 +303,10 @@ class RE_01_01_Services
     {
         $rows = [];
         foreach ($mieters as $receivedMieter) {
+            //todo important delete later
+            if ($receivedMieter['recnnr'] == null) {
+                continue;
+            }
             $mieter = Ceos_MIETER::updateOrCreate(
                 ['MI_COMP_API_ID' => $receivedMieter['recnnr']],
                 ['User' => 0]

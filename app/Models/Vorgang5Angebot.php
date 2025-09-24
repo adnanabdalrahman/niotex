@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Eloquent;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -46,12 +47,12 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Vorgang5Angebot whereVorWiedervorlageDatumIntern($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Vorgang5Angebot whereVorWiedervorlageJahr($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Vorgang5Angebot whereVorWiedervorlageWoche($value)
- * @mixin \Eloquent
+ * @mixin Eloquent
  */
 class Vorgang5Angebot extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Vorgang5Angebot';
     protected $primaryKey = 'InterneVorgangsnummer';
     protected $guarded = [];
