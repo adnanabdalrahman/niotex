@@ -30,7 +30,7 @@ use Illuminate\Database\Eloquent\Model;
 class Ceos_LIEGENSCHAFT extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Ceos_LIEGENSCHAFT';
     protected $primaryKey = 'LiegenschaftsID';
     protected $guarded = [];

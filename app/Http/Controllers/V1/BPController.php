@@ -2,24 +2,28 @@
 
 namespace App\Http\Controllers\V1;
 
+use App\Exceptions\DBSaveException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BP_0101_geschaeftspartnerRequest;
 use App\Http\Requests\BP_0103_verwalterRequest;
 use App\Models\Adresse;
 use App\Models\Ansprechpartner;
 use App\Services\BPServices;
+use App\Traits\ApiResponses;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class BPController extends Controller
 {
+    use ApiResponses;
+
     protected BPServices\BP_01_01_Services $bp0101Services;
     protected BPServices\BP_01_03_Services $bp0103Services;
 
     public function __construct(
         BPServices\BP_01_01_Services $bp0101Services,
         BPServices\BP_01_03_Services $bp0103Services
-
     )
     {
         $this->bp0101Services = $bp0101Services;
@@ -30,13 +34,34 @@ class BPController extends Controller
      * BP_01_01 Geschaeftspartner
      * SAP → CEOS
      */
+    /**
+     * @throws DBSaveException
+     */
     public function bp_01_01_Geschaeftspartner(BP_0101_geschaeftspartnerRequest $request): JsonResponse
     {
+        /*        throw new DBSaveException('SaveWorkerRequest', [
+                    'database' => 'Failed to insert worker'
+                ]);*/
+
+
+        //return $this->successResponse("Worker created successfully",['data1' => 2233], 201);
+        /*return $this->errorResponse(
+            "Failed to save worker",
+            ['database' => 'Insert failed'],
+            "RESOURCE_NOT_SAVED",
+            422);*/
+
+
         $validated = $request->validated();
         $adressnummer = ltrim($validated['DebitorenKreditorennummer'], '0');
-
-        $currentAdresse = Adresse::where('AdressNummer', $adressnummer)->first();
-
+        try {
+            $currentAdresse = Adresse::where('AdressNummer', $adressnummer)->first();
+        } catch (Throwable $exception) {
+            /*  throw new DBSaveException('bp_0101_geschaeftspartner', ['error' => $exception->getMessage()]);*/
+            throw new DBSaveException('bp_0101_geschaeftspartner', [
+                'database' => 'Failed to insert worker record'
+            ]);
+        }
         $status = $currentAdresse !== null ? 'aktualisiert' : 'gespeichert';
         if ($validated['Loeschvormerkung'] !== null) {
             $status = 'gelöscht';
@@ -46,20 +71,13 @@ class BPController extends Controller
         }
 
         $data = $this->bp0101Services->bp_0101_geschaeftspartner($validated);
-        if ($data !== null) {
-            $message = "Geschäftspartner {$data['Adresse']} erfolgreich " . $status;
-            Log::info($message);
-            return response()->json([
-                'status' => 'success',
-                'message' => $message,
-                'data' => $data
-            ], 202);
-        } else {
-            return response()->json([
-                'status' => 'Error',
-                'message' => 'Geschäftspartner speichern fehlgeschlagen',
-            ], 400);
-        }
+        $message = "Geschäftspartner {$data['Adresse']} erfolgreich " . $status;
+        Log::info($message);
+        return response()->json([
+            'status' => 'success',
+            'message' => $message,
+            'data' => $data
+        ], 202);
     }
 
     /*

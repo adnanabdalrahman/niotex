@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\Model;
 class Ceos_MESSPUNKT extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Ceos_MESSPUNKT';
     protected $primaryKey = 'MesspunktID';
     protected $guarded = [];

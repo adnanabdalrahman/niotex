@@ -151,7 +151,7 @@ use Illuminate\Database\Eloquent\Model;
 class Warengruppe extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Warengruppe';
     protected $primaryKey = 'KZWarengruppe';
     protected $guarded = [];

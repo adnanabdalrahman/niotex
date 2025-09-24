@@ -2,11 +2,10 @@
 
 namespace App\Exceptions;
 
-class AdresseNotFoundException extends ApiException
+class DBSaveException extends ApiException
 {
     public function getErrorCode(): string
     {
-        return "RESOURCE_NOT_FOUND";
+        return "RESOURCE_NOT_SAVED";
     }
-
 }

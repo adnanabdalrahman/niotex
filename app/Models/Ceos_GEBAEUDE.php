@@ -29,7 +29,7 @@ use Illuminate\Database\Eloquent\Model;
 class Ceos_GEBAEUDE extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Ceos_GEBAEUDE';
     protected $primaryKey = 'GebaeudeID';
     protected $guarded = [];

@@ -1,12 +1,8 @@
 <?php
 
-use App\Exceptions\AdresseGesperrtException;
-use App\Exceptions\AdresseNotFoundException;
-use App\Exceptions\VorgangNotFound;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -20,25 +16,33 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $ex) {
-        $ex->report(function (AdresseNotFoundException $e) {
-            Log::error($e->getMessage());
-        })->stop();
-        $ex->renderable(function (AdresseNotFoundException $e, Request $req) {
-            return response()->json(['error' => $e->getMessage()], $e->getCode());
+        // General Report
+        $ex->renderable(function (Throwable $e) {
+            // If it’s already an ApiException, let it render itself
+            if ($e instanceof \App\Exceptions\ApiException) {
+                return $e->render();
+            }
+
+            // Fallback for any other unhandled exceptions
+            return response()->json([
+                "status" => "error",
+                "status_code" => 500,
+                "code" => "INTERNAL_SERVER_ERROR",
+                "message" => $e->getMessage() ?: "An unexpected error occurred.",
+                "errors" => [],
+                "meta" => [
+                    "path" => request()->path(),
+                    "timestamp" => now()->toIso8601String(),
+                    "trace_id" => uniqid('', true),
+                ]
+            ], 500);
         });
-        //----------------------------------------------
-        $ex->report(function (AdresseGesperrtException $e) {
-            Log::error($e->getMessage());
+
+
+        $ex->reportable(function (Throwable $e) {
+            Log::error($e->getMessage(), [
+                'exception' => Str::limit((string)$e, 600) . '....'
+            ]);
         })->stop();
-        $ex->renderable(function (AdresseGesperrtException $e, Request $req) {
-            return response()->json(['error' => $e->getMessage()], $e->getCode());
-        });
-        $ex->report(function (VorgangNotFound $e) {
-            Log::error($e->getMessage());
-        })->stop();
-        $ex->renderable(function (VorgangNotFound $e, Request $req) {
-            return response()->json(['error' => $e->getMessage()], $e->getCode());
-        });
-        //----------------------------------------------
     })
     ->create();

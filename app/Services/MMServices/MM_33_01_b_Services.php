@@ -149,8 +149,7 @@ class MM_33_01_b_Services
                 $positionData['externGesamtPreis'] = $gesamtNettoPreis;
                 $positionData['externEinzelPreis'] = $receivedPosition['Netpr'];
                 $positionData['externMenge'] = $receivedPosition['Quantity'];
-
-
+                
                 if ($receivedPosition['PosInt'] != 0) {
                     $position = Position::where(
                         'InternePositionsnummer', $receivedPosition['PosInt'],

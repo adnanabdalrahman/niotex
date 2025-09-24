@@ -4,6 +4,13 @@ namespace App\Services;
 
 use App\Models\NummernkreisVorgang;
 use App\Models\Vorgang;
+use App\Models\Vorgang1Wert;
+use App\Models\Vorgang2Text;
+use App\Models\Vorgang3Zahlung;
+use App\Models\Vorgang4Versand;
+use App\Models\Vorgang5Angebot;
+use App\Models\Vorgang6Wiederhol;
+use App\Models\VorgangWert;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -243,39 +250,39 @@ class VorgangService
                     ->where('VNkArt', $data['VNkArt'])
                     ->update(['VNkAktuellerWert' => $data['VorNummer'] + 1]);
 
-                DB::connection('sqlsrv2')->table('cis.Vorgang2Text')->insertGetId([
+                Vorgang2Text::insertGetId([
                     'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
                     'VorNotiz' => $data['VorNotiz'] ?? NULL
                 ]);
 
-                DB::connection('sqlsrv2')->table('cis.Vorgang3Zahlung')->insertGetId([
+                Vorgang3Zahlung::insertGetId([
                     'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
                     'VorSonderkonditionenJN' => $data['VorSonderkonditionenJN'] ?? 0,
                     'VorBonusAbrechnungJN' => $data['VorBonusAbrechnungJN'] ?? 0,
                     'VorZbdVariabelJN' => $data['VorZbdVariabelJN'] ?? 0,
                 ]);
 
-                DB::connection('sqlsrv2')->table('cis.Vorgang4Versand')->insertGetId([
+                Vorgang4Versand::insertGetId([
                     'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
                     'VorTransportversicherungJN' => $data['VorTransportversicherungJN'] ?? 0,
                     'VorVersandPrivatZustJN' => $data['VorVersandPrivatZustJN'] ?? 0,
                 ]);
 
-                DB::connection('sqlsrv2')->table('cis.Vorgang5Angebot')->insertGetId([
+                Vorgang5Angebot::insertGetId([
                     'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
                     'VorAngebotVerfolgenJN' => $data['VorAngebotVerfolgenJN'] ?? 1,
                     'VorAbschlussOutlookIsTask' => $data['VorAbschlussOutlookIsTask'] ?? 0,
                     'VorWiederVorlageOutlookIsTask' => $data['VorWiederVorlageOutlookIsTask'] ?? 0,
                 ]);
 
-                DB::connection('sqlsrv2')->table('cis.Vorgang6Wiederhol')->insertGetId([
+                Vorgang6Wiederhol::insertGetId([
                     'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
                     'VorWiederholMonat' => $data['VorWiederholMonat'] ?? 0,
                     'VorWiederholKennzeichen' => $data['VorWiederholKennzeichen'] ?? 0,
                     'VorDruckKennzeichen' => $data['VorDruckKennzeichen'] ?? 0,
                 ]);
 
-                DB::connection('sqlsrv2')->table('cis.VorgangWert')->insertGetId([
+                VorgangWert::insertGetId([
                     'InterneVorgangsnummer' => $data['InterneVorgangsnummer'] ?? $vorgang->InterneVorgangsnummer,
                     'VorWBruttowertGesamt' => $data['VorWBruttowertGesamt'] ?? 0,
                     'VorWBruttowertAuftrag' => $data['VorWBruttowertAuftrag'] ?? 0,
@@ -339,7 +346,7 @@ class VorgangService
                     'VorWGewichtRechnung' => $data['VorWGewichtRechnung'] ?? 0,
                 ]);
 
-                DB::connection('sqlsrv2')->table('cis.Vorgang1Wert')->insertGetId([
+                Vorgang1Wert::insertGetId([
                     'InterneVorgangsnummer' => $data['InterneVorgangsnummer'] ?? $vorgang->InterneVorgangsnummer,
                     'VorRabattProzent' => $data['VorRabattProzent'] ?? 0,
                     'VorZusRabattProzent' => $data['VorZusRabattProzent'] ?? 0,

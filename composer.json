@@ -13,6 +13,7 @@
         "doctrine/dbal": "^4.0",
         "illuminate/filesystem": "*",
         "laravel/framework": "^11.31",
+        "laravel/slack-notification-channel": "^3.6",
         "laravel/tinker": "^2.9",
         "tartanlegrand/laravel-openapi": "^2.1",
         "thiagoprz/eloquent-composite-key": "^1.0"

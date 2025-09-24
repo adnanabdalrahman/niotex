@@ -113,7 +113,7 @@ use Illuminate\Database\Eloquent\Model;
 class ArtikelKunde extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.ArtikelKunde';
     protected $primaryKey = 'ArtikelKundeID';
     protected $guarded = [];

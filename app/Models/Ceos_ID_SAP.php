@@ -24,7 +24,7 @@ use Illuminate\Database\Eloquent\Model;
 class Ceos_ID_SAP extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Ceos_ID_SAP';
     protected $primaryKey = 'ID';
     protected $guarded = [];

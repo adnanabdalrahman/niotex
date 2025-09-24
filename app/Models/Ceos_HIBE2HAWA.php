@@ -41,7 +41,7 @@ use Illuminate\Database\Eloquent\Model;
 class Ceos_HIBE2HAWA extends Model
 {
     public $timestamps = false;
-    protected $connection = 'sqlsrv2';
+    protected $connection = 'sqlsrv';
     protected $table = 'cis.Ceos_HIBE2HAWA';
     protected $primaryKey = 'ID';
     protected $guarded = [];

@@ -165,6 +165,7 @@ class MMController extends Controller
 
         $response = $this->mm352Services->mm_35_02_materialverbrauch($data);
         if ($response !== null) {
+            Log::info('mm_35_02_materialverbrauch erfolgreich gesendet');
             return response()->json(
                 [
                     'message' => 'mm_35_02_materialverbrauch erfolgreich gesendet',
@@ -192,6 +193,7 @@ class MMController extends Controller
         ]);
         $response = $this->mm331aServices->mm_33_01_a_NuLeistungsbestaetigung($data);
         if ($response !== null) {
+            Log::info('mm_33_01_a_NuLeistungsbestaetigung erfolgreich gesendet');
             return response()->json([
                 'message' => 'mm_33_01_a_NuLeistungsbestaetigung erfolgreich gesendet',
                 'data' => $response
@@ -219,6 +221,7 @@ class MMController extends Controller
         $response = $this->mm331bServices->mm_33_01_b_NuAuftragspaket($data);
 
         if ($response !== null) {
+            Log::info('mm_33_01_b_NuAuftragspaket erfolgreich gesendet');
             return response()->json([
                 'message' => 'mm_33_01_b_NuAuftragspaket erfolgreich gesendet',
                 'data' => $response
@@ -243,6 +246,7 @@ class MMController extends Controller
             $validated['lager']
         );
         if ($response !== null) {
+            Log::info('mm_22_1_lagerbestaende erfolgreich gesendet');
             return response()->json([
                 'status' => 'success',
                 'message' => 'Menge erfolgreich gespeichert',
