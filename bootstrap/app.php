@@ -1,5 +1,8 @@
 <?php
 
+use App\Exceptions\ApiException;
+use App\Notifications\ErrorNotifiable;
+use App\Notifications\ErrorReportNotification;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,13 +19,13 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $ex) {
-        // General Report
+
+        //Controls how an exception is converted into an HTTP response (JSON, HTML, etc.) sent back
         $ex->renderable(function (Throwable $e) {
-            // If it’s already an ApiException, let it render itself
-            if ($e instanceof \App\Exceptions\ApiException) {
+
+            if ($e instanceof ApiException) {
                 return $e->render();
             }
-
             // Fallback for any other unhandled exceptions
             return response()->json([
                 "status" => "error",
@@ -38,11 +41,32 @@ return Application::configure(basePath: dirname(__DIR__))
             ], 500);
         });
 
-
         $ex->reportable(function (Throwable $e) {
-            Log::error($e->getMessage(), [
-                'exception' => Str::limit((string)$e, 600) . '....'
-            ]);
+            $context[] = [];
+            $context['errors'] = [];
+            $context['errorCode'] = '';
+            if ($e instanceof ApiException) {
+                $context['errors'] = $e->errors ?? [];
+                $context['errorCode'] = $e->getErrorCode();
+            }
+
+            $report = [
+                "status" => "error",
+                "status_code" => $e->getCode() ?: 422,
+                "code" => $context['errorCode'],
+                "message" => $e->getMessage(),
+                "errors" => $context['errors'],
+                "meta" => [
+                    "path" => request()->path(),
+                    "timestamp" => now()->toIso8601String(),
+                    "trace_id" => uniqid('', true)
+                ]
+            ];
+
+            $notifiable = new ErrorNotifiable();
+            $notifiable->notify(new ErrorReportNotification($report));
+
+            Log::error(request()->path() . " " . $e->getMessage(), $context);
         })->stop();
     })
     ->create();

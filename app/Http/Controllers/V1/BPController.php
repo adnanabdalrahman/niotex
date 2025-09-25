@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1;
 
+use App\Exceptions\AdresseNotFoundException;
 use App\Exceptions\DBSaveException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BP_0101_geschaeftspartnerRequest;
@@ -10,8 +11,8 @@ use App\Models\Adresse;
 use App\Models\Ansprechpartner;
 use App\Services\BPServices;
 use App\Traits\ApiResponses;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class BPController extends Controller
@@ -39,65 +40,45 @@ class BPController extends Controller
      */
     public function bp_01_01_Geschaeftspartner(BP_0101_geschaeftspartnerRequest $request): JsonResponse
     {
-        /*        throw new DBSaveException('SaveWorkerRequest', [
-                    'database' => 'Failed to insert worker'
-                ]);*/
-
-
-        //return $this->successResponse("Worker created successfully",['data1' => 2233], 201);
-        /*return $this->errorResponse(
-            "Failed to save worker",
-            ['database' => 'Insert failed'],
-            "RESOURCE_NOT_SAVED",
-            422);*/
-
-
         $validated = $request->validated();
         $adressnummer = ltrim($validated['DebitorenKreditorennummer'], '0');
         try {
             $currentAdresse = Adresse::where('AdressNummer', $adressnummer)->first();
         } catch (Throwable $exception) {
-            /*  throw new DBSaveException('bp_0101_geschaeftspartner', ['error' => $exception->getMessage()]);*/
-            throw new DBSaveException('bp_0101_geschaeftspartner', [
-                'database' => 'Failed to insert worker record'
+            throw new DBSaveException('Fehler beim Abrufen des Geschäftspartners', [
+                'database' => $exception->getMessage(),
             ]);
         }
-        $status = $currentAdresse !== null ? 'aktualisiert' : 'gespeichert';
-        if ($validated['Loeschvormerkung'] !== null) {
-            $status = 'gelöscht';
-        }
-        if ($request['Sperrkennzeichen'] !== null) {
-            $status = 'gesperrt';
-        }
+        $status = match (true) {
+            !empty($validated['Loeschvormerkung']) => 'gelöscht',
+            !empty($validated['Sperrkennzeichen']) => 'gesperrt',
+            $currentAdresse !== null => 'aktualisiert',
+            default => 'gespeichert',
+        };
 
         $data = $this->bp0101Services->bp_0101_geschaeftspartner($validated);
-        $message = "Geschäftspartner {$data['Adresse']} erfolgreich " . $status;
-        Log::info($message);
-        return response()->json([
-            'status' => 'success',
-            'message' => $message,
-            'data' => $data
-        ], 202);
+        return $this->successResponse("Geschäftspartner erfolgreich " . $status,
+            $data, 202);
     }
 
     /*
      * BP_0103 Geschaeftspartner Verwalter
      * SAP → CEOS
-     * */
+     */
+    /**
+     * @throws AdresseNotFoundException|DBSaveException
+     */
     public function bp_01_03_Verwalter(BP_0103_verwalterRequest $request): JsonResponse
     {
         $validated = $request->validated();
         $adressnummer = ltrim($validated['Adressnummer'], '0');
-        $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
-        if ($adresse === null) {
-            Log::error(
-                'bp_0103_verwalter Kein Adresse für Verwalter gefunden',
-                ['AdressNummer' => $adressnummer]
-            );
-            return response()->json([
-                'status' => 'Error',
-                'message' => 'Ansprechpartner speichern fehlgeschlagen',
-            ], 400);
+
+        try {
+            $adresse = Adresse::where('AdressNummer', $adressnummer)->firstOrFail();
+        } catch (ModelNotFoundException $exception) {
+            throw new AdresseNotFoundException('Die angeforderte Adresse wurde nicht gefunden.', [
+                'AdressNummer' => $adressnummer,
+            ]);
         }
 
         $currentAnsprechpartner = Ansprechpartner::
@@ -105,25 +86,14 @@ class BPController extends Controller
             ->where('AnsIndividualC1', $validated['Geschaeftspartnernummer'])
             ->first();
 
-        $status = $currentAnsprechpartner !== null ? 'aktualisiert' : 'gespeichert';
-        if ($request['LVorm'] !== null) {
-            $status = 'gelöscht';
-        }
+        $status = match (true) {
+            $request['LVorm'] !== null => 'gelöscht',
+            $currentAnsprechpartner !== null => 'aktualisiert',
+            default => 'gespeichert',
+        };
 
         $data = $this->bp0103Services->bp_0103_verwalter($validated, $adresse->InterneAdressnummer);
-        if ($data !== null) {
-            $message = "Ansprechpartner {$validated['Geschaeftspartnernummer']} erfolgreich " . $status;
-            Log::info($message);
-            return response()->json([
-                'status' => 'success',
-                'message' => $message,
-                'data' => $data
-            ], 202);
-        } else {
-            return response()->json([
-                'status' => 'Error',
-                'message' => 'Ansprechpartner speichern fehlgeschlagen',
-            ], 400);
-        }
+        return $this->successResponse("Verwalter erfolgreich " . $status,
+            $data, 202);
     }
 }

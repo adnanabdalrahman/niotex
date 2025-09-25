@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Exceptions\ValidationFailedException;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class BP_0103_verwalterRequest extends FormRequest
@@ -21,8 +23,8 @@ class BP_0103_verwalterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'Adressnummer' => 'required|string|max:30',
-            'Geschaeftspartnernummer' => 'required',
+            'Adressnummer' => 'required|numeric|integer|min:-2147483648|max:2147483647',
+            'Geschaeftspartnernummer' => 'required|integer',
             'LVorm' => 'nullable|string',
             'Titel' => 'nullable|string',
             'Anrede' => 'nullable|string',
@@ -63,5 +65,15 @@ class BP_0103_verwalterRequest extends FormRequest
             'boolean' => 'Das Feld ":attribute" muss entweder true oder false sein.',
             'integer' => 'Das Feld ":attribute" muss eine ganze Zahl sein.',
         ];
+    }
+
+    /**
+     * @throws ValidationFailedException
+     */
+    protected function failedValidation(Validator $validator)
+    {
+        $errors = $validator->errors()->toArray();
+        $message = "Validierung fehlgeschlagen.";
+        throw new ValidationFailedException($message, $errors, 422,);
     }
 }

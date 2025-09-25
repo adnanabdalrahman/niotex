@@ -58,6 +58,13 @@ return [
             'days' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
         ],
+        'ceosweb_requests' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/ceosweb_requests.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => env('LOG_DAILY_DAYS', 14),
+            'replace_placeholders' => true,
+        ],
 
         'stack' => [
             'driver' => 'stack',

@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log;
 
 trait ApiResponses
 {
@@ -28,12 +29,13 @@ trait ApiResponses
      * @return JsonResponse
      */
     public function successResponse(
-        mixed  $data = null,
         string $message = "Success",
+        mixed  $data = null,
         int    $statusCode = 200,
         string $code = "OK"
     ): JsonResponse
     {
+        Log::info(request()->path() . " " . $message, $data);
         return response()->json([
             "status" => "success",
             "status_code" => $statusCode,
@@ -76,6 +78,7 @@ trait ApiResponses
         int    $statusCode = 422
     ): JsonResponse
     {
+        Log::info(request()->path() . " " . $message, $errors);
         return response()->json([
             "status" => "error",
             "status_code" => $statusCode,

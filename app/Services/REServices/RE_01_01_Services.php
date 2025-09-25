@@ -46,7 +46,7 @@ class RE_01_01_Services
 
                 $report['failed'][] = [
                     'slgnr' => $slgnr,
-                    'error' => $e->getMessage()
+                    'message' => $e->getMessage()
                 ];
             }
         }

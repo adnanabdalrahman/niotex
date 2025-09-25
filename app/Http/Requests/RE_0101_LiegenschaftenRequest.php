@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Exceptions\ValidationFailedException;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class RE_0101_LiegenschaftenRequest extends FormRequest
@@ -121,5 +123,15 @@ class RE_0101_LiegenschaftenRequest extends FormRequest
             'boolean' => 'Das Feld ":attribute" muss entweder true oder false sein.',
             'integer' => 'Das Feld ":attribute" muss eine ganze Zahl sein.',
         ];
+    }
+
+    /**
+     * @throws ValidationFailedException
+     */
+    protected function failedValidation(Validator $validator)
+    {
+        $errors = $validator->errors()->toArray();
+        $message = "Validierung fehlgeschlagen.";
+        throw new ValidationFailedException($message, $errors, 422,);
     }
 }
