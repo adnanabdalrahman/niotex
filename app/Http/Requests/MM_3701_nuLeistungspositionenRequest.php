@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Exceptions\ValidationFailedException;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class MM_3701_nuLeistungspositionenRequest extends FormRequest
@@ -69,5 +71,14 @@ class MM_3701_nuLeistungspositionenRequest extends FormRequest
         ];
     }
 
+    /**
+     * @throws ValidationFailedException
+     */
+    protected function failedValidation(Validator $validator)
+    {
+        $errors = $validator->errors()->toArray();
+        $message = "Validierung fehlgeschlagen.";
+        throw new ValidationFailedException($message, $errors, 422,);
+    }
 
 }

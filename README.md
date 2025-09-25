@@ -168,7 +168,7 @@ php artisan queue:work
 
 # With specific options
 
-php artisan queue:work --queue=slack,default --tries=3 --timeout=60 --sleep=3
+php artisan queue:work --queue=notifications,default --tries=3 --timeout=60
 
 # Daemon mode (for production-like environment)
 
@@ -182,6 +182,47 @@ php artisan queue:work --queue=slack
 
 php artisan queue:work --max-time=3600
 
+Steps with NSSM (recommended)
 
+Download NSSM
+👉 https://nssm.cc/download
 
+Extract it somewhere, e.g. C:\nssm\nssm.exe.
 
+Open Command Prompt as Administrator.
+Install a new service:
+E:\nssm-2.24\win64\nssm.exe install laravel-queue
+
+A GUI will open:
+
+Path: point to your PHP executable
+Example: C:\php\php.exe
+
+Arguments:
+artisan queue:work --queue=notifications,default --tries=3 --timeout=60
+Startup directory: your Laravel project root
+Example: E:\CeosAPIs\Apache24\htdocs\ceosapi_test
+
+Save and close.
+
+Start the service:
+nssm start laravel-queue
+------------------------------------------------------------
+if everything is ok
+
+-
+
+/**
+
+* @throws ValidationFailedException
+  */
+  protected function failedValidation(Validator $validator)
+  {
+  $errors = $validator->errors()->toArray();
+  $message = "BP creation validation failed.";
+  throw new ValidationFailedException($message, $errors, 422,);
+  }
+
+in all Requests validation like BP.
+
+- build different Exceptions and Groups for each API-request 

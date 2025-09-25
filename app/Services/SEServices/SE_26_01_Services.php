@@ -125,13 +125,6 @@ class SE_26_01_Services
                 Log::error('se-26-01 Error received');
                 return null;
             }
-            //Storno
-            if ((isset($result['d']['Vbeln']) && isset($result['d']['Zuonr']))) {
-                if ($result['d']['Vbeln'] == $result['d']['Zuonr']) {
-                    $vorgang->VorStatus = 100430;
-                    $vorgang->save();
-                }
-            }
             return $result;
         } catch (Throwable $e) {
             Log::error($e->getMessage());

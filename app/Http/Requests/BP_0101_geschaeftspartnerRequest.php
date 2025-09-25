@@ -20,9 +20,8 @@ class BP_0101_geschaeftspartnerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'Geschaeftspartnernummer' => 'required|numeric',
-            //'DebitorenKreditorennummer' => 'required|integer|min:-2147483648|max:2147483647',
-            'DebitorenKreditorennummer' => 'required',
+            'Geschaeftspartnernummer' => 'required|numeric|integer|min:-2147483648|max:2147483647',
+            'DebitorenKreditorennummer' => 'required|integer|min:-2147483648|max:2147483647',
             'Anrede' => 'nullable|digits:4',
             'Titel' => 'nullable|string|max:20',
             'Vorname' => 'nullable|string|max:40',

@@ -2,8 +2,6 @@
 
 namespace App\Exceptions;
 
-use App\Notifications\ErrorNotifiable;
-use App\Notifications\ErrorReportNotification;
 use Exception;
 use Illuminate\Http\JsonResponse;
 
@@ -39,14 +37,8 @@ abstract class ApiException extends Exception
             ]
         ];
 
-        $notifiable = new ErrorNotifiable();
-        $notifiable->notify(new ErrorReportNotification($report));
-
         return response()->json($report, $this->getCode() ?: 422);
     }
 
-    /**
-     * Each exception must define its own specific error code
-     */
     abstract public function getErrorCode(): string;
 }

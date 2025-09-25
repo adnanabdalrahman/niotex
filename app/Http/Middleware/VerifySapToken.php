@@ -17,18 +17,28 @@ class VerifySapToken
         $token = $request->header('X-SAP-Token');
 
         // Log the incoming request
-        Log::channel('sap_requests')->DEBUG('Incoming SAP API request', [
+        Log::channel('sap_requests')->DEBUG('Incoming SAP API request : ' . $request->fullUrl(), [
             'request_id' => $requestId,
-            //'headers' => $request->headers->all(),
             'method' => $request->method(),
             'ip' => $request->ip(),
-            'url' => $request->fullUrl(),
             'user_id' => optional($request->user())->id,
             'body' => $request->all(),
+            //'headers' => $request->headers->all(),
+            //'url' => $request->fullUrl(),
             //'raw_body' => $request->all(),
         ]);
 
         if (!$token || $token !== config('sap.api_token')) {
+            Log::channel('sap_requests')->error('Unauthorized Request: ', [
+                'request_id' => $requestId,
+                'method' => $request->method(),
+                'ip' => $request->ip(),
+                'headers' => $request->headers->all(),
+                'url' => $request->fullUrl(),
+                'raw_body' => $request->all(),
+                'user_id' => optional($request->user())->id,
+                'body' => $request->all(),
+            ]);
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         return $next($request);

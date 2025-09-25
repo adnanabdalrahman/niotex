@@ -21,7 +21,7 @@ class ErrorReportNotification extends Notification implements ShouldQueue
     public function __construct(array $report)
     {
         $this->report = $report;
-        $this->onQueue('notifications'); // Optional: specific queue name
+        $this->onQueue('notifications');
     }
 
     public function via($notifiable): array

@@ -2,40 +2,63 @@
 
 namespace App\Services\BPServices;
 
+use App\Exceptions\DBSaveException;
 use App\Models\Ansprechpartner;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 use Throwable;
-
 
 class BP_01_03_Services
 {
-
     /**
      * SAP → Ceos
      * BP-01-03 Geschäftspartner (GP-Rolle "Verwalter")
+     *
+     * @param array $data
+     * @param int $interneAdressnummer
+     * @return array|null
+     *
+     * @throws DBSaveException
      */
-    public function bp_0103_verwalter($data, $interneAdressnummer): ?array
+    public function bp_0103_verwalter(array $data, int $interneAdressnummer): ?array
     {
+        $defaults = [
+            'Anrede' => 5,
+            'Titel' => null,
+            'Vorname' => null,
+            'Nachname' => null,
+            'Strasse' => '',
+            'Postleitzahl' => '',
+            'Ort' => '',
+            'Telefon' => null,
+            'Mobiltelefon' => null,
+            'Fax' => null,
+            'EMail' => null,
+            'Geschaeftspartnernummer' => null,
+            'Ansprechpartner2' => null,
+            'GueltigVon' => null,
+            'GueltigBis' => null,
+        ];
+
+        $data = array_merge($defaults, $data);
+
+        // Format dates safely
+        $gueltigVon = $data['GueltigVon'] ? Carbon::parse($data['GueltigVon'])->format('Ymd') : null;
+        $gueltigBis = $data['GueltigBis'] ? Carbon::parse($data['GueltigBis'])->format('Ymd') : null;
+
         try {
-            $gueltigVon = Carbon::parse($data['GueltigVon'])->format('Ymd');
-            $gueltigBis = Carbon::parse($data['GueltigBis'])->format('Ymd');
-            if ($data['Anrede'] === null || $data['Anrede'] === "") {
-                $data['Anrede'] = 5;
-            }
             $ansprechpartner = Ansprechpartner::updateOrCreate(
                 [
                     'InterneAdressnummer' => $interneAdressnummer,
-                    'AnsIndividualC1' => $data['Geschaeftspartnernummer']
+                    'AnsIndividualC1' => $data['Geschaeftspartnernummer'],
                 ],
                 [
                     'InterneAdressnummer' => $interneAdressnummer,
                     'NRTitel' => $data['Titel'],
-                    'NRAnrede' => $data['Anrede'],
+                    'NRAnrede' => $data['Anrede'] ?: 5,
                     'AnsVorname' => $data['Vorname'],
                     'AnsNachname' => $data['Nachname'],
                     'AnsPrivatStrasse' => mb_substr($data['Strasse'], 0, 39),
-                    'AnsPrivatOrt' => $data['Postleitzahl'] . " " . $data['Ort'],
+                    'AnsPrivatOrt' => trim($data['Postleitzahl'] . ' ' . $data['Ort']),
                     'AnsPrivatTelefon' => $data['Telefon'],
                     'AnsMobiltelefon' => $data['Mobiltelefon'],
                     'AnsFax' => $data['Fax'],
@@ -46,18 +69,17 @@ class BP_01_03_Services
                     'AnsIndividualC2' => $data['Ansprechpartner2'],
                 ]
             );
-            $ansprechpartnerId = $ansprechpartner['AnsprechpartnerID'];
-        } catch (Throwable $e) {
-            Log::error(
-                'bp_0103_verwalter Error ' . $e->getMessage(),
-                ['Adresse' => $interneAdressnummer]
+
+            return [
+                'interneAnsprechpartnerId' => $ansprechpartner->AnsprechpartnerID,
+                'Geschaeftspartnernummer' => $data['Geschaeftspartnernummer'],
+                'Adresse' => $interneAdressnummer,
+            ];
+        } catch (Throwable $exception) {
+            throw new DBSaveException(
+                'Fehler beim Speichern oder Aktualisieren des Ansprechpartner',
+                ['database' => $exception->getMessage()]
             );
-            return null;
         }
-        return [
-            'interneAnsprechpartnerId' => $ansprechpartnerId,
-            'Geschaeftspartnernummer' => $data['Geschaeftspartnernummer'],
-            'Adresse' => $interneAdressnummer
-        ];
     }
 }
