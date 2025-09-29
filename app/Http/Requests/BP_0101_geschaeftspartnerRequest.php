@@ -20,8 +20,8 @@ class BP_0101_geschaeftspartnerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'Geschaeftspartnernummer' => 'required|numeric|integer|min:-2147483648|max:2147483647',
-            'DebitorenKreditorennummer' => 'required|integer|min:-2147483648|max:2147483647',
+            'Geschaeftspartnernummer' => 'required|numeric',
+            'DebitorenKreditorennummer' => 'required|numeric',
             'Anrede' => 'nullable|digits:4',
             'Titel' => 'nullable|string|max:20',
             'Vorname' => 'nullable|string|max:40',
@@ -87,5 +87,24 @@ class BP_0101_geschaeftspartnerRequest extends FormRequest
         $errors = $validator->errors()->toArray();
         $message = "BP creation validation failed.";
         throw new ValidationFailedException($message, $errors, 422,);
+    }
+
+    /**
+     * @throws ValidationFailedException
+     */
+    protected function getValidatorInstance(): Validator
+    {
+        $content = $this->getContent();
+
+        json_decode($content);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new ValidationFailedException(
+                'Ungültiges JSON: ' . json_last_error_msg(),
+                [],
+                400
+            );
+        }
+        return parent::getValidatorInstance();
     }
 }

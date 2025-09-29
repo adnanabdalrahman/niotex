@@ -16,27 +16,28 @@ class MM_3101_materialStammdatenRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'Material' => 'required|numeric|digits:18',
-            'Materialkurztext' => 'required|string|max:40',
-            'Warengruppe' => 'required|string|max:9',
-            'Bezeichnung1' => 'required|string|max:100',
-            'Bezeichnung2' => 'nullable|string|max:50',
-            'Basismengeneinheit' => 'required|string|max:3',
-            'LVorm' => 'nullable|string',
-            'BKSchluessel' => 'nullable|string|max:3',
-            'CEOSWarengruppe' => 'required|string|max:4',
-            'CEOSArtikelgruppe' => 'required|string|max:10',
-            'CEOSArtikeluntergruppe' => 'nullable|string|max:10',
-            'CEOSHIBEzuHAWA1' => 'nullable|string|max:18',
-            'CEOSHIBEzuHAWA2' => 'nullable|string|max:18',
-            'CEOSHIBEzuHAWA3' => 'nullable|string|max:18',
-            'Produktgruppe' => 'nullable|string|max:4',
-            'Basisempfindlichkeit' => 'required|numeric',
-            'Hersteller' => 'nullable|string|max:10',
-            'Herstellerteilenummer' => 'nullable|string|max:40',
-            'EANNummerSAP' => 'nullable|string|max:16',
-            'Langtext' => 'nullable|string|max:1000',
-            'Matchcode' => 'nullable|string|max:100',
+            '*' => 'required|array',
+            '*.Material' => 'required|numeric|digits:18',
+            '*.Materialkurztext' => 'required|string|max:40',
+            '*.Warengruppe' => 'required|string|max:9',
+            '*.Bezeichnung1' => 'required|string|max:100',
+            '*.Bezeichnung2' => 'nullable|string|max:50',
+            '*.Basismengeneinheit' => 'required|string|max:3',
+            '*.LVorm' => 'nullable|string',
+            '*.BKSchluessel' => 'nullable|string|max:3',
+            '*.CEOSWarengruppe' => 'required|string|max:4',
+            '*.CEOSArtikelgruppe' => 'required|string|max:10',
+            '*.CEOSArtikeluntergruppe' => 'nullable|string|max:10',
+            '*.CEOSHIBEzuHAWA1' => 'nullable|string|max:18',
+            '*.CEOSHIBEzuHAWA2' => 'nullable|string|max:18',
+            '*.CEOSHIBEzuHAWA3' => 'nullable|string|max:18',
+            '*.Produktgruppe' => 'nullable|string|max:4',
+            '*.Basisempfindlichkeit' => 'required|numeric',
+            '*.Hersteller' => 'nullable|string|max:10',
+            '*.Herstellerteilenummer' => 'nullable|string|max:40',
+            '*.EANNummerSAP' => 'nullable|string|max:16',
+            '*.Langtext' => 'nullable|string|max:1000',
+            '*.Matchcode' => 'nullable|string|max:100',
         ];
     }
 
@@ -71,5 +72,24 @@ class MM_3101_materialStammdatenRequest extends FormRequest
         $errors = $validator->errors()->toArray();
         $message = "Validierung fehlgeschlagen.";
         throw new ValidationFailedException($message, $errors, 422,);
+    }
+
+    /**
+     * @throws ValidationFailedException
+     */
+    protected function getValidatorInstance(): Validator
+    {
+        $content = $this->getContent();
+
+        json_decode($content);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new ValidationFailedException(
+                'Ungültiges JSON: ' . json_last_error_msg(),
+                [],
+                400
+            );
+        }
+        return parent::getValidatorInstance();
     }
 }

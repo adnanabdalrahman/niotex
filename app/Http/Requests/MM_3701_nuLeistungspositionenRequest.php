@@ -81,4 +81,22 @@ class MM_3701_nuLeistungspositionenRequest extends FormRequest
         throw new ValidationFailedException($message, $errors, 422,);
     }
 
+    /**
+     * @throws ValidationFailedException
+     */
+    protected function getValidatorInstance(): Validator
+    {
+        $content = $this->getContent();
+
+        json_decode($content);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new ValidationFailedException(
+                'Ungültiges JSON: ' . json_last_error_msg(),
+                [],
+                400
+            );
+        }
+        return parent::getValidatorInstance();
+    }
 }

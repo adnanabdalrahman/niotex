@@ -2,7 +2,7 @@
 
 namespace App\Exceptions;
 
-class AdresseNotFoundException extends ApiException
+class ResourceNotFoundException extends ApiException
 {
     public function getErrorCode(): string
     {

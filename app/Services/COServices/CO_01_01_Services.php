@@ -2,7 +2,7 @@
 
 namespace App\Services\COServices;
 
-use App\Exceptions\VorgangNotFound;
+use App\Exceptions\ResourceNotFoundException;
 use App\Models\Position;
 use App\Models\Position1Wert;
 use App\Models\Position3Menge;
@@ -23,7 +23,7 @@ class CO_01_01_Services
         $this->baseUrl = config('sap.base_url');
         $this->co0101_path = config('sap.co0101_path');
     }
-    
+
     /**
      * CEOSWeb -> CEOS --> SAP
      * CO-01-01 Dienstleistungsrechnung
@@ -39,7 +39,10 @@ class CO_01_01_Services
                     "co_01_01_Zeiteinheiten Kein Vorgang gefunden",
                     ['InterneVorgangsnummer' => $request['InterneVorgangsnummer']]
                 );
-                throw new VorgangNotFound($request['InterneVorgangsnummer']);
+                throw new ResourceNotFoundException("Kein Vorgang gefunden", [
+                    'InterneVorgangsnummer' => $request['InterneVorgangsnummer']
+                ]);
+
             }
 
             $belegDatum = Carbon::parse($vorgang->VorAnlageAm)->format('Y-m-d');

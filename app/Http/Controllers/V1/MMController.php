@@ -8,14 +8,18 @@ use App\Http\Requests\MM_3101_materialStammdatenRequest;
 use App\Http\Requests\MM_3701_nuLeistungspositionenRequest;
 use App\Models\Artikel;
 use App\Services\MMServices;
+use App\Traits\ApiResponses;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 
 class MMController extends Controller
 {
+    use ApiResponses;
+
     protected MMServices\MM_33_01_b_Services $mm331bServices;
     protected MMServices\MM_31_01_Services $mm311Services;
     protected MMServices\MM_34_01_Services $mm341Services;
@@ -51,33 +55,58 @@ class MMController extends Controller
      * @param MM_3101_materialStammdatenRequest $request
      * @return JsonResponse
      */
-
     public function mm_31_1_Materialstammdaten(MM_3101_materialStammdatenRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $artikelNummer = ltrim($validated['Material'], '0');
+        $report = [
+            'success' => [],
+            'failed' => []
+        ];
+        foreach ($validated as $materialData) {
+            try {
+                $artikelNummer = ltrim($materialData['Material'], '0');
 
-        $currentArtikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
-        $status = $currentArtikel !== null ? 'aktualisiert' : 'gespeichert';
-        if ($request['LVorm'] !== null) {
-            $status = 'gelöscht';
+                $currentArtikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
+                $status = $currentArtikel !== null ? 'aktualisiert' : 'gespeichert';
+                if (!empty($materialData['LVorm'])) {
+                    $status = 'gelöscht';
+                }
+
+                $data = $this->mm311Services->mm_31_01_materialstammdaten($materialData);
+                if ($data !== null) {
+                    $message = "Material {$data['Material']} erfolgreich " . $status;
+                    $report['success'][] = [
+                        'Material' => $data['Material'],
+                        'message' => $message
+                    ];
+                } else {
+                    $message = "Material $artikelNummer konnte nicht gespeichert werden";
+                    $report['failed'][] = [
+                        'Material' => $artikelNummer,
+                        'message' => $message
+                    ];
+                }
+            } catch (Exception $e) {
+                $report['failed'][] = [
+                    'Material' => $materialData['Material'],
+                    'message' => $e->getMessage()
+                ];
+            } catch (Throwable $e) {
+                $report['failed'][] = [
+                    'Material' => $materialData['Material'],
+                    'message' => $e->getMessage()
+                ];
+            }
+
         }
-        $data = $this->mm311Services->mm_31_01_materialstammdaten($validated);
-
-        if ($data !== null) {
-            $message = "Material {$data['Material']} erfolgreich " . $status;
-            Log::info($message);
-            return response()->json([
-                'status' => 'success',
-                'message' => $message,
-                'data' => $data
-            ], 202);
+        if (count($report['failed']) === 0) {
+            return $this->successResponse("Alle Materialien erfolgreich importiert", $report, 202);
+        } elseif (count($report['success']) === 0) {
+            return $this->errorResponse("Kein Material konnte importiert werden", $report, 400);
         } else {
-            return response()->json([
-                'status' => 'Error',
-                'message' => 'Material speichern fehlgeschlagen',
-            ], 400);
+            return $this->multiStatusResponse("Einige Materialien wurden nicht importiert", $report);
         }
+
     }
 
     //------------------------------------------------------------------------------------------------------------------
