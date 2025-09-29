@@ -8,7 +8,6 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class RE_0101_LiegenschaftenRequest extends FormRequest
 {
-
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -123,6 +122,25 @@ class RE_0101_LiegenschaftenRequest extends FormRequest
             'boolean' => 'Das Feld ":attribute" muss entweder true oder false sein.',
             'integer' => 'Das Feld ":attribute" muss eine ganze Zahl sein.',
         ];
+    }
+
+    /**
+     * @throws ValidationFailedException
+     */
+    protected function getValidatorInstance(): Validator
+    {
+        $content = $this->getContent();
+
+        json_decode($content);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new ValidationFailedException(
+                'Ungültiges JSON: ' . json_last_error_msg(),
+                [],
+                400
+            );
+        }
+        return parent::getValidatorInstance();
     }
 
     /**

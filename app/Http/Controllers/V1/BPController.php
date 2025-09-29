@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\V1;
 
-use App\Exceptions\AdresseNotFoundException;
 use App\Exceptions\DBSaveException;
+use App\Exceptions\ResourceNotFoundException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BP_0101_geschaeftspartnerRequest;
 use App\Http\Requests\BP_0103_verwalterRequest;
@@ -11,7 +11,6 @@ use App\Models\Adresse;
 use App\Models\Ansprechpartner;
 use App\Services\BPServices;
 use App\Traits\ApiResponses;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Throwable;
 
@@ -66,17 +65,16 @@ class BPController extends Controller
      * SAP → CEOS
      */
     /**
-     * @throws AdresseNotFoundException|DBSaveException
+     * @throws ResourceNotFoundException|DBSaveException
      */
     public function bp_01_03_Verwalter(BP_0103_verwalterRequest $request): JsonResponse
     {
         $validated = $request->validated();
         $adressnummer = ltrim($validated['Adressnummer'], '0');
 
-        try {
-            $adresse = Adresse::where('AdressNummer', $adressnummer)->firstOrFail();
-        } catch (ModelNotFoundException $exception) {
-            throw new AdresseNotFoundException('Die angeforderte Adresse wurde nicht gefunden.', [
+        $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
+        if ($adresse === null) {
+            throw new ResourceNotFoundException('Die angeforderte Adresse wurde nicht gefunden.', [
                 'AdressNummer' => $adressnummer,
             ]);
         }

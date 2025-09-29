@@ -3,7 +3,7 @@
 namespace App\Services\SDServices;
 
 use App\Exceptions\AdresseGesperrtException;
-use App\Exceptions\AdresseNotFoundException;
+use App\Exceptions\ResourceNotFoundException;
 use App\Models\Adresse;
 use App\Models\Artikel;
 use App\Models\Ceos_GEBAEUDE_TimeLine;
@@ -79,7 +79,7 @@ class SD_0101_Services
                 $data['VorRechnungsanschrift'] = $adresse->InterneAdressnummer;
                 $data['VorSammelRechnungsanschrift'] = $adresse->InterneAdressnummer;
             } else {
-                throw new AdresseNotFoundException($header['vbeln'], $header['kunnr']);
+                throw new ResourceNotFoundException($header['vbeln'], $header['kunnr']);
             }
             $materialGruppe = substr($positions[0]['aufnr'], 0, 2);
 

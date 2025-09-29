@@ -23,8 +23,8 @@ class BP_0103_verwalterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'Adressnummer' => 'required|numeric|integer|min:-2147483648|max:2147483647',
-            'Geschaeftspartnernummer' => 'required|integer',
+            'Adressnummer' => 'required|numeric',
+            'Geschaeftspartnernummer' => 'required|numeric',
             'LVorm' => 'nullable|string',
             'Titel' => 'nullable|string',
             'Anrede' => 'nullable|string',
@@ -75,5 +75,24 @@ class BP_0103_verwalterRequest extends FormRequest
         $errors = $validator->errors()->toArray();
         $message = "Validierung fehlgeschlagen.";
         throw new ValidationFailedException($message, $errors, 422,);
+    }
+
+    /**
+     * @throws ValidationFailedException
+     */
+    protected function getValidatorInstance(): Validator
+    {
+        $content = $this->getContent();
+
+        json_decode($content);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new ValidationFailedException(
+                'Ungültiges JSON: ' . json_last_error_msg(),
+                [],
+                400
+            );
+        }
+        return parent::getValidatorInstance();
     }
 }
