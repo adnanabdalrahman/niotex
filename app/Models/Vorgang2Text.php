@@ -6,8 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 
 /**
- * 
- *
  * @property int $InterneVorgangsnummer
  * @property string|null $VorEinleitungstext
  * @property int|null $VorEinleitungstextForm

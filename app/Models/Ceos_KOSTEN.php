@@ -5,8 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @property int $KostenID
  * @property int|null $KOS_FOREIGN_ID
  * @property int $User

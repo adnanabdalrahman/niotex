@@ -5,8 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @property int $HeizkoerperID
  * @property int|null $HEI_FOREIGN_ID
  * @property int $User

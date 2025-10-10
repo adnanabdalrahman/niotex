@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @property int $InterneVorgangsnummer
  * @property float|null $VorRabattProzent
  * @property float|null $VorZusRabattProzent

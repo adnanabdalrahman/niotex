@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1;
 
+use App\Exceptions\DBFetchException;
 use App\Exceptions\DBSaveException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Http\Controllers\Controller;
@@ -35,7 +36,7 @@ class BPController extends Controller
      * SAP → CEOS
      */
     /**
-     * @throws DBSaveException
+     * @throws DBFetchException|DBSaveException
      */
     public function bp_01_01_Geschaeftspartner(BP_0101_geschaeftspartnerRequest $request): JsonResponse
     {
@@ -44,7 +45,7 @@ class BPController extends Controller
         try {
             $currentAdresse = Adresse::where('AdressNummer', $adressnummer)->first();
         } catch (Throwable $exception) {
-            throw new DBSaveException('Fehler beim Abrufen des Geschäftspartners', [
+            throw new DBFetchException('Fehler beim Abrufen des Geschäftspartners', [
                 'database' => $exception->getMessage(),
             ]);
         }

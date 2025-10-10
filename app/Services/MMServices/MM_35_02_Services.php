@@ -45,7 +45,7 @@ class MM_35_02_Services
         }
         $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorLieferanschrift)->first();
         if ($adresse === null) {
-            Log::error("mm_35_02_materialverbrauch Kein Adresse für Vorgang gefunden");
+            Log::error("mm_35_02_materialverbrauch Kein Adresse für Vorgang gefunden", ['Adresse' => $vorgang->VorLieferschein]);
             return null;
         }
 

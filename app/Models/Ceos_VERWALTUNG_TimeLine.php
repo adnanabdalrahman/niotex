@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @property int $ID
  * @property int $LiegenschaftsID
  * @property int $VerwaltungID

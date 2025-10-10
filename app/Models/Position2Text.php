@@ -6,8 +6,6 @@ use Eloquent;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @property int $InterneVorgangsnummer
  * @property int $InternePositionsnummer
  * @property string|null $PosBezeichnung2

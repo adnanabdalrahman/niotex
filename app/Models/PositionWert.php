@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @property int $PositionWertID
  * @property int $InterneVorgangsnummer
  * @property int $InternePositionsnummer
