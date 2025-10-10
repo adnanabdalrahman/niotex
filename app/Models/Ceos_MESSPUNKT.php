@@ -5,8 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @property int $MesspunktID
  * @property int|null $MP_FOREIGN_ID
  * @property int $User

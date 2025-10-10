@@ -68,7 +68,18 @@ trait ApiResponses
         string $code = "OK"
     ): JsonResponse
     {
-        Log::info(request()->path() . ": " . $message, $data);
+        Log::info(request()->path() . ": " . $message, [
+            "status" => "success",
+            "status_code" => $statusCode,
+            "code" => $code,
+            "message" => $message,
+            "data" => $data,
+            "meta" => [
+                "path" => request()->path(),
+                "timestamp" => now()->toIso8601String(),
+                "trace_id" => uniqid('', true)
+            ]
+        ]);
         return response()->json([
             "status" => "success",
             "status_code" => $statusCode,

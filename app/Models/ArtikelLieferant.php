@@ -6,8 +6,6 @@ use Eloquent;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @property int $ArtikelLieferantID
  * @property int $InterneAdressnummer
  * @property int $InterneArtikelnummer

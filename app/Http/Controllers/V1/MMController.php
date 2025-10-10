@@ -4,16 +4,16 @@ namespace App\Http\Controllers\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MM_2201_SAPStockRequest;
-use App\Http\Requests\MM_3101_materialStammdatenRequest;
 use App\Http\Requests\MM_3701_nuLeistungspositionenRequest;
 use App\Models\Artikel;
 use App\Services\MMServices;
+use App\Services\MMServices\MM_31_01_01_Validation;
 use App\Traits\ApiResponses;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Throwable;
+use Illuminate\Support\Facades\Validator;
 
 
 class MMController extends Controller
@@ -52,62 +52,65 @@ class MMController extends Controller
      * MM-31-1 Materialstammdaten
      * Receive material data from SAP.
      *
-     * @param MM_3101_materialStammdatenRequest $request
+     * @param Request $request
      * @return JsonResponse
      */
-    public function mm_31_1_Materialstammdaten(MM_3101_materialStammdatenRequest $request): JsonResponse
+
+    public function mm_31_1_Materialstammdaten(Request $request): JsonResponse
     {
-        $validated = $request->validated();
-        $report = [
-            'success' => [],
-            'failed' => []
-        ];
-        foreach ($validated as $materialData) {
+        $materials = $request->all();
+        $report = ['success' => [], 'failed' => []];
+
+        foreach ($materials as $materialData) {
+            $validator = Validator::make(
+                $materialData,
+                MM_31_01_01_Validation::rules(),
+                MM_31_01_01_Validation::messages()
+            );
+            
+            if ($validator->fails()) {
+                $report['failed'][] = [
+                    'Material' => $materialData['Material'] ?? 'unknown',
+                    'message' => $validator->errors()->all()
+                ];
+                continue;
+            }
+
+            // Process material
+            $artikelNummer = ltrim($materialData['Material'], '0');
+            $currentArtikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
+            $status = !empty($materialData['LVorm']) ? 'gelöscht' : ($currentArtikel ? 'aktualisiert' : 'gespeichert');
+
             try {
-                $artikelNummer = ltrim($materialData['Material'], '0');
-
-                $currentArtikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
-                $status = $currentArtikel !== null ? 'aktualisiert' : 'gespeichert';
-                if (!empty($materialData['LVorm'])) {
-                    $status = 'gelöscht';
-                }
-
                 $data = $this->mm311Services->mm_31_01_materialstammdaten($materialData);
-                if ($data !== null) {
-                    $message = "Material {$data['Material']} erfolgreich " . $status;
+
+                if ($data) {
                     $report['success'][] = [
                         'Material' => $data['Material'],
-                        'message' => $message
+                        'message' => "Material {$data['Material']} erfolgreich {$status}"
                     ];
                 } else {
-                    $message = "Material $artikelNummer konnte nicht gespeichert werden";
                     $report['failed'][] = [
                         'Material' => $artikelNummer,
-                        'message' => $message
+                        'message' => "Material {$artikelNummer} konnte nicht gespeichert werden"
                     ];
                 }
-            } catch (Exception $e) {
-                $report['failed'][] = [
-                    'Material' => $materialData['Material'],
-                    'message' => $e->getMessage()
-                ];
-            } catch (Throwable $e) {
+            } catch (\Throwable $e) {
                 $report['failed'][] = [
                     'Material' => $materialData['Material'],
                     'message' => $e->getMessage()
                 ];
             }
-
-        }
-        if (count($report['failed']) === 0) {
-            return $this->successResponse("Alle Materialien erfolgreich importiert", $report, 202);
-        } elseif (count($report['success']) === 0) {
-            return $this->errorResponse("Kein Material konnte importiert werden", $report, 400);
-        } else {
-            return $this->multiStatusResponse("Einige Materialien wurden nicht importiert", $report);
         }
 
+        // Return response based on success/failure
+        return match (true) {
+            empty($report['failed']) => $this->successResponse("Alle Materialien erfolgreich importiert", $report, 202),
+            empty($report['success']) => $this->errorResponse("Kein Material konnte importiert werden", $report, 400),
+            default => $this->multiStatusResponse("Einige Materialien wurden nicht importiert", $report),
+        };
     }
+
 
     //------------------------------------------------------------------------------------------------------------------
     /*

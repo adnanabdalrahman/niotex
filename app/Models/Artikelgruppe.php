@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 use Thiagoprz\CompositeKey\HasCompositeKey;
 
 /**
- * 
- *
  * @property string $KZWarengruppe
  * @property string $KZArtikelgruppe
  * @property string|null $AgrBezeichnung

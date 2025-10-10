@@ -5,8 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @property int $InterneVorgangsnummer
  * @property int|null $VorFrachtRechnungsanschrift
  * @property string|null $VorFrachtText

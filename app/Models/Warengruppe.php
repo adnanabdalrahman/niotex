@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @property int $KZWarengruppe
  * @property string|null $WgrBezeichnung
  * @property string|null $WgrArtikelart

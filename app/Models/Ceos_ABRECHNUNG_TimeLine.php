@@ -5,8 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @property int $ID
  * @property int $LiegenschaftsID
  * @property int $AbrechnungID

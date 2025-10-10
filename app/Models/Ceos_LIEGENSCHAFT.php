@@ -6,8 +6,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @property int $LiegenschaftsID
  * @property int|null $LG_DELETED
  * @property int|null $LG_FOREIGN_ID

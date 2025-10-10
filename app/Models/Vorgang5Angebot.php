@@ -6,8 +6,6 @@ use Eloquent;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @property int $InterneVorgangsnummer
  * @property int|null $VorAbschlussWoche
  * @property int|null $VorAbschlussJahr

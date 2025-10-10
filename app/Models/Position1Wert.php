@@ -6,8 +6,6 @@ use Eloquent;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Position1Wert newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Position1Wert newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Position1Wert query()

@@ -5,6 +5,7 @@ namespace App\Services\BPServices;
 use App\Exceptions\DBSaveException;
 use App\Models\Adresse;
 use App\Models\AdresseBranche;
+use App\Models\Nutzer;
 use Throwable;
 
 class BP_01_01_Services
@@ -16,7 +17,7 @@ class BP_01_01_Services
      * @param array $data
      * @return array
      *
-     * @throws DBSaveException
+     * @throws DBSaveException|DBSaveException
      */
     public function bp_0101_geschaeftspartner(array $data): array
     {
@@ -70,8 +71,12 @@ class BP_01_01_Services
     }
 
 
+    /**
+     */
     private function mapAdresseData(array $data, ?string $kundengruppe1): array
     {
+        $nutzerId = Nutzer::where('NutName', 'ZSAP')->first()->NRBenutzer;
+
         return [
             'AdrFremdnummer' => $data['Geschaeftspartnernummer'],
             'AdressNummer' => $data['DebitorenKreditorennummer'],
@@ -80,8 +85,15 @@ class BP_01_01_Services
             'MwstTypID' => 3,
             'AdrKarenztage' => 0,
             'KZSprache' => "DE",
-            'AdrFactoringJN' => 0,
             'AdrMahnSperreJN' => 0,
+            'AdrRabatt' => 0,
+            'AdrFactoringJN' => 0,
+            'KZZahlungsbedingung' => "0/0",
+            'AdrAnlageAm' => now(),
+            'AdrAnlageDurch' => $nutzerId,
+            'AdrLetzteAenderungAm' => now(),
+            'AdrLetzteAenderungDurch' => $nutzerId,
+
             'NRAnrede' => $data['Anrede'],
             'NRTitel' => $data['Titel'] ?? null,
             'AdrFirmenbezeichnung1' => $this->truncate($data['Name1'] ?? '', 40),

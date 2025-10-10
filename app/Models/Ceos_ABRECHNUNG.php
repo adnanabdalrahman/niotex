@@ -5,8 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
- *
  * @property int $AbrechnungID
  * @property int|null $ABR_FOREIGN_ID
  * @property int $User
