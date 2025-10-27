@@ -18,13 +18,13 @@ class MM_3402_StatusUmlagerungReservierungRequest extends FormRequest
     {
         return [
             '*.header' => 'required|array',
-            '*.header.TourId' => 'required|string|max:20',
-            '*.header.ReservNo' => 'required|string|max:20',
+            '*.header.tourId' => 'required|string|max:20',
+            '*.header.reservNo' => 'required|numeric',
 
             '*.materials' => 'required|array|min:1',
-            '*.materials.*.Material' => 'required|string|max:20',
-            '*.materials.*.EntryQnt' => 'required|numeric',
-            '*.materials.*.EntryUom' => 'required|string|max:2',
+            '*.materials.*.material' => 'required|string|max:20',
+            '*.materials.*.entryQnt' => 'required|numeric',
+            '*.materials.*.entryUom' => 'required|string|max:2',
         ];
     }
 

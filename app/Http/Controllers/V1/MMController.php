@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\V1;
 
-use App\Exceptions\DBFetchException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Helpers\MM_31_01_01_Validation;
 use App\Http\Controllers\Controller;
@@ -17,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Throwable;
 
 
 class MMController extends Controller
@@ -101,7 +101,7 @@ class MMController extends Controller
                         'message' => "Material {$artikelNummer} konnte nicht gespeichert werden"
                     ];
                 }
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $report['failed'][] = [
                     'Material' => $materialData['Material'],
                     'message' => $e->getMessage()
@@ -119,28 +119,15 @@ class MMController extends Controller
 
 
     /**
-     * @throws DBFetchException
      * @throws ResourceNotFoundException
+     * @throws Throwable
      */
     public function mm_34_02_Statusumlagerungsreservierung(MM_3402_StatusUmlagerungReservierungRequest $request): JsonResponse
     {
         $validated = $request->validated();
         $data = $this->mm342Services->mm_34_02_Statusumlagerungsreservierung($validated);
-
-        if ($data !== null) {
-            $message = "Statusumlagerungsreservierung erfolgreich gespeichert";
-            Log::info($message);
-            return response()->json([
-                'status' => 'success',
-                'message' => $message,
-                'data' => $data
-            ], 202);
-        } else {
-            return response()->json([
-                'status' => 'Error',
-                'message' => 'Statusumlagerungsreservierung speichern fehlgeschlagen',
-            ], 400);
-        }
+        return $this->successResponse("Status umlagerungsreservierung erfolgreich gespeichert",
+            $data, 202);
     }
 
 
