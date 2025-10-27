@@ -37,7 +37,7 @@ class Position5IndividualService
                     'PosIndividualC3' => $data['PosIndividualC3'] ?? null,
                     'PosIndividualC4' => $data['PosIndividualC4'] ?? null, // PosAtt
                     'PosIndividualC5' => $data['PosIndividualC5'] ?? null, // kwmeng
-                    'PosIndividualC6' => $data['PosIndividualC6'] ?? null,
+                    'PosIndividualC6' => $data['PosIndividualC6'] ?? null, //gepackte menge
                     'PosIndividualC7' => $data['PosIndividualC7'] ?? null,
                     'PosIndividualC8' => $data['PosIndividualC8'] ?? null,
                     'PosIndividualC9' => $data['PosIndividualC9'] ?? null,
