@@ -19,6 +19,10 @@ Route::middleware([VerifySapToken::class])->group(function () {
 
             //mm-37-1: SAP-->CEOS, NU zugelassene Leistungspositionen
             Route::post('/3701/nuleistungspositionen', [MMController::class, 'mm_37_1_NuLeistungspositionen']);
+
+            //mm-34-02: SAP-->CEOS, Status umlagerungsreservierung
+            Route::post('/3402/statusumlagerungsreservierung', [MMController::class, 'mm_34_02_Statusumlagerungsreservierung']);
+
         });
 
         Route::prefix('bp')->group(function () {
@@ -93,7 +97,6 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
             //SE-26-01: CEOSWEB-->CEOS-->SAP , reparaturauftrag
             Route::get('/buildall/', [REController::class, 'buildAllMaster']);
             Route::get('/buildforliegenschaft/{liegenschaftsId} ', [REController::class, 'buildMasterForLiegenschaft']);
-
         });
     });
 });

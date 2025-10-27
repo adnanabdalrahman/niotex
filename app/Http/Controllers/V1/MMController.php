@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\V1;
 
+use App\Exceptions\DBFetchException;
+use App\Exceptions\ResourceNotFoundException;
+use App\Helpers\MM_31_01_01_Validation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MM_2201_SAPStockRequest;
+use App\Http\Requests\MM_3402_StatusUmlagerungReservierungRequest;
 use App\Http\Requests\MM_3701_nuLeistungspositionenRequest;
 use App\Models\Artikel;
 use App\Services\MMServices;
-use App\Services\MMServices\MM_31_01_01_Validation;
 use App\Traits\ApiResponses;
 use Exception;
 use Illuminate\Http\JsonResponse;
@@ -23,6 +26,7 @@ class MMController extends Controller
     protected MMServices\MM_33_01_b_Services $mm331bServices;
     protected MMServices\MM_31_01_Services $mm311Services;
     protected MMServices\MM_34_01_Services $mm341Services;
+    protected MMServices\MM_34_02_Services $mm342Services;
     protected MMServices\MM_22_01_Services $mm221Services;
     protected MMServices\MM_35_02_Services $mm352Services;
     protected MMServices\MM_33_01_a_Services $mm331aServices;
@@ -36,6 +40,7 @@ class MMController extends Controller
         MMServices\MM_35_02_Services   $mm352Services,
         MMServices\MM_33_01_a_Services $mm331aServices,
         MMServices\MM_37_1_Services    $mm371aServices,
+        MMServices\MM_34_02_Services   $mm342Services,
 
     )
     {
@@ -46,6 +51,7 @@ class MMController extends Controller
         $this->mm221Services = $mm221Services;
         $this->mm352Services = $mm352Services;
         $this->mm371aServices = $mm371aServices;
+        $this->mm342Services = $mm342Services;
     }
 
     /**
@@ -67,7 +73,7 @@ class MMController extends Controller
                 MM_31_01_01_Validation::rules(),
                 MM_31_01_01_Validation::messages()
             );
-            
+
             if ($validator->fails()) {
                 $report['failed'][] = [
                     'Material' => $materialData['Material'] ?? 'unknown',
@@ -110,6 +116,34 @@ class MMController extends Controller
             default => $this->multiStatusResponse("Einige Materialien wurden nicht importiert", $report),
         };
     }
+
+
+    /**
+     * @throws DBFetchException
+     * @throws ResourceNotFoundException
+     */
+    public function mm_34_02_Statusumlagerungsreservierung(MM_3402_StatusUmlagerungReservierungRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $data = $this->mm342Services->mm_34_02_Statusumlagerungsreservierung($validated);
+
+        if ($data !== null) {
+            $message = "Statusumlagerungsreservierung erfolgreich gespeichert";
+            Log::info($message);
+            return response()->json([
+                'status' => 'success',
+                'message' => $message,
+                'data' => $data
+            ], 202);
+        } else {
+            return response()->json([
+                'status' => 'Error',
+                'message' => 'Statusumlagerungsreservierung speichern fehlgeschlagen',
+            ], 400);
+        }
+    }
+
+
 
 
     //------------------------------------------------------------------------------------------------------------------

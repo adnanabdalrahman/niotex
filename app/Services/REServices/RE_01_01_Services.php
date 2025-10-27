@@ -137,12 +137,14 @@ class RE_01_01_Services
             }
         }
 
-        if ($rows) {
-            Ceos_GEBAEUDE_TimeLine::upsert(
-                $rows,
-                ['LiegenschaftsID', 'GebaeudeNr', 'DatumVon'],
-                ['MDM', 'DatumBis', 'LG_Strasse', 'LG_PLZ', 'LG_Ort', 'Heizanlage_JN', 'User']
-            );
+        if (!empty($rows)) {
+            foreach (array_chunk($rows, 150) as $chunk) {
+                Ceos_GEBAEUDE_TimeLine::upsert(
+                    $chunk,
+                    ['LiegenschaftsID', 'GebaeudeNr', 'DatumVon'],
+                    ['MDM', 'DatumBis', 'LG_Strasse', 'LG_PLZ', 'LG_Ort', 'Heizanlage_JN', 'User']
+                );
+            }
         }
     }
 
@@ -290,13 +292,16 @@ class RE_01_01_Services
             }
         }
 
-        if ($rows) {
-            Ceos_WOHNEINHEIT_TimeLine::upsert(
-                $rows,
-                ['LiegenschaftsID', 'WE_LfdNr', 'DatumVon'],
-                ['lfd_Adressnummer_GE_CEOS', 'GebaeudeID', 'MDM', 'WE_Bezeichnung', 'Gewerblich_JN', 'DatumBis', 'User']
-            );
+        if (!empty($rows)) {
+            foreach (array_chunk($rows, 150) as $chunk) {
+                Ceos_WOHNEINHEIT_TimeLine::upsert(
+                    $chunk,
+                    ['LiegenschaftsID', 'WE_LfdNr', 'DatumVon'],
+                    ['lfd_Adressnummer_GE_CEOS', 'GebaeudeID', 'MDM', 'WE_Bezeichnung', 'Gewerblich_JN', 'DatumBis', 'User']
+                );
+            }
         }
+
     }
 
     private function processMieter(Ceos_LIEGENSCHAFT $liegenschaft, array $mieters): void
@@ -335,13 +340,17 @@ class RE_01_01_Services
             ];
         }
 
-        if ($rows) {
-            Ceos_MIETER_TimeLine::upsert(
-                $rows,
-                ['LiegenschaftsID', 'MieterID', 'DatumVon'],
-                ['lfd_Adressnummer_GE_CEOS', 'lfd_Adressnummer_ME_CEOS', 'Mietvertragsnummer', 'M_Name1', 'M_Anrede', 'DatumBis', 'User']
-            );
+        if (!empty($rows)) {
+            // Process in chunks to avoid SQL Server's 2100 parameter limit
+            foreach (array_chunk($rows, 150) as $chunk) {
+                Ceos_MIETER_TimeLine::upsert(
+                    $chunk,
+                    ['LiegenschaftsID', 'MieterID', 'DatumVon'],
+                    ['lfd_Adressnummer_GE_CEOS', 'lfd_Adressnummer_ME_CEOS', 'Mietvertragsnummer', 'M_Name1', 'M_Anrede', 'DatumBis', 'User']
+                );
+            }
         }
+
     }
 
     private function findWohneinheit(Ceos_LIEGENSCHAFT $liegenschaft, ?Ceos_GEBAEUDE_TimeLine $gebaeude, int $menr): ?Ceos_WOHNEINHEIT_TimeLine

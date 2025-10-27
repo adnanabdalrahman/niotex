@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\MMServices;
+namespace App\Helpers;
 
 class MM_31_01_01_Validation
 {
