@@ -36,7 +36,6 @@ abstract class ApiException extends Exception
                 "trace_id" => uniqid('', true)
             ]
         ];
-
         return response()->json($report, $this->getCode() ?: 422);
     }
 

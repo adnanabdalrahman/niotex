@@ -199,7 +199,7 @@ Path: point to your PHP executable
 Example: C:\php\php.exe
 
 Arguments:
-artisan queue:work --queue=notifications,default --tries=3 --timeout=60
+php artisan queue:work --queue=notifications,default --tries=3 --timeout=60
 Startup directory: your Laravel project root
 Example: E:\CeosAPIs\Apache24\htdocs\ceosapi_test
 

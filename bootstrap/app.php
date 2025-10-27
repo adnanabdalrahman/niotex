@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\ApiException;
+use App\Helpers\RequestSource;
 use App\Notifications\ErrorNotifiable;
 use App\Notifications\ErrorReportNotification;
 use Illuminate\Foundation\Application;
@@ -49,13 +50,14 @@ return Application::configure(basePath: dirname(__DIR__))
                 $context['errors'] = $e->errors ?? [];
                 $context['errorCode'] = $e->getErrorCode();
             }
-
+            $channel = RequestSource::getChannel();
             $report = [
                 "status" => "error",
                 "status_code" => $e->getCode() ?: 422,
                 "code" => $context['errorCode'],
                 "message" => $e->getMessage(),
                 "errors" => $context['errors'],
+                "channel" => $channel,
                 "meta" => [
                     "path" => request()->path(),
                     "timestamp" => now()->toIso8601String(),
@@ -66,7 +68,7 @@ return Application::configure(basePath: dirname(__DIR__))
             $notifiable = new ErrorNotifiable();
             $notifiable->notify(new ErrorReportNotification($report));
 
-            Log::error(request()->path() . " " . $e->getMessage(), $context);
+            Log::channel($channel)->error(request()->path() . " " . $e->getMessage(), $context);
         })->stop();
     })
     ->create();
