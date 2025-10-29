@@ -124,10 +124,14 @@ class MMController extends Controller
      */
     public function mm_34_02_Statusumlagerungsreservierung(MM_3402_StatusUmlagerungReservierungRequest $request): JsonResponse
     {
-        $validated = $request->validated();
-        $data = $this->mm342Services->mm_34_02_Statusumlagerungsreservierung($validated);
-        return $this->successResponse("Status umlagerungsreservierung erfolgreich gespeichert",
-            $data, 202);
+        $data = $request->validated();
+        $response = $this->mm342Services->mm_34_02_Statusumlagerungsreservierung($data);
+
+        return $response['checkStatus'] ?
+            $this->successResponse("Status umlagerungsreservierung erfolgreich geprüft",
+                $response['response']) :
+            $this->successResponse("Status umlagerungsreservierung erfolgreich gespeichert",
+                $response['response'], 202);
     }
 
 
