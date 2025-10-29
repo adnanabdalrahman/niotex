@@ -5,7 +5,7 @@ namespace App\Exceptions;
 class ValidationFailedException extends ApiException
 {
     public function __construct(
-        string $message = "The given data was invalid.",
+        string $message = "Die angegebenen Daten sind ungültig.",
         array  $errors = [],
         int    $statusCode = 422,
     )

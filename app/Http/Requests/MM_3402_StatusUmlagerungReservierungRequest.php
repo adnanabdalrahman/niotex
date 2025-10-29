@@ -19,7 +19,8 @@ class MM_3402_StatusUmlagerungReservierungRequest extends FormRequest
         return [
             '*.header' => 'required|array',
             '*.header.tourId' => 'required|string|max:20',
-            '*.header.reservNo' => 'required|numeric',
+            '*.header.reservNo' => 'nullable',
+            '*.header.checkStatus' => 'nullable|string|max:1',
 
             '*.materials' => 'required|array|min:1',
             '*.materials.*.material' => 'required|string|max:20',

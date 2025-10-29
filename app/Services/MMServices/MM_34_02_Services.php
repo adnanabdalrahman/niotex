@@ -19,13 +19,15 @@ class MM_34_02_Services
     {
         return DB::transaction(function () use ($reservations) {
             $response = [];
+            $response['checkStatus'] = true;
 
             foreach ($reservations as $reservation) {
                 $tourId = $reservation['header']['tourId'];
-                $response['TourId'] = $tourId;
+                $checkStatus = $reservation['header']['checkStatus'];
+                $response['response']['TourId'] = $tourId;
                 $materialTour = Rak_Mad_Material_Tour::where('TourID', $tourId)->first();
                 if ($materialTour === null) {
-                    throw new ResourceNotFoundException('Die Material_Tour wurde nicht gefunden.', [
+                    throw new ResourceNotFoundException('Der Vorgang für diese Tour wurde nicht gefunden.', [
                         'TourId' => $tourId,
                     ]);
                 }
@@ -42,7 +44,7 @@ class MM_34_02_Services
                     if ($interneArtikel === null) {
                         throw new ResourceNotFoundException('Die Interne CEOS Material wurde nicht gefunden.', [
                             'TourId' => $tourId,
-                            'Artikelnummer' => $artikelNummer,
+                            'materials' => [$artikelNummer],
                         ]);
                     }
 
@@ -52,7 +54,8 @@ class MM_34_02_Services
 
                     if ($position === null) {
                         throw new ResourceNotFoundException('Die Position wurde nicht gefunden.', [
-                            'Artikelnummer' => $artikelNummer,
+                            'TourId' => $tourId,
+                            'materials' => [$artikelNummer],
                             'InterneArtikelnummer' => $interneArtikel->InterneArtikelnummer,
                         ]);
                     }
@@ -63,14 +66,21 @@ class MM_34_02_Services
 
                     if ($position5Individual === null) {
                         throw new ResourceNotFoundException('Position5Individual wurde nicht gefunden.', [
+                            'TourId' => $tourId,
+                            'materials' => [$artikelNummer],
                             'InternePositionsnummer' => $position->InternePositionsnummer,
+                            'InterneArtikelnummer' => $interneArtikel->InterneArtikelnummer,
                         ]);
+
                     }
 
                     $position5Individual->PosIndividualC6 =
                         (($position5Individual->PosIndividualC6 ?? 0) + $materialData['entryQnt']);
-                    $response['materials'][] = $artikelNummer;
-
+                    if ($checkStatus !== "X") {
+                        $response['checkStatus'] = false;
+                        $position5Individual->save();
+                    }
+                    $response['response']['materials'][] = $artikelNummer;
                 }
             }
             return $response;

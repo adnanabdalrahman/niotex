@@ -10,7 +10,7 @@ abstract class ApiException extends Exception
     public array $errors;
 
     public function __construct(
-        string $message = "An error occurred",
+        string $message = "Es ist ein Fehler aufgetreten",
         array  $errors = [],
         int    $statusCode = 400,
     )
@@ -38,6 +38,7 @@ abstract class ApiException extends Exception
         ];
         return response()->json($report, $this->getCode() ?: 422);
     }
+
 
     abstract public function getErrorCode(): string;
 }
