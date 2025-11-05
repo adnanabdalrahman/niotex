@@ -17,13 +17,14 @@ class MM_34_02_Services
      */
     public function mm_34_02_Statusumlagerungsreservierung($reservations): ?array
     {
+        //todo verify with Pantie what if more Vorgänge exist for same TourId
         return DB::transaction(function () use ($reservations) {
             $response = [];
-            $response['checkStatus'] = true;
+            $response['checkstatus'] = true;
 
             foreach ($reservations as $reservation) {
                 $tourId = $reservation['header']['tourId'];
-                $checkStatus = $reservation['header']['checkStatus'];
+                $checkStatus = $reservation['header']['checkstatus'];
                 $response['response']['TourId'] = $tourId;
                 $materialTour = Rak_Mad_Material_Tour::where('TourID', $tourId)->first();
                 if ($materialTour === null) {
@@ -77,7 +78,7 @@ class MM_34_02_Services
                     $position5Individual->PosIndividualC6 =
                         (($position5Individual->PosIndividualC6 ?? 0) + $materialData['entryQnt']);
                     if ($checkStatus !== "X") {
-                        $response['checkStatus'] = false;
+                        $response['checkstatus'] = false;
                         $position5Individual->save();
                     }
                     $response['response']['materials'][] = $artikelNummer;
