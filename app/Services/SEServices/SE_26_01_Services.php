@@ -8,6 +8,7 @@ use App\Models\Position;
 use App\Models\Position2Text;
 use App\Models\Position3Menge;
 use App\Models\Vorgang;
+use App\Models\Vorgang7Abrechnung;
 use App\Services\SapApiClient;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -29,6 +30,7 @@ class SE_26_01_Services
 
     public function se_26_01_Reparaturauftrag($request)
     {
+        //todo Bstkd addieren in Kopf ebene CHR35
         try {
             $data = [];
             $vorgang = Vorgang::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->first();
@@ -40,6 +42,15 @@ class SE_26_01_Services
                 );
                 return null;
             }
+            $vorgang7Abrechnung = Vorgang7Abrechnung::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->first();
+            if ($vorgang7Abrechnung === null) {
+                Log::error(
+                    "se_26_01_Reparaturauftrag Kein vorgang7Abrechnung gefunden",
+                    ['InterneVorgangsnummer' => $request->InterneVorgangsnummer]
+                );
+                return null;
+            }
+
             $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
             if ($adresse !== null) {
                 $data['Kunnr'] = $adresse->AdressNummer;
@@ -51,7 +62,8 @@ class SE_26_01_Services
                 return null;
             }
             $data['Auart'] = (string)$vorgang->VorIndividualC2;
-            $data['Zzlgsnr'] = (string)$vorgang->VorIndividualC3 ?? '';
+            $data['Zzlgsnr'] = (string)$vorgang->VorIndividualC3;
+            $data['Bstkd'] = (string)$vorgang7Abrechnung->Montage_Bestellnummer;
             $data['Vorgn'] = (string)$vorgang->VorNummer;
             $data['VorgnInt'] = (string)$vorgang->InterneVorgangsnummer;
 
