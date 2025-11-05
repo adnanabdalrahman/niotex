@@ -127,7 +127,7 @@ class MMController extends Controller
         $data = $request->validated();
         $response = $this->mm342Services->mm_34_02_Statusumlagerungsreservierung($data);
 
-        return $response['checkStatus'] ?
+        return $response['checkstatus'] ?
             $this->successResponse("Status umlagerungsreservierung erfolgreich geprüft",
                 $response['response']) :
             $this->successResponse("Status umlagerungsreservierung erfolgreich gespeichert",
