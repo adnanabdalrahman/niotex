@@ -67,6 +67,7 @@ class SE_26_01_Services
             $data['Vorgn'] = (string)$vorgang->VorNummer;
             $data['VorgnInt'] = (string)$vorgang->InterneVorgangsnummer;
 
+            
             //---------------------------------------------------------------------------------------------
             $positions = Position::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->get();
             $positionArray = [];
