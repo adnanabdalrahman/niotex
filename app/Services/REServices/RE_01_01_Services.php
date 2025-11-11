@@ -154,7 +154,7 @@ class RE_01_01_Services
             ['WE_COMP_API_ID' => $data['slgnr'] . '-0-0'],
             ['User' => 0]
         );
-
+        
         $gebaeude = $this->findGebaeude($liegenschaft, 0);
 
         Ceos_WOHNEINHEIT_TimeLine::upsert([[
@@ -175,7 +175,7 @@ class RE_01_01_Services
         );
 
         $mieter = Ceos_MIETER::updateOrCreate(
-            ['MI_COMP_API_ID' => $data['slgnr'] . '-0-0'],
+            ['MI_COMP_API_ID' => $data['slgnr'] . '-0-0-0'],
             ['User' => 0]
         );
 
