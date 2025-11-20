@@ -66,12 +66,11 @@ class SE_26_01_Services
             $data['Bstkd'] = (string)$vorgang7Abrechnung->Montage_Bestellnummer;
             $data['Vorgn'] = (string)$vorgang->VorNummer;
             $data['VorgnInt'] = (string)$vorgang->InterneVorgangsnummer;
-            
+
             //---------------------------------------------------------------------------------------------
             $positions = Position::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->get();
             $positionArray = [];
             foreach ($positions as $position) {
-
                 $artikel = Artikel::where('InterneArtikelnummer', $position->InterneArtikelnummer)->first();
                 if (is_null($artikel)) {
                     Log::error(

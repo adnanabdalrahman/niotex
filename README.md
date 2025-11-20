@@ -150,16 +150,6 @@ app/
 │ ├── api.php                          <-- API routes for MM, SD, etc.
 │ └── web.php                          <-- Optional web routes for any other services
 
-## changees
-
-25.04.2025
-change Route
-
-- mm/311/materialstammdaten -> mm/3101/materialstammdaten
-- mm/221/lagerbestaende -> mm/2201/lagerbestaende
-
-## New Feature
-
 php artisan ide-helper:models --write
 
 # Basic worker (runs until manually stopped)

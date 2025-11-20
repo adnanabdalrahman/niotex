@@ -24,7 +24,6 @@ class MM_35_02_Services
         $this->mm352_path = config('sap.mm352_path');
     }
 
-
     /**
      * MM_35_02 materialverbrauch
      * CEOSWEB-->CEOS-->SAP
@@ -44,8 +43,10 @@ class MM_35_02_Services
             return null;
         }
         $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorLieferanschrift)->first();
+
         if ($adresse === null) {
-            Log::error("mm_35_02_materialverbrauch Kein Adresse für Vorgang gefunden", ['Adresse' => $vorgang->VorLieferschein]);
+            Log::error("mm_35_02_materialverbrauch Kein Adresse für Vorgang gefunden",
+                ['Adresse' => $vorgang->VorLieferanschrift]);
             return null;
         }
 
