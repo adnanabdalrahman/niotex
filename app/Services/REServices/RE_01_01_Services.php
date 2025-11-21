@@ -215,7 +215,7 @@ class RE_01_01_Services
             'DatumBis' => '99991231',
             'User' => 0,
         ]],
-            ['LiegenschaftsID', 'MieterID', 'DatumVon'],
+            ['LiegenschaftsID', 'lfd_Adressnummer_GE_CEOS', 'lfd_Adressnummer_ME_CEOS', 'MieterID', 'DatumVon'],
             ['DatumBis', 'M_Name1', 'M_Anrede', 'User']
         );
     }
@@ -334,8 +334,7 @@ class RE_01_01_Services
         $rows = [];
         foreach ($mieters as $receivedMieter) {
             $mieter = Ceos_MIETER::updateOrCreate(
-                ['MI_COMP_API_ID' => $liegenschaft->Liegenschaftsnummer . '-' . $receivedMieter['genrCeos'] .
-                    '-' . $receivedMieter['menrCeos'] . '-' . $receivedMieter['partner']],
+                ['MI_COMP_API_ID' => $receivedMieter['partner']],
                 ['User' => 0]
             );
             $this->importedMieter[] = $mieter->MieterID;
@@ -367,7 +366,7 @@ class RE_01_01_Services
             foreach (array_chunk($rows, 150) as $chunk) {
                 Ceos_MIETER_TimeLine::upsert(
                     $chunk,
-                    ['LiegenschaftsID', 'MieterID', 'DatumVon'],
+                    ['LiegenschaftsID', 'lfd_Adressnummer_GE_CEOS', 'lfd_Adressnummer_ME_CEOS', 'MieterID', 'DatumVon'],
                     ['lfd_Adressnummer_GE_CEOS', 'lfd_Adressnummer_ME_CEOS', 'Mietvertragsnummer', 'M_Name1', 'M_Anrede', 'DatumBis', 'User']
                 );
             }
