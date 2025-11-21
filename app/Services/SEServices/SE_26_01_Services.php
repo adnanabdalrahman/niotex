@@ -71,7 +71,6 @@ class SE_26_01_Services
             $positions = Position::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->get();
             $positionArray = [];
             foreach ($positions as $position) {
-
                 $artikel = Artikel::where('InterneArtikelnummer', $position->InterneArtikelnummer)->first();
                 if (is_null($artikel)) {
                     Log::error(

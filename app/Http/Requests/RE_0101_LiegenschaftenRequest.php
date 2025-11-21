@@ -71,13 +71,14 @@ class RE_0101_LiegenschaftenRequest extends FormRequest
 
             // Mieter
             '*.liegenschaft.mieter' => 'nullable|array',
-            '*.liegenschaft.mieter.*.genrCeos' => 'required_with:*.liegenschaft.mieter.*.datumEinzug|nullable|numeric',
-            '*.liegenschaft.mieter.*.menrCeos' => 'required_with:*.liegenschaft.mieter.*.datumEinzug|nullable|numeric',
+            '*.liegenschaft.mieter.*.genrCeos' => 'required|nullable|numeric',
+            '*.liegenschaft.mieter.*.menrCeos' => 'required|nullable|numeric',
+            '*.liegenschaft.mieter.*.partner' => 'required|numeric',
             '*.liegenschaft.mieter.*.recnnr' => 'nullable|string',
             '*.liegenschaft.mieter.*.mName' => 'nullable|string',
             '*.liegenschaft.mieter.*.mAnrede' => 'nullable|string',
-            '*.liegenschaft.mieter.*.datumEinzug' => 'nullable|date|required_with:*.liegenschaft.mieter.*.datumAuszug',
-            '*.liegenschaft.mieter.*.datumAuszug' => 'nullable|date|required_with:*.liegenschaft.mieter.*.datumEinzug',
+            '*.liegenschaft.mieter.*.datumEinzug' => 'nullable|date|required',
+            '*.liegenschaft.mieter.*.datumAuszug' => 'nullable|date|required',
 
             // Abrechnungsdaten
             '*.liegenschaft.abrechnungsdaten' => 'required|array',

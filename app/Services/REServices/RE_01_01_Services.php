@@ -23,6 +23,12 @@ use Throwable;
 
 class RE_01_01_Services
 {
+    private array $importedGebaeude = [];
+    private array $importedWohneinheiten = [];
+    private array $importedMieter = [];
+
+    private ?int $currentLiegenschaftId = null;
+
     public function re_01_01_Liegenschaften(array $receivedLiegenschaften): array
     {
         $report = ['success' => [], 'failed' => []];
@@ -33,7 +39,7 @@ class RE_01_01_Services
 
             try {
                 DB::transaction(fn() => $this->processLiegenschaft($data), 3);
-
+                $this->cleanupRemovedRecordsForLiegenschaft();
                 $report['success'][] = [
                     'slgnr' => $slgnr,
                     'message' => 'Erfolgreich importiert'
@@ -60,7 +66,7 @@ class RE_01_01_Services
             ['Liegenschaftsnummer' => $data['slgnr']],
             ['User' => 0]
         );
-
+        $this->currentLiegenschaftId = $liegenschaft->LiegenschaftsID;
         $this->processTimeline($liegenschaft, $data);
         $this->processGebaeude($liegenschaft, $data['adressen']);
         $this->processMieter0($liegenschaft, $data);
@@ -75,25 +81,39 @@ class RE_01_01_Services
         $kunden = $data['kunden'];
 
         Ceos_LIEGENSCHAFT_TimeLine::upsert(
-            [[
-                'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
-                'Liegenschaftsnummer' => $data['slgnr'],
-                'MDM' => $data['mdmId'],
-                'Fernablesung_JN' => $data['fern'],
-                'Fernablesung_Ab' => $data['fernAb'],
-                'OnlinePortal_JN' => $data['opk'],
-                'OnlinePortal_Ab' => $data['opkAb'],
-                'UviReady_JN' => $data['uvir'],
-                'UviReady_Ab' => $data['uvirAb'],
-                'Mdf' => $data['mdf'],
-                'Vertreter' => $kunden[0]['vtrCeos'] ?? null,
-                'Mdf_Bis' => $data['mdfBis'],
-                'DatumVon' => $data['validfrom'],
-                'DatumBis' => $data['validto'],
-                'User' => 0,
-            ]],
+            [
+                [
+                    'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
+                    'Liegenschaftsnummer' => $data['slgnr'],
+                    'MDM' => $data['mdmId'],
+                    'Fernablesung_JN' => $data['fern'],
+                    'Fernablesung_Ab' => $data['fernAb'],
+                    'OnlinePortal_JN' => $data['opk'],
+                    'OnlinePortal_Ab' => $data['opkAb'],
+                    'UviReady_JN' => $data['uvir'],
+                    'UviReady_Ab' => $data['uvirAb'],
+                    'Mdf' => $data['mdf'],
+                    'Vertreter' => $kunden[0]['vtrCeos'] ?? null,
+                    'Mdf_Bis' => $data['mdfBis'],
+                    'DatumVon' => $data['validfrom'],
+                    'DatumBis' => $data['validto'],
+                    'User' => 0,
+                ]
+            ],
             ['LiegenschaftsID', 'DatumVon'],
-            ['Fernablesung_JN', 'Fernablesung_Ab', 'OnlinePortal_JN', 'OnlinePortal_Ab', 'UviReady_JN', 'UviReady_Ab', 'Mdf', 'Vertreter', 'Mdf_Bis', 'DatumBis', 'User']
+            [
+                'Fernablesung_JN',
+                'Fernablesung_Ab',
+                'OnlinePortal_JN',
+                'OnlinePortal_Ab',
+                'UviReady_JN',
+                'UviReady_Ab',
+                'Mdf',
+                'Vertreter',
+                'Mdf_Bis',
+                'DatumBis',
+                'User'
+            ]
         );
 
         if (!empty($data['lgnrExt'])) {
@@ -117,6 +137,7 @@ class RE_01_01_Services
                 ['GEB_COMP_API_ID' => $liegenschaft->Liegenschaftsnummer . '-' . $adresse['genrCeos']],
                 ['User' => 0]
             );
+            $this->importedGebaeude[] = $gebaeude->GebaeudeID;
 
             $rows[] = [
                 'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
@@ -156,6 +177,7 @@ class RE_01_01_Services
         );
 
         $gebaeude = $this->findGebaeude($liegenschaft, 0);
+        $this->importedWohneinheiten[] = $wohneinheit->WohneinheitID;
 
         Ceos_WOHNEINHEIT_TimeLine::upsert([[
             'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
@@ -175,9 +197,10 @@ class RE_01_01_Services
         );
 
         $mieter = Ceos_MIETER::updateOrCreate(
-            ['MI_COMP_API_ID' => $data['slgnr'] . '-0-0'],
+            ['MI_COMP_API_ID' => $data['slgnr'] . '-0-0-0'],
             ['User' => 0]
         );
+        $this->importedMieter[] = $mieter->MieterID;
 
         Ceos_MIETER_TimeLine::upsert([[
             'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
@@ -261,6 +284,8 @@ class RE_01_01_Services
                 ['User' => 0]
             );
 
+            $this->importedWohneinheiten[] = $wohneinheit->WohneinheitID;
+
             $gebaeude = $this->findGebaeude($liegenschaft, $mietobjekt['genrCeos']);
             if (!$gebaeude) {
                 $this->logMissing('Kein Gebaeude', ['LiegenschaftsID' => $liegenschaft->LiegenschaftsID, 'GebaeudeNr' => $mietobjekt['genrCeos']]);
@@ -308,15 +333,12 @@ class RE_01_01_Services
     {
         $rows = [];
         foreach ($mieters as $receivedMieter) {
-            //todo important delete later
-            if ($receivedMieter['recnnr'] == null) {
-                continue;
-            }
             $mieter = Ceos_MIETER::updateOrCreate(
-                ['MI_COMP_API_ID' => $receivedMieter['recnnr']],
+                ['MI_COMP_API_ID' => $liegenschaft->Liegenschaftsnummer . '-' . $receivedMieter['genrCeos'] .
+                    '-' . $receivedMieter['menrCeos'] . '-' . $receivedMieter['partner']],
                 ['User' => 0]
             );
-
+            $this->importedMieter[] = $mieter->MieterID;
             $gebaeude = $this->findGebaeude($liegenschaft, $receivedMieter['genrCeos']);
             $wohneinheit = $this->findWohneinheit($liegenschaft, $gebaeude, $receivedMieter['menrCeos']);
 
@@ -422,5 +444,46 @@ class RE_01_01_Services
             Log::error('Invalid month/day: ' . $e->getMessage());
             return null;
         }
+    }
+
+    private function cleanupRemovedRecordsForLiegenschaft(): void
+    {
+        $liegenschaftId = $this->currentLiegenschaftId;
+
+        if (!$liegenschaftId) return;
+
+        // delete Mieter
+        $mieterToDelete = Ceos_MIETER_TimeLine::where('LiegenschaftsID', $liegenschaftId)
+            ->whereNotIn('MieterID', $this->importedMieter)
+            ->pluck('MieterID');
+
+        if ($mieterToDelete->isNotEmpty()) {
+            Ceos_MIETER_TimeLine::whereIn('MieterID', $mieterToDelete)->delete();
+            Ceos_MIETER::whereIn('MieterID', $mieterToDelete)->delete();
+
+        }
+
+        // delete WOHNEINHEIT
+        $wohneinheitenToDelete = Ceos_WOHNEINHEIT_TimeLine::where('LiegenschaftsID', $liegenschaftId)
+            ->whereNotIn('WohneinheitID', $this->importedWohneinheiten)
+            ->pluck('WohneinheitID');
+
+        if ($wohneinheitenToDelete->isNotEmpty()) {
+            Ceos_WOHNEINHEIT_TimeLine::whereIn('WohneinheitID', $wohneinheitenToDelete)->delete();
+            Ceos_WOHNEINHEIT::whereIn('WohneinheitID', $wohneinheitenToDelete)->delete();
+        }
+
+
+        // delete GEBAEUDE
+        $gebaeudeToDelete = Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaftId)
+            ->whereNotIn('GebaeudeID', $this->importedGebaeude)
+            ->pluck('GebaeudeID');
+
+        if ($gebaeudeToDelete->isNotEmpty()) {
+            Ceos_GEBAEUDE_TimeLine::whereIn('GebaeudeID', $gebaeudeToDelete)->delete();
+            Ceos_GEBAEUDE::whereIn('GebaeudeID', $gebaeudeToDelete)->delete();
+        }
+
+
     }
 }
