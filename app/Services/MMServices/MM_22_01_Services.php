@@ -30,7 +30,7 @@ class MM_22_01_Services
     public function mm_22_01_lagerbestaende(array $artikelnummer, string $lager): ?array
     {
         $materialEqArray = array_map(function ($artikelnummer) {
-            return "Material eq '{$artikelnummer}'";
+            return "Record  eq '{$artikelnummer}'";
         }, $artikelnummer);
         $materialFilterString = implode(' or ', $materialEqArray);
         $data = "?\$filter=( {$materialFilterString} ) and Storage eq '{$lager}'  and Plant eq '1270'";
@@ -40,7 +40,7 @@ class MM_22_01_Services
                 Log::error('mm_22_01_lagerbestaende Error Response');
                 return null;
             }
-            Log::info('mm_22_01_lagerbestaende recieved Response', $response);
+            Log::info('mm_22_01_lagerbestaende received Response', $response);
             if (isset($response['d']['results'])) {
                 $responseData = [];
 
