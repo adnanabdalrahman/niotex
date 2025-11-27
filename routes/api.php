@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\V1\BPController;
 use App\Http\Controllers\V1\COController;
+use App\Http\Controllers\V1\EAController;
 use App\Http\Controllers\V1\MMController;
 use App\Http\Controllers\V1\REController;
 use App\Http\Controllers\V1\SDController;
@@ -97,6 +98,11 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
             //SE-26-01: CEOSWEB-->CEOS-->SAP , reparaturauftrag
             Route::get('/buildall/', [REController::class, 'buildAllMaster']);
             Route::get('/buildforliegenschaft/{liegenschaftsId} ', [REController::class, 'buildMasterForLiegenschaft']);
+        });
+
+
+        Route::prefix('ea')->group(function () {
+            Route::post('/0201/listfiles', [EAController::class, 'EA_02_01_listDokumenten']);
         });
     });
 });
