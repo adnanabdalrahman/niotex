@@ -9,13 +9,13 @@ use Illuminate\Support\Facades\Log;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
-class EA_01_01_DokumentInfo
+class EA_01_01_FileExchange
 {
-    protected string $ea21_path;
+    protected string $ea11_path;
 
     public function __construct()
     {
-        $this->ea21_path = config('sap.ea21_path');
+        $this->ea11_path = config('sap.ea11_path');
     }
 
     /**
@@ -24,12 +24,14 @@ class EA_01_01_DokumentInfo
      * @param $validated
      * @return array|null
      */
-    public function EA_02_01_ListDokumente($validated): ?array
+    public function EA_01_01_FileExchange($validated): ?array
     {
-        $record = $validated['Record'];
-        $objectId = $validated['ObjectId'];
-        $folkey = $validated['Folkey'];
+        $arcdocid = $validated['arcdocid'];
+        $archivid = $validated['archivid'];
+        $filename = $validated['filename'];
 
+
+        // todo weiter machen :) 
         $materialEqArray = array_map(function ($record) {
             return "Record eq '{$record}'";
         }, $record);

@@ -6,7 +6,7 @@ use App\Exceptions\ValidationFailedException;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
-class EA_0201_FileListRequest extends FormRequest
+class EA_0201_FileExchangeRequest extends FormRequest
 {
 
     public function authorize(): bool
@@ -17,9 +17,9 @@ class EA_0201_FileListRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'Record' => 'required',
-            'ObjectId' => 'nullable',
-            'Folkey' => 'nullable',
+            'arcdocid' => 'required',
+            'archivid' => 'nullable',
+            'Filename' => 'nullable',
         ];
     }
 

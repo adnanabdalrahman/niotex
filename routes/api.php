@@ -102,7 +102,8 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
 
 
         Route::prefix('ea')->group(function () {
-            Route::post('/0201/listfiles', [EAController::class, 'EA_02_01_listDokumenten']);
+            Route::post('/0201/listfiles', [EAController::class, 'EA_02_01_listFiles']);
+            Route::post('/0201/fileExchange', [EAController::class, 'EA_01_01_FileExchange']);
         });
     });
 });

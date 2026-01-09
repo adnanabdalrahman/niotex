@@ -24,16 +24,16 @@ class EA_02_01_ListDokumente
      * @param $validated
      * @return array|null
      */
+
+    //todo weiter entwickeln
+
     public function EA_02_01_ListDokumente($validated): ?array
     {
         $record = $validated['Record'];
         $objectId = $validated['ObjectId'];
         $folkey = $validated['Folkey'];
-
-        $materialEqArray = array_map(function ($record) {
-            return "Record eq '{$record}'";
-        }, $record);
-        $data = "?\$filter= Record eq '{$record}' and ObjectId eq '{$objectId}' and Folkey eq {$folkey}";
+        $data = "?\$filter= Record eq '{$record}' and ObjectId eq '{$objectId}' ";
+        $data .= "and Folkey eq '{$folkey}'";
         try {
             $response = app(SapApiClient::class)->get($this->ea21_path, $data);
             if ($response === null) {
@@ -47,13 +47,13 @@ class EA_02_01_ListDokumente
                 foreach ($response['d']['results'] as $result) {
                     $responseData [] = $result;
                 }
-
+                dd($responseData);
             } else {
-                Log::error('mm_22_01_lagerbestaende Kein Amount gefunden', $response);
+                Log::error('EA_02_01_ListDokumente Kein Amount gefunden', $response);
                 return null;
             }
         } catch (Exception|NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            Log::error('mm_22_01_lagerbestaende' . $e->getMessage());
+            Log::error('EA_02_01_ListDokumente' . $e->getMessage());
             return null;
         }
         return $responseData;
