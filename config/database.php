@@ -101,6 +101,7 @@ return [
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'host' => env('DB_HOST_SQLSRV', '127.0.0.1'),
+            'instanceName' => env('DB_INSTANCE_SQLSRV', ''),
             'port' => env('DB_PORT_SQLSRV', '1433'),
             'database' => env('DB_DATABASE_SQLSRV', 'database2'),
             'username' => env('DB_USERNAME_SQLSRV', 'sa'),
@@ -109,6 +110,8 @@ return [
             'collation' => 'utf8_unicode_ci',
             'prefix' => '',
             'prefix_indexes' => true,
+            'encrypt' => 'yes',
+            'trust_server_certificate' => true,
         ],
     ],
 

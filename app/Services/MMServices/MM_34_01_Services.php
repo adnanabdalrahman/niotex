@@ -93,7 +93,7 @@ class MM_34_01_Services
         Log::info("mm_34_01_umlagerungsreservierung sent Data", $requestData);
         $response = app(SapApiClient::class)->post($this->mm341_path, $requestData);
         if ($response === null) {
-            Log::error('mm_22_01_lagerbestaende Error Response');
+            Log::error('mm_34_01_umlagerungsreservierung Error Response');
             return null;
         }
         Log::info("mm_34_01_umlagerungsreservierung received Data", $response);
