@@ -30,7 +30,7 @@ class MM_22_01_Services
     public function mm_22_01_lagerbestaende(array $artikelnummer, string $lager): ?array
     {
         $materialEqArray = array_map(function ($artikelnummer) {
-            return "Record  eq '{$artikelnummer}'";
+            return "Material  eq '{$artikelnummer}'";
         }, $artikelnummer);
         $materialFilterString = implode(' or ', $materialEqArray);
         $data = "?\$filter=( {$materialFilterString} ) and Storage eq '{$lager}'  and Plant eq '1270'";

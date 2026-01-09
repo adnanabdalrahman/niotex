@@ -17,7 +17,6 @@ class MM_34_02_Services
      */
     public function mm_34_02_Statusumlagerungsreservierung($reservations): ?array
     {
-        //todo verify with Pantie what if more Vorgänge exist for same TourId
         return DB::transaction(function () use ($reservations) {
             $response = [];
             $response['checkstatus'] = true;
