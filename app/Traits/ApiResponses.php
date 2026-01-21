@@ -25,7 +25,7 @@ trait ApiResponses
         string $code = "PARTIAL"
     ): JsonResponse
     {
-        Log::info(request()->path() . ": " . $message, $data);
+        Log::warning(request()->path() . ": " . $message, $data);
         return response()->json([
             "status" => "partial",
             "status_code" => $statusCode,
@@ -122,7 +122,7 @@ trait ApiResponses
         string $code = "ERROR"
     ): JsonResponse
     {
-        Log::info(request()->path() . ": " . $message, $errors);
+        Log::error(request()->path() . ": " . $message, $errors);
         return response()->json([
             "status" => "error",
             "status_code" => $statusCode,

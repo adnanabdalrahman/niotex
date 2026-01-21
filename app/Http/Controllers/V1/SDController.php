@@ -2,19 +2,25 @@
 
 namespace App\Http\Controllers\V1;
 
+use App\Helpers\SD_01_01_Validation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SD_0101_beauftragungRequest;
 use App\Http\Requests\SD_0201_mietvertragsrechnungenRequest;
 use App\Http\Requests\SD_0302_fakturiertedienstleistungsrechnungRequest;
 use App\Services\SDServices;
+use App\Traits\ApiResponses;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Throwable;
 
 
 class SDController extends Controller
 {
+
+    use ApiResponses;
+
     protected SDServices\SD_0101_Services $sd0101Services;
     protected SDServices\SD_0102_Services $sd0102Services;
     protected SDServices\SD_0201_Services $sd0201Services;
@@ -48,29 +54,62 @@ class SDController extends Controller
      * @return JsonResponse
      * @throws Throwable
      */
-    public function sd_0101_beauftragung(SD_0101_beauftragungRequest $request)
+    public function sd_0101_beauftragung(Request $request): JsonResponse
     {
-        $validated = $request->validated();
-        $vorgangDataArray = $this->sd0101Services->sd_0101_beauftragung($validated);
+        $auftraege = $request->all();
 
-        if ($vorgangDataArray !== null) {
-            Log::info('sd_0101_beauftragung Beauftragung erfolgreich empfangen', [
-                'header' => $vorgangDataArray,
-            ]);
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Beauftragung erfolgreich empfangen',
-                'data' => [
-                    'header' => $vorgangDataArray['header'],
-                    'positions' => $vorgangDataArray['positions'],
-                ],
-            ], 202);
+        $report = ['success' => [], 'failed' => []];
+
+        foreach ($auftraege as $auftrag) {
+            $validator = Validator::make(
+                $auftrag,
+                SD_01_01_Validation::rules(),
+                SD_01_01_Validation::messages()
+            );
+            $vbeln = $auftrag['header']['vbeln'] ?? 'unknown';
+
+            if ($validator->fails()) {
+                $report['failed'][] = [
+                    'vbeln' => $vbeln,
+                    'message' => $validator->errors()->all()
+                ];
+                continue;
+            }
+            try {
+                $result = $this->sd0101Services->sd_0101_beauftragung($auftrag);
+
+                if ($result) {
+                    $report['success'][] = [
+                        'vbeln' => $vbeln,
+                        'data' => $result,
+                        'message' => "Beauftragung $vbeln erfolgreich verarbeitet",
+                    ];
+                } else {
+                    $report['failed'][] = [
+                        'vbeln' => $vbeln,
+                        'message' => "Beauftragung $vbeln konnte nicht verarbeitet werden",
+                    ];
+                }
+
+            } catch (Throwable $e) {
+                $report['failed'][] = [
+                    'vbeln' => $vbeln,
+                    'message' => $e->getMessage(),
+                ];
+            }
         }
-        return response()->json([
-            'status' => 'Error',
-            'message' => 'Beauftragung fehlgeschlagen',
-        ], 400);
+        return match (true) {
+            empty($report['failed']) =>
+            $this->successResponse('Alle Beauftragungen erfolgreich verarbeitet', $report, 202),
+
+            empty($report['success']) =>
+            $this->errorResponse('Keine Beauftragung konnte verarbeitet werden', $report, 400),
+
+            default =>
+            $this->multiStatusResponse('Einige Beauftragungen wurden nicht verarbeitet', $report),
+        };
     }
+
 
     // SD-01-02: CEOS-->SAP, beauftragung Rückmeldung
     public function sd_01_02_beauftragungRueckmeldung(Request $request)

@@ -3,6 +3,7 @@
 namespace App\Services\SDServices;
 
 use App\Exceptions\AdresseGesperrtException;
+use App\Exceptions\CreationFailedException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Models\Adresse;
 use App\Models\Artikel;
@@ -13,7 +14,6 @@ use App\Services\PositionService;
 use App\Services\VorgangService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Throwable;
 
 
@@ -22,12 +22,9 @@ class SD_0101_Services
     protected string $baseUrl;
     protected string $sd0102_path;
     protected string $sd0301_path;
-
     protected array $vorgruppeMapping;
     protected array $vorgruppeSKTMapping;
-
     protected array $auth;
-
     protected array $mwstSatzProzentArray;
 
     public function __construct()
@@ -55,136 +52,214 @@ class SD_0101_Services
      */
     public function sd_0101_beauftragung($requestData): ?array
     {
-        // todo Important Adresse.Sperrkennzeichen ist 1 (gesperrt) darf keinen Auftrag anlegen.
-        /*
-            'vbeln' → Verkaufsbeleg Vorgang.VorIndividualC1
-            'auart' → Vorgang.VorIndividualC2
-            'kunnr' → Adresse.AdressNummer → Adresse.InterneAdressnummer(zu speichernde nummer in: Vorgang.VorAuftraggeber)
-            'vdatu' → Vorgang.VorLieferung-WunschDatum Wunschlieferdatum
-            'zzlgsnr' → Vorgang.VorIndividualC3 Liegenschaftsnummer
-            'genrCeos' → Vorgang.VorIndividualD4
-            'txtZ012' → Vorgang2Text.VorNotiz Bemerkung zur Liegenschaft
-            'txtZ013' → Vorgang.VorStichwort für Reparaturaufträge Ausstattung / Austauschgrund
-        */
         return DB::transaction(function () use (&$requestData) {
+
             $header = $requestData['header'];
             $positions = $requestData['positions'];
-            $adresse = Adresse::where('AdressNummer', $header['kunnr'])->first();
-            if ($adresse !== null) {
-                if ($adresse->AdrLiefersperreJN == "1") {
-                    throw new AdresseGesperrtException($adresse->AdressNummer);
-                }
-                $data['VorAuftraggeber'] = $adresse->InterneAdressnummer; // Kunnr
-                $data['VorLieferanschrift'] = $adresse->InterneAdressnummer;
-                $data['VorRechnungsanschrift'] = $adresse->InterneAdressnummer;
-                $data['VorSammelRechnungsanschrift'] = $adresse->InterneAdressnummer;
-            } else {
-                throw new ResourceNotFoundException($header['vbeln'], $header['kunnr']);
-            }
+            $data = [];
+            // Adresse
+            $this->prepareAdresse($header['kunnr'], $data);
+            // VorGruppe
             $materialGruppe = substr($positions[0]['aufnr'], 0, 2);
-
-            $vorGruppe = isset($this->vorgruppeMapping[$header['augru'] . $materialGruppe]) ?
-                $this->vorgruppeMapping[$header['augru'] . $materialGruppe] : 'RE';
-
-            //vdatu
-            $data['VorLieferungWunschDatum'] = Carbon::parse($header['vdatu'])->format('Ymd');
-            $data['VorStichwort'] = $header['txtZ013'] ?? 'MONTAGEAUFTRAG';
-            $data['VorIndividualC1'] = $header['vbeln'];
-            $data['VorIndividualC2'] = $header['auart'];
-            $data['VorIndividualC3'] = $header['zzlgsnr'];
-            $data['VorIndividualC7'] = $this->vorgruppeSKTMapping[$header['augru']];
-            $data['VorIndividualD4'] = $header['genrCeos'];// GebäudeNr
-
-            //todo get Adress from Liegenschaft Gebäude
-            //get LiegenschaftsID
-            $liegenschaft = Ceos_LIEGENSCHAFT_TimeLine::where('Liegenschaftsnummer', $header['zzlgsnr'])->first();
-            if ($liegenschaft !== null) {
-                $gebaeude = Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
-                    ->where('GebaeudeNr', $header['genrCeos'])->first();
-                if ($gebaeude !== null) {
-                    $data['VorBetrefftextZeile1'] = $gebaeude->LG_Strasse;
-                    $data['VorBetrefftextZeile2'] = $gebaeude->LG_PLZ . ' ' . $gebaeude->LG_Ort;
-                }
-            }
-
-            $data['VorNotiz'] = $header['txtZ012'];
-            $data['VorArt'] = 'A';
-            $data['VorUnterArt'] = 'R';  // char 1
-            $data['VorGruppe'] = $vorGruppe;
-            $data['VNkArt'] = '100000';
-            $data['VorStatus'] = '100100'; //-- 100000 Nicht gedruckt / 100010 Angebot / 100100 Auftragsbestätigung
-
-            $vorgang = new VorgangService();
-            $vorgang = $vorgang->createVorgang($data);
-            if ($vorgang === null) {
-                //todo add Throw Error Here
-                Log::error('sd_0101_beauftragung_vorgang creation Failed');
-                return null;
-            }
-
-            //todo important delete all position if one fails also vorgang
-            $positionsArray = [];
-            foreach ($positions as $key => $position) {
-                $artikelNummer = ltrim($position['matnr'], '0');
-                $artikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
-                if ($artikel === null) {
-                    Log::error(
-                        "Material für Position nicht gefunden",
-                        [
-                            'Material' => $artikelNummer,
-                            'Vorgangnummer' => $vorgang['VorNummer']
-                        ]
-                    );
-                    return null;
-                }
-
-                $positionData['InterneVorgangsnummer'] = $vorgang['InterneVorgangsnummer'];
-                $positionData['VorNummer'] = $vorgang['VorNummer'];
-                $positionData['PosIndividualC1'] = $position['posnr'];
-                $positionData['PosZusatztextLieferschein'] = $position['txtZ002'];
-                $positionData['PosZusatztext'] = $position['txtZ009'];
-                $positionData['PosNotiz'] = $position['txtZ010'];
-                $positionData['PosMenge1'] = $position['kwmeng'];
-                $positionData['PosKZMengeneinheit1'] = $position['vrkme'];
-                $positionData['PosIndividualC5'] = $position['kwmeng'];
-                $positionData['externMenge'] = $position['kwmeng'];
-                $positionData['current_date'] = date('Ymd');
-                $carbonMontagedatum = Carbon::parse((string)$position['montagedatum']);
-                $montagedatum = $carbonMontagedatum->format('Ymd');
-                $positionData['PosIndividualT3'] = $montagedatum;
-
-                $preisbasis = Preisbasis::where('NRPreisbasis', $artikel->NRPreisbasis)->first();
-                $positionData['NRPreisbasis'] = $artikel->NRPreisbasis;
-                $positionData['PosPreisfaktor'] = $preisbasis->Preisfaktor;
-
-                $positionData['PosNummer'] = $key + 1;
-                $positionData['PosNummernText'] = $key + 1;
-                $positions = new PositionService();
-                $createdPosition = $positions->createPosition($positionData, $artikel);
-                if ($createdPosition !== null) {
-                    $positionsArray[] = $createdPosition;
-                }
-            }
-            if (!empty($positionsArray)) {
-                return [
-                    'header' => [
-                        'InterneVorgangsnummer' => $vorgang['InterneVorgangsnummer'],
-                        'VorNummer' => $vorgang['VorNummer'],
-                        'Verkaufsbeleg' => $header['vbeln'],
-                    ],
-                    'positions' => $positionsArray,
-                ];
-            }
-            Log::error('sd_0101_beauftragung_positions Positions Creation Failed');
-            return null;
+            $vorGruppe = $this->getVorGruppe($header['augru'], $materialGruppe);
+            // Header Daten
+            $this->prepareHeaderData($header, $data, $vorGruppe);
+            // Liegenschaft / Gebäude
+            $this->prepareLiegenschaftData($header, $data);
+            // Vorgang erstellen
+            $vorgang = $this->createVorgang($data, $header);
+            // Positionen erstellen
+            $positionsArray = $this->preparePositions($positions, $vorgang);
+            return [
+                'header' => [
+                    'InterneVorgangsnummer' => $vorgang['InterneVorgangsnummer'],
+                    'VorNummer' => $vorgang['VorNummer'],
+                    'Verkaufsbeleg' => $header['vbeln'],
+                ],
+                'positions' => $positionsArray,
+            ];
         });
-
     }
 
+    /* =========================
+     * Helper Methods
+     * ========================= */
 
+    /**
+     * @throws ResourceNotFoundException
+     * @throws AdresseGesperrtException
+     */
+    protected function prepareAdresse(string $kunnr, array &$data): void
+    {
+        $adresse = Adresse::where('AdressNummer', $kunnr)->first();
+
+        if ($adresse === null) {
+            throw new ResourceNotFoundException('Ressource wurde nicht gefunden', ['AdressNummer' => $kunnr]);
+        }
+
+        if ($adresse->AdrLiefersperreJN == "1") {
+            throw new AdresseGesperrtException($adresse->AdressNummer);
+        }
+
+        $interneNummer = $adresse->InterneAdressnummer;
+
+        $data['VorAuftraggeber'] = $interneNummer;
+        $data['VorLieferanschrift'] = $interneNummer;
+        $data['VorRechnungsanschrift'] = $interneNummer;
+        $data['VorSammelRechnungsanschrift'] = $interneNummer;
+    }
+
+    protected function getVorGruppe(string $augru, string $materialGruppe): string
+    {
+        return $this->vorgruppeMapping[$augru . $materialGruppe] ?? 'RE';
+    }
+
+    protected function prepareHeaderData(array $header, array &$data, string $vorGruppe): void
+    {
+        $data['VorLieferungWunschDatum'] = !empty($header['vdatu'])
+            ? Carbon::parse($header['vdatu'])->format('Ymd')
+            : null;
+
+        $txtZ013 = $header['txtZ013']
+            ? mb_substr($header['txtZ013'], 0, 40)
+            : 'MONTAGEAUFTRAG';
+
+        $data['VorStichwort'] = $txtZ013;
+        $data['VorIndividualC1'] = $header['vbeln'];
+        $data['VorIndividualC2'] = $header['auart'];
+        $data['VorIndividualC3'] = $header['zzlgsnr'];
+        $data['VorIndividualC7'] = $this->vorgruppeSKTMapping[$header['augru']];
+        $data['VorIndividualD4'] = $header['genrCeos'];
+        $data['VorNotiz'] = $header['txtZ012'];
+
+        $data['VorArt'] = 'A';
+        $data['VorUnterArt'] = 'R';
+        $data['VorGruppe'] = $vorGruppe;
+        $data['VNkArt'] = '100000';
+        $data['VorStatus'] = '100100';
+    }
+
+    protected function prepareLiegenschaftData(array $header, array &$data): void
+    {
+        $liegenschaft = Ceos_LIEGENSCHAFT_TimeLine::where(
+            'Liegenschaftsnummer',
+            $header['zzlgsnr']
+        )->first();
+
+        if ($liegenschaft === null) {
+            return;
+        }
+
+        $gebaeude = Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+            ->where('GebaeudeNr', $header['genrCeos'])
+            ->first();
+
+        if ($gebaeude !== null) {
+            $data['VorBetrefftextZeile1'] = $gebaeude->LG_Strasse;
+            $data['VorBetrefftextZeile2'] = $gebaeude->LG_PLZ . ' ' . $gebaeude->LG_Ort;
+        }
+    }
+
+    /**
+     * @throws CreationFailedException
+     */
+    protected function createVorgang(array $data, array $header): array
+    {
+        $vorgangService = new VorgangService();
+        $vorgang = $vorgangService->createVorgang($data);
+
+        if ($vorgang === null) {
+            throw new CreationFailedException('Vorgang Erstellung fehlgeschlagen', $header);
+        }
+
+        return $vorgang;
+    }
+
+    /**
+     * @throws ResourceNotFoundException
+     * @throws CreationFailedException
+     */
+    protected function preparePositions(array $positions, array $vorgang): array
+    {
+        $artikelIds = array_map(
+            fn($p) => ltrim($p['matnr'], '0'),
+            $positions
+        );
+
+        $artikelCollection = Artikel::whereIn('Artikelnummer', $artikelIds)
+            ->get()
+            ->keyBy('Artikelnummer');
+
+        $preisbasisCollection = Preisbasis::whereIn(
+            'NRPreisbasis',
+            $artikelCollection->pluck('NRPreisbasis')
+        )
+            ->get()
+            ->keyBy('NRPreisbasis');
+
+        $positionsArray = [];
+
+        foreach ($positions as $key => $position) {
+
+            $artikelNummer = ltrim($position['matnr'], '0');
+            $artikel = $artikelCollection[$artikelNummer] ?? null;
+
+            if ($artikel === null) {
+                throw new ResourceNotFoundException(
+                    'Material für Position nicht gefunden',
+                    ['Material' => $artikelNummer, 'Vorgangnummer' => $vorgang['VorNummer']]
+                );
+            }
+
+            $preisbasis = $preisbasisCollection[$artikel->NRPreisbasis] ?? null;
+
+            if ($preisbasis === null) {
+                throw new ResourceNotFoundException(
+                    'Preisbasis für Artikel nicht gefunden',
+                    ['Material' => $artikelNummer, 'NRPreisbasis' => $artikel->NRPreisbasis]
+                );
+            }
+
+            $montagedatum = !empty($position['montagedatum'])
+                ? Carbon::parse($position['montagedatum'])->format('Ymd')
+                : null;
+
+            $positionData = [
+                'InterneVorgangsnummer' => $vorgang['InterneVorgangsnummer'],
+                'VorNummer' => $vorgang['VorNummer'],
+                'PosIndividualC1' => $position['posnr'],
+                'PosZusatztextLieferschein' => $position['txtZ002'],
+                'PosZusatztext' => $position['txtZ009'],
+                'PosNotiz' => $position['txtZ010'],
+                'PosMenge1' => $position['kwmeng'],
+                'PosKZMengeneinheit1' => $position['vrkme'],
+                'PosIndividualC5' => $position['kwmeng'],
+                'externMenge' => $position['kwmeng'],
+                'current_date' => date('Ymd'),
+                'PosIndividualT3' => $montagedatum,
+                'NRPreisbasis' => $artikel->NRPreisbasis,
+                'PosPreisfaktor' => $preisbasis->Preisfaktor,
+                'PosNummer' => $key + 1,
+                'PosNummernText' => $key + 1,
+            ];
+
+            $positionService = new PositionService();
+            $createdPosition = $positionService->createPosition($positionData, $artikel);
+
+            if ($createdPosition === null) {
+                throw new CreationFailedException(
+                    'Position Erstellung fehlgeschlagen',
+                    $positionData
+                );
+            }
+
+            $positionsArray[] = $createdPosition;
+        }
+
+        if (empty($positionsArray)) {
+            throw new CreationFailedException('Positionen Erstellung fehlgeschlagen');
+        }
+
+        return $positionsArray;
+    }
 }
-
-
-
-
-
