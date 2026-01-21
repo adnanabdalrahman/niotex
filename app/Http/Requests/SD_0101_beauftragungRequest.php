@@ -14,35 +14,38 @@ class SD_0101_beauftragungRequest extends FormRequest
         return true;
     }
 
+
     public function rules(): array
     {
         return [
-            'header' => 'required|array',
-            'header.vbeln' => 'required|string|max:10', // Verkaufsbeleg Vorgang.VorIndividualC1
-            'header.auart' => 'required|string|max:4', // Vorgang.VorIndividualC2
-            'header.kunnr' => ['required', 'numeric', 'integer', 'min:0', 'max:2147483647'],
-            'header.vdatu' => 'required|date', // Wunschlieferdatum Vorgang.VorLieferung-WunschDatum
-            'header.zzlgsnr' => 'nullable|string|max:9', // Liegenschaftsnummer Vorgang.VorIndividualC3
-            'header.genrCeos' => 'nullable|integer',// Vorgang.VorIndividualD4
-            'header.txtZ012' => 'nullable|string', //Bemerkung zur Liegenschaft Vorgang2TextService.VorNotiz
-            'header.txtZ013' => 'nullable|string',// Vorgang.VorStichwort für Reparaturaufträge Ausstattung / Austauschgrund
-            'header.augru' => 'required|string',// Vorgruppe
+            '*' => 'required|array',
 
-            'positions' => 'required|array|min:1',
-            'positions.*.matnr' => 'required|string|max:18',
-            'positions.*.kondm' => 'nullable|string|max:2',
-            'positions.*.kwmeng' => 'required|numeric',
-            'positions.*.vrkme' => 'required|string|max:6',
-            'positions.*.kwmengO' => 'nullable|numeric',
-            'positions.*.aufnr' => 'required|string|max:18',
-            'positions.*.txtZ002' => 'nullable|string',
-            'positions.*.txtZ009' => 'nullable|string',
-            'positions.*.txtZ010' => 'nullable|string',
-            'positions.*.posnr' => 'required|integer',
-            'positions.*.posErl' => 'nullable|Boolean', // 1 erledigt ,2 teilweise erledigt
-//          'positions.*.Kontierungsobjekt' => 'required|string|max:12',
-//          'positions.*.Vorgangsnummer' => 'nullable|integer',
-            'positions.*.montagedatum' => 'nullable|string',
+            '*.header' => 'required|array',
+            '*.header.vbeln' => 'required|string|max:10', // Verkaufsbeleg Vorgang.VorIndividualC1
+            '*.header.auart' => 'required|string|max:4', // Vorgang.VorIndividualC2
+            '*.header.kunnr' => ['required', 'numeric', 'integer', 'min:0', 'max:2147483647'],
+            '*.header.vdatu' => 'required|date', // Wunschlieferdatum Vorgang.VorLieferung-WunschDatum
+            '*.header.zzlgsnr' => 'nullable|string|max:9', // Liegenschaftsnummer Vorgang.VorIndividualC3
+            '*.header.genrCeos' => 'nullable|integer',// Vorgang.VorIndividualD4
+            '*.header.txtZ012' => 'nullable|string', //Bemerkung zur Liegenschaft Vorgang2TextService.VorNotiz
+            '*.header.txtZ013' => 'nullable|string',// Vorgang.VorStichwort für Reparaturaufträge Ausstattung / Austauschgrund
+            '*.header.augru' => 'required|string',// Vorgruppe
+
+            '*.positions' => 'required|array|min:1',
+            '*.positions.*.matnr' => 'required|string|max:18',
+            '*.positions.*.kondm' => 'nullable|string|max:2',
+            '*.positions.*.kwmeng' => 'required|numeric',
+            '*.positions.*.vrkme' => 'required|string|max:6',
+            '*.positions.*.kwmengO' => 'nullable|numeric',
+            '*.positions.*.aufnr' => 'required|string|max:18',
+            '*.positions.*.txtZ002' => 'nullable|string',
+            '*.positions.*.txtZ009' => 'nullable|string',
+            '*.positions.*.txtZ010' => 'nullable|string',
+            '*.positions.*.posnr' => 'required|integer',
+            '*.positions.*.posErl' => 'nullable|boolean', // 1 erledigt ,2 teilweise erledigt
+            '*.positions.*.montagedatum' => 'nullable|string',
+            //'*.positions.*.Kontierungsobjekt' => 'required|string|max:12',
+            //'*.positions.*.Vorgangsnummer' => 'nullable|integer',
         ];
     }
 
