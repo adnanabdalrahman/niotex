@@ -6,7 +6,7 @@ return [
         'VorIndividualC3' => 'Slgnr(Liegenschaftsnummer) - Zzlgsnr (Liegenschaftsnummer )',
         'VorIndividualC4' => '',
         'VorIndividualC5' => 'PoItem Bestellposition  MM_33_01b',
-        'VorIndividualC6' => 'PoNumber Bestellnummer  MM_33_01b',
+        'VorIndividualD6' => 'PoNumber Bestellnummer  MM_33_01b',
     ],
     'PosIndividual' => [
 
