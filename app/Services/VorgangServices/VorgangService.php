@@ -202,10 +202,10 @@ class VorgangService
                 'VorIndividualC3' => $data['VorIndividualC3'] ?? NULL, // Slgnr(Liegenschaftsnummer)
                 'VorIndividualC4' => $data['VorIndividualC4'] ?? NULL, // ReservNo
                 'VorIndividualC5' => $data['VorIndividualC5'] ?? NULL, // PoItem
-                'VorIndividualC6' => $data['VorIndividualC6'] ?? NULL, // PoNumber
+                'VorIndividualC6' => $data['VorIndividualC6'] ?? NULL,
                 'VorIndividualC7' => $data['VorIndividualC7'] ?? NULL, // Vorlagebeleg
                 'VorIndividualD5' => $data['VorIndividualD5'] ?? NULL,
-                'VorIndividualD6' => $data['VorIndividualD6'] ?? NULL,
+                'VorIndividualD6' => $data['VorIndividualD6'] ?? NULL, // PoNumber
                 'VorIndividualD7' => $data['VorIndividualD7'] ?? NULL,
                 'VorIndividualT3' => $data['VorIndividualT3'] ?? NULL,
                 'VorIndividualT4' => $data['VorIndividualT4'] ?? NULL,

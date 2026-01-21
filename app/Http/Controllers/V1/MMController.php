@@ -81,7 +81,6 @@ class MMController extends Controller
                 ];
                 continue;
             }
-
             // Process material
             $artikelNummer = ltrim($materialData['Material'], '0');
             $currentArtikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
@@ -93,12 +92,12 @@ class MMController extends Controller
                 if ($data) {
                     $report['success'][] = [
                         'Material' => $data['Material'],
-                        'message' => "Material {$data['Material']} erfolgreich {$status}"
+                        'message' => "Material {$data['Material']} erfolgreich $status"
                     ];
                 } else {
                     $report['failed'][] = [
                         'Material' => $artikelNummer,
-                        'message' => "Material {$artikelNummer} konnte nicht gespeichert werden"
+                        'message' => "Material $artikelNummer konnte nicht gespeichert werden"
                     ];
                 }
             } catch (Throwable $e) {
@@ -108,7 +107,6 @@ class MMController extends Controller
                 ];
             }
         }
-
         // Return response based on success/failure
         return match (true) {
             empty($report['failed']) => $this->successResponse("Alle Materialien erfolgreich importiert", $report, 202),

@@ -122,7 +122,7 @@ class MM_33_01_b_Services
             $receivedVorgangInfo = $result['d'];
 
             $vorgang->VorIndividualC5 = $receivedVorgangInfo['PoItem'];
-            $vorgang->VorIndividualC6 = $receivedVorgangInfo['PoNumber'];
+            $vorgang->VorIndividualD6 = $receivedVorgangInfo['PoNumber'];
             $vorgang->save();
         }
         if (isset($result['d']['to_items']['results'])) {
@@ -149,7 +149,7 @@ class MM_33_01_b_Services
                 $positionData['externGesamtPreis'] = $gesamtNettoPreis;
                 $positionData['externEinzelPreis'] = $receivedPosition['Netpr'];
                 $positionData['externMenge'] = $receivedPosition['Quantity'];
-                
+
                 if ($receivedPosition['PosInt'] != 0) {
                     $position = Position::where(
                         'InternePositionsnummer', $receivedPosition['PosInt'],

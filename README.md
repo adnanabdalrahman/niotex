@@ -182,16 +182,19 @@ Extract it somewhere, e.g. C:\nssm\nssm.exe.
 Open Command Prompt as Administrator.
 Install a new service:
 E:\nssm-2.24\win64\nssm.exe install laravel-queue
+or if exist :
+E:\nssm-2.24\win64\nssm.exe edit laravel-queue
 
 A GUI will open:
 
 Path: point to your PHP executable
 Example: C:\php\php.exe
 
+Startup directory: your Laravel project root
+Example: E:\CeosAPIs\Apache24\htdocs\ceosapi
+
 Arguments:
 php artisan queue:work --queue=notifications,default --tries=3 --timeout=60
-Startup directory: your Laravel project root
-Example: E:\CeosAPIs\Apache24\htdocs\ceosapi_test
 
 Save and close.
 
@@ -200,6 +203,7 @@ nssm start laravel-queue
 ------------------------------------------------------------
 if everything is ok
 
+to find in services : laravel-queue
 -
 
 /**
