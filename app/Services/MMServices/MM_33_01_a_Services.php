@@ -92,16 +92,15 @@ class MM_33_01_a_Services
                 "Goodsmovement" => "",
                 "GoodsmvmtLine" => "",
                 "PoUnit" => "",
-                "PoNumber" => $vorgang->VorIndividualD6 ?? "",
+                "PoNumber" => (string)(int)$vorgang->VorIndividualD6,
                 "PoItem" => $vorgang->VorIndividualC5 ?? "",
             ];
         }
-
         $requestData = [
             "TourId" => (string)$requestData['tourId'],
             "Interface" => 'A',
             "Lifnr" => $adresse->AdressNummer,
-            "PoNumber" => $vorgang->VorIndividualD6 ?? "",
+            "PoNumber" => (string)(int)$vorgang->VorIndividualD6,
             "to_items" => $to_Items
         ];
         Log::info("mm_33_01_a_NuLeistungsbestaetigung sent Data", $requestData);
