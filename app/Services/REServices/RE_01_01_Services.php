@@ -26,7 +26,6 @@ class RE_01_01_Services
     private array $importedGebaeude = [];
     private array $importedWohneinheiten = [];
     private array $importedMieter = [];
-
     private ?int $currentLiegenschaftId = null;
 
     public function re_01_01_Liegenschaften(array $receivedLiegenschaften): array
@@ -60,6 +59,9 @@ class RE_01_01_Services
         return $report;
     }
 
+    /**
+     * @throws Throwable
+     */
     private function processLiegenschaft(array $data): void
     {
         $liegenschaft = Ceos_LIEGENSCHAFT::updateOrCreate(
@@ -76,50 +78,120 @@ class RE_01_01_Services
         $this->processAbrechnungen($liegenschaft, $data['abrechnungsdaten']);
     }
 
+    /**
+     * @throws Throwable
+     */
+
+
     private function processTimeline(Ceos_LIEGENSCHAFT $liegenschaft, array $data): void
     {
-        $kunden = $data['kunden'];
+        $kunden = $data['kunden'] ?? [];
 
-        Ceos_LIEGENSCHAFT_TimeLine::upsert(
-            [
-                [
-                    'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
-                    'Liegenschaftsnummer' => $data['slgnr'],
-                    'MDM' => $data['mdmId'],
-                    'Fernablesung_JN' => $data['fern'],
-                    'Fernablesung_Ab' => $data['fernAb'],
-                    'OnlinePortal_JN' => $data['opk'],
-                    'OnlinePortal_Ab' => $data['opkAb'],
-                    'UviReady_JN' => $data['uvir'],
-                    'UviReady_Ab' => $data['uvirAb'],
-                    'Mdf' => $data['mdf'],
-                    'Vertreter' => $kunden[0]['vtrCeos'] ?? null,
-                    'Mdf_Bis' => $data['mdfBis'],
-                    'DatumVon' => $data['validfrom'],
-                    'DatumBis' => $data['validto'],
-                    'User' => 0,
-                ]
-            ],
-            ['LiegenschaftsID', 'DatumVon'],
-            [
-                'Fernablesung_JN',
-                'Fernablesung_Ab',
-                'OnlinePortal_JN',
-                'OnlinePortal_Ab',
-                'UviReady_JN',
-                'UviReady_Ab',
-                'Mdf',
-                'Vertreter',
-                'Mdf_Bis',
-                'DatumBis',
-                'User'
-            ]
-        );
+        DB::transaction(function () use ($liegenschaft, $data, $kunden) {
 
+            // Prepare API data
+            $apiData = [
+                'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
+                'Liegenschaftsnummer' => $data['slgnr'],
+                'MDM' => $data['mdmId'],
+                'Fernablesung_JN' => $data['fern'],
+                'Fernablesung_Ab' => $data['fernAb'],
+                'OnlinePortal_JN' => $data['opk'],
+                'OnlinePortal_Ab' => $data['opkAb'],
+                'UviReady_JN' => $data['uvir'],
+                'UviReady_Ab' => $data['uvirAb'],
+                'Mdf' => $data['mdf'],
+                'Mdf_Bis' => $data['mdfBis'],
+                'Vertreter' => $kunden[0]['vtrCeos'] ?? null,
+                'DatumVon' => $data['validfrom'],
+                'DatumBis' => $data['validto'],
+                'User' => 0,
+            ];
+
+            $newDatumVon = $apiData['DatumVon'];
+
+            // Check if a record with the same DatumVon exists
+            $existing = Ceos_LIEGENSCHAFT_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                ->where('DatumVon', $newDatumVon)
+                ->orderByDesc('ID')
+                ->first();
+
+            $sameDatumVonButDifferent = false;
+
+            if ($existing) {
+                $isIdentical = true;
+
+                foreach ($apiData as $key => $value) {
+                    if (in_array($key, ['DatumVon', 'DatumBis', 'User'])) {
+                        continue;
+                    }
+                    if ($existing->$key != $value) {
+                        $isIdentical = false;
+                        break;
+                    }
+                }
+
+                // Same DatumVon and identical data
+                if ($isIdentical) {
+                    return;
+                }
+
+                // Same DatumVon but different data
+                $sameDatumVonButDifferent = true;
+            }
+
+            // Close all overlapping records except same DatumVon case
+            if (!$sameDatumVonButDifferent) {
+                $overlappingRecords = Ceos_LIEGENSCHAFT_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                    ->where('DatumBis', '>=', $newDatumVon)
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($overlappingRecords as $record) {
+                    if ($record->DatumVon != $newDatumVon) {
+                        $record->update([
+                            'DatumBis' => date(
+                                'Y-m-d',
+                                strtotime($newDatumVon . ' -1 day')
+                            ),
+                        ]);
+                    }
+                }
+            }
+
+            // Find previous record strictly before new DatumVon for data copy
+            $previous = Ceos_LIEGENSCHAFT_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                ->where('DatumVon', '<=', $newDatumVon)
+                ->orderByDesc('DatumVon')
+                ->orderByDesc('ID')
+                ->first();
+
+            // Prepare new record by copying previous data
+            $newData = $previous ? $previous->toArray() : [];
+            unset(
+                $newData['ID'],
+                $newData['FULL_HASH'],
+                $newData['DateStamp'],
+                $newData['TimeStamp']
+            );
+
+            // Merge API data into copied data
+            $newData = array_merge($newData, $apiData);
+
+            // Create new timeline record
+            Ceos_LIEGENSCHAFT_TimeLine::create($newData);
+        });
+
+        // Create SAP ID if provided
         if (!empty($data['lgnrExt'])) {
-            $this->createSapId($liegenschaft->LiegenschaftsID, 'LG_KORR_Nr', $data['lgnrExt']);
+            $this->createSapId(
+                $liegenschaft->LiegenschaftsID,
+                'LG_KORR_Nr',
+                $data['lgnrExt']
+            );
         }
     }
+
 
     private function createSapId(int $id, string $type, string $value): void
     {
@@ -128,46 +200,121 @@ class RE_01_01_Services
             ['VALUE' => $value]
         );
     }
-
+    
     private function processGebaeude(Ceos_LIEGENSCHAFT $liegenschaft, array $adressen): void
     {
-        $rows = [];
         foreach ($adressen as $adresse) {
-            $gebaeude = Ceos_GEBAEUDE::updateOrCreate(
+
+            // Create or get building master record
+            $gebaeude = Ceos_GEBAEUDE::firstOrCreate(
                 ['GEB_COMP_API_ID' => $liegenschaft->Liegenschaftsnummer . '-' . $adresse['genrCeos']],
                 ['User' => 0]
             );
+
             $this->importedGebaeude[] = $gebaeude->GebaeudeID;
 
-            $rows[] = [
+            // Prepare API data
+            $apiData = [
                 'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                 'GebaeudeID' => $gebaeude->GebaeudeID,
-                'MDM' => $adresse['mdmId'],
-                'DatumVon' => $adresse['validfrom'],
-                'DatumBis' => $adresse['validto'],
                 'GebaeudeNr' => $adresse['genrCeos'],
+                'MDM' => $adresse['mdmId'],
                 'LG_Strasse' => $adresse['lgStr'],
                 'LG_PLZ' => $adresse['lgPlz'],
                 'LG_Ort' => $adresse['lgOrt'],
                 'Heizanlage_JN' => $adresse['hausHeizanlage'],
+                'DatumVon' => $adresse['validfrom'],
+                'DatumBis' => $adresse['validto'],
                 'User' => 0,
             ];
 
-            if (!empty($adresse['tplnr'])) {
-                $this->createSapId($gebaeude->GebaeudeID, 'GEB_TPlatz', $adresse['tplnr']);
-            }
-        }
+            $newDatumVon = $apiData['DatumVon'];
 
-        if (!empty($rows)) {
-            foreach (array_chunk($rows, 150) as $chunk) {
-                Ceos_GEBAEUDE_TimeLine::upsert(
-                    $chunk,
-                    ['LiegenschaftsID', 'GebaeudeNr', 'DatumVon'],
-                    ['MDM', 'DatumBis', 'LG_Strasse', 'LG_PLZ', 'LG_Ort', 'Heizanlage_JN', 'User']
+            // Check if a record with the same DatumVon exists
+            $existing = Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                ->where('GebaeudeNr', $adresse['genrCeos'])
+                ->where('DatumVon', $newDatumVon)
+                ->orderByDesc('ID')
+                ->first();
+
+            $sameDatumVonButDifferent = false;
+
+            if ($existing) {
+                $isIdentical = true;
+
+                foreach ($apiData as $key => $value) {
+                    if (in_array($key, ['DatumVon', 'DatumBis', 'User'])) {
+                        continue;
+                    }
+                    if ($existing->$key != $value) {
+                        $isIdentical = false;
+                        break;
+                    }
+                }
+
+                // Same DatumVon and identical data
+                if ($isIdentical) {
+                    continue;
+                }
+
+                // Same DatumVon but different data
+                $sameDatumVonButDifferent = true;
+            }
+
+            // Close all overlapping records except same DatumVon case
+            if (!$sameDatumVonButDifferent) {
+                $overlappingRecords = Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                    ->where('GebaeudeNr', $adresse['genrCeos'])
+                    ->where('DatumBis', '>=', $newDatumVon)
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($overlappingRecords as $record) {
+                    if ($record->DatumVon != $newDatumVon) {
+                        $record->update([
+                            'DatumBis' => date(
+                                'Y-m-d',
+                                strtotime($newDatumVon . ' -1 day')
+                            ),
+                        ]);
+                    }
+                }
+            }
+
+            // Find previous record strictly before new DatumVon for copy
+            $previous = Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                ->where('GebaeudeNr', $adresse['genrCeos'])
+                ->where('DatumVon', '<=', $newDatumVon)
+                ->orderByDesc('DatumVon')
+                ->orderByDesc('ID')
+                ->first();
+
+            // Prepare new record by copying previous data
+            $newData = $previous ? $previous->toArray() : [];
+            unset(
+                $newData['ID'],
+                $newData['FULL_HASH'],
+                $newData['DateStamp'],
+                $newData['TimeStamp']
+            );
+
+            // Merge API data
+            $newData = array_merge($newData, $apiData);
+
+            // Create new timeline row
+            Ceos_GEBAEUDE_TimeLine::create($newData);
+
+            // Create SAP ID if provided
+            if (!empty($adresse['tplnr'])) {
+                $this->createSapId(
+                    $gebaeude->GebaeudeID,
+                    'GEB_TPlatz',
+                    $adresse['tplnr']
                 );
             }
         }
     }
+
 
     private function processMieter0(Ceos_LIEGENSCHAFT $liegenschaft, array $data): void
     {
@@ -232,121 +379,286 @@ class RE_01_01_Services
         return Carbon::now()->format('Ymd');
     }
 
+
     private function processKunden(Ceos_LIEGENSCHAFT $liegenschaft, array $kunden): void
     {
-        $rows = [];
         foreach ($kunden as $kunde) {
-            $verwaltung = Ceos_VERWALTUNG::updateOrCreate(
+
+            // Create or get Verwaltung master record
+            $verwaltung = Ceos_VERWALTUNG::firstOrCreate(
                 ['VER_FOREIGN_ID' => $kunde['kunnr']],
                 ['User' => 0]
             );
 
+            // Resolve address
             $adressnummer = ltrim($kunde['kunnr'], '0');
             $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
+
             if (!$adresse) {
                 $this->logMissing('Kein Adresse gefunden', ['adressnummer' => $adressnummer]);
                 continue;
             }
 
-            $rows[] = [
+            // Prepare API data
+            $apiData = [
                 'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                 'VerwaltungID' => $verwaltung->VerwaltungID,
-                'DatumVon' => $kunde['validfrom'],
-                'DatumBis' => $kunde['validto'],
                 'AuftraggeberID' => $adresse->InterneAdressnummer,
                 'Kundenart' => $kunde['kdart'],
                 'ErsteAbr' => $kunde['abrfirst'],
                 'LetzteAbr' => $kunde['abrlast'],
+                'DatumVon' => $kunde['validfrom'],
+                'DatumBis' => $kunde['validto'],
                 'User' => 0,
             ];
-        }
 
-        if ($rows) {
-            Ceos_VERWALTUNG_TimeLine::upsert(
-                $rows,
-                ['LiegenschaftsID', 'VerwaltungID', 'DatumVon'],
-                ['DatumBis', 'AuftraggeberID', 'Kundenart', 'ErsteAbr', 'LetzteAbr', 'User']
+            $newDatumVon = $apiData['DatumVon'];
+
+            // Check if a record with the same DatumVon exists
+            $existing = Ceos_VERWALTUNG_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                ->where('VerwaltungID', $verwaltung->VerwaltungID)
+                ->where('DatumVon', $newDatumVon)
+                ->orderByDesc('ID')
+                ->first();
+
+            $sameDatumVonButDifferent = false;
+
+            if ($existing) {
+                $isIdentical = true;
+
+                foreach ($apiData as $key => $value) {
+                    if (in_array($key, ['DatumVon', 'DatumBis', 'User'])) {
+                        continue;
+                    }
+                    if ($existing->$key != $value) {
+                        $isIdentical = false;
+                        break;
+                    }
+                }
+
+                // Same DatumVon and identical data
+                if ($isIdentical) {
+                    continue;
+                }
+
+                // Same DatumVon but different data
+                $sameDatumVonButDifferent = true;
+            }
+
+            // Close all overlapping records except same DatumVon case
+            if (!$sameDatumVonButDifferent) {
+                $overlappingRecords = Ceos_VERWALTUNG_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                    ->where('VerwaltungID', $verwaltung->VerwaltungID)
+                    ->where('DatumBis', '>=', $newDatumVon)
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($overlappingRecords as $record) {
+                    if ($record->DatumVon != $newDatumVon) {
+                        $record->update([
+                            'DatumBis' => date(
+                                'Y-m-d',
+                                strtotime($newDatumVon . ' -1 day')
+                            ),
+                        ]);
+                    }
+                }
+            }
+
+            // Find previous record strictly before new DatumVon for copy
+            $previous = Ceos_VERWALTUNG_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                ->where('VerwaltungID', $verwaltung->VerwaltungID)
+                ->where('DatumVon', '<=', $newDatumVon)
+                ->orderByDesc('DatumVon')
+                ->orderByDesc('ID')
+                ->first();
+
+            // Prepare new timeline row by copying previous data
+            $newData = $previous ? $previous->toArray() : [];
+            unset(
+                $newData['ID'],
+                $newData['DateStamp'],
+                $newData['TimeStamp']
             );
+
+            // Merge API data
+            $newData = array_merge($newData, $apiData);
+
+            // Create new timeline row
+            Ceos_VERWALTUNG_TimeLine::create($newData);
         }
     }
+
 
     private function logMissing(string $context, array $extra = []): void
     {
         Log::warning("re_01_01_Liegenschaften: $context", $extra);
     }
 
+
     private function processMietobjekte(Ceos_LIEGENSCHAFT $liegenschaft, array $mietobjekte): void
     {
-        $rows = [];
         foreach ($mietobjekte as $mietobjekt) {
-            $wohneinheit = Ceos_WOHNEINHEIT::updateOrCreate(
-                ['WE_COMP_API_ID' => $liegenschaft->Liegenschaftsnummer . '-' . $mietobjekt['genrCeos'] . '-' . $mietobjekt['menrCeos']],
+
+            // Create or get Wohneinheit master record
+            $wohneinheit = Ceos_WOHNEINHEIT::firstOrCreate(
+                [
+                    'WE_COMP_API_ID' =>
+                        $liegenschaft->Liegenschaftsnummer . '-' .
+                        $mietobjekt['genrCeos'] . '-' .
+                        $mietobjekt['menrCeos'],
+                ],
                 ['User' => 0]
             );
 
             $this->importedWohneinheiten[] = $wohneinheit->WohneinheitID;
 
+            // Resolve building
             $gebaeude = $this->findGebaeude($liegenschaft, $mietobjekt['genrCeos']);
             if (!$gebaeude) {
-                $this->logMissing('Kein Gebaeude', ['LiegenschaftsID' => $liegenschaft->LiegenschaftsID, 'GebaeudeNr' => $mietobjekt['genrCeos']]);
+                $this->logMissing('Kein Gebaeude', [
+                    'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
+                    'GebaeudeNr' => $mietobjekt['genrCeos'],
+                ]);
                 continue;
             }
 
-            $rows[] = [
+            // Prepare API data
+            $apiData = [
                 'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
+                'GebaeudeID' => $gebaeude->GebaeudeID,
                 'WohneinheitID' => $wohneinheit->WohneinheitID,
                 'lfd_Adressnummer_GE_CEOS' => $mietobjekt['genrCeos'],
-                'GebaeudeID' => $gebaeude->GebaeudeID,
-                'MDM' => $mietobjekt['mdmIdMe'],
                 'WE_LfdNr' => $mietobjekt['menrCeos'],
                 'WE_Bezeichnung' => $mietobjekt['mLage'],
                 'Gewerblich_JN' => $mietobjekt['gewerblichJn'],
+                'MDM' => $mietobjekt['mdmIdMe'],
                 'DatumVon' => $mietobjekt['validfrom'],
                 'DatumBis' => $mietobjekt['validto'],
                 'User' => 0,
             ];
 
+            $newDatumVon = $apiData['DatumVon'];
+
+            // Check if a record with the same DatumVon exists
+            $existing = Ceos_WOHNEINHEIT_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                ->where('WohneinheitID', $wohneinheit->WohneinheitID)
+                ->where('DatumVon', $newDatumVon)
+                ->orderByDesc('ID')
+                ->first();
+
+            $sameDatumVonButDifferent = false;
+
+            if ($existing) {
+                $isIdentical = true;
+
+                foreach ($apiData as $key => $value) {
+                    if (in_array($key, ['DatumVon', 'DatumBis', 'User'])) {
+                        continue;
+                    }
+                    if ($existing->$key != $value) {
+                        $isIdentical = false;
+                        break;
+                    }
+                }
+
+                // Same DatumVon and identical data
+                if ($isIdentical) {
+                    continue;
+                }
+
+                // Same DatumVon but different data
+                $sameDatumVonButDifferent = true;
+            }
+
+            // Close all overlapping records except same DatumVon case
+            if (!$sameDatumVonButDifferent) {
+                $overlappingRecords = Ceos_WOHNEINHEIT_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                    ->where('WohneinheitID', $wohneinheit->WohneinheitID)
+                    ->where('DatumBis', '>=', $newDatumVon)
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($overlappingRecords as $record) {
+                    if ($record->DatumVon != $newDatumVon) {
+                        $record->update([
+                            'DatumBis' => date(
+                                'Y-m-d',
+                                strtotime($newDatumVon . ' -1 day')
+                            ),
+                        ]);
+                    }
+                }
+            }
+
+            // Find previous record strictly before new DatumVon for copy
+            $previous = Ceos_WOHNEINHEIT_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                ->where('WohneinheitID', $wohneinheit->WohneinheitID)
+                ->where('DatumVon', '<=', $newDatumVon)
+                ->orderByDesc('DatumVon')
+                ->orderByDesc('ID')
+                ->first();
+
+            // Prepare new timeline row by copying previous data
+            $newData = $previous ? $previous->toArray() : [];
+            unset(
+                $newData['ID'],
+                $newData['DateStamp'],
+                $newData['TimeStamp']
+            );
+
+            // Merge API data
+            $newData = array_merge($newData, $apiData);
+
+            // Create new timeline row
+            Ceos_WOHNEINHEIT_TimeLine::create($newData);
+
+            // Create SAP IDs
             foreach ([
                          'tplnr' => 'WE_TPlatz',
                          'korrnrHk' => 'WE_HK_KORR_Nr',
                          'korrnrKw' => 'WE_KW_KORR_Nr',
                      ] as $key => $type) {
                 if (!empty($mietobjekt[$key])) {
-                    $this->createSapId($wohneinheit->WohneinheitID, $type, $mietobjekt[$key]);
+                    $this->createSapId(
+                        $wohneinheit->WohneinheitID,
+                        $type,
+                        $mietobjekt[$key]
+                    );
                 }
             }
         }
-
-        if (!empty($rows)) {
-            foreach (array_chunk($rows, 150) as $chunk) {
-                Ceos_WOHNEINHEIT_TimeLine::upsert(
-                    $chunk,
-                    ['LiegenschaftsID', 'WE_LfdNr', 'DatumVon'],
-                    ['lfd_Adressnummer_GE_CEOS', 'GebaeudeID', 'MDM', 'WE_Bezeichnung', 'Gewerblich_JN', 'DatumBis', 'User']
-                );
-            }
-        }
-
     }
 
+
+    /**
+     * @throws Throwable
+     */
     private function processMieter(Ceos_LIEGENSCHAFT $liegenschaft, array $mieters): void
     {
-        $rows = [];
         foreach ($mieters as $receivedMieter) {
-            $mieter = Ceos_MIETER::updateOrCreate(
+
+            $mieter = Ceos_MIETER::firstOrCreate(
                 ['MI_COMP_API_ID' => $receivedMieter['partner']],
                 ['User' => 0]
             );
+
             $this->importedMieter[] = $mieter->MieterID;
+
+            // Find corresponding building and unit
             $gebaeude = $this->findGebaeude($liegenschaft, $receivedMieter['genrCeos']);
             $wohneinheit = $this->findWohneinheit($liegenschaft, $gebaeude, $receivedMieter['menrCeos']);
 
             if (!$wohneinheit) {
-                $this->logMissing('Kein Wohneinheit', ['genr' => $receivedMieter['genrCeos'], 'menr' => $receivedMieter['menrCeos']]);
+                $this->logMissing(
+                    'No Wohneinheit found',
+                    ['genr' => $receivedMieter['genrCeos'], 'menr' => $receivedMieter['menrCeos']]
+                );
                 continue;
             }
 
-            $rows[] = [
+            // Prepare API data
+            $apiData = [
                 'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                 'WohneinheitID' => $wohneinheit->WohneinheitID,
                 'MieterID' => $mieter->MieterID,
@@ -359,20 +671,70 @@ class RE_01_01_Services
                 'DatumBis' => $receivedMieter['datumAuszug'],
                 'User' => 0,
             ];
-        }
 
-        if (!empty($rows)) {
-            // Process in chunks to avoid SQL Server's 2100 parameter limit
-            foreach (array_chunk($rows, 150) as $chunk) {
-                Ceos_MIETER_TimeLine::upsert(
-                    $chunk,
-                    ['LiegenschaftsID', 'lfd_Adressnummer_GE_CEOS', 'lfd_Adressnummer_ME_CEOS', 'MieterID', 'DatumVon'],
-                    ['lfd_Adressnummer_GE_CEOS', 'lfd_Adressnummer_ME_CEOS', 'Mietvertragsnummer', 'M_Name1', 'M_Anrede', 'DatumBis', 'User']
-                );
+            // Check if a timeline record with the same DatumVon exists
+            $existing = Ceos_MIETER_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                ->where('WohneinheitID', $wohneinheit->WohneinheitID)
+                ->where('MieterID', $mieter->MieterID)
+                ->where('DatumVon', $receivedMieter['datumEinzug'])
+                ->orderByDesc('ID')
+                ->first();
+
+            // Case 1: Same DatumVon exists and data is identical → skip creation
+            if ($existing) {
+                $isIdentical = true;
+                foreach ($apiData as $key => $value) {
+                    if (in_array($key, ['DatumVon', 'DatumBis', 'User'])) continue;
+                    if ($existing->$key != $value) {
+                        $isIdentical = false;
+                        break;
+                    }
+                }
+                if ($isIdentical) continue; // Skip if nothing changed
             }
-        }
 
+            DB::transaction(function () use ($liegenschaft, $wohneinheit, $mieter, $apiData) {
+
+                $newDatumVon = $apiData['DatumVon'];
+
+                // Close all previous timeline records that overlap with new DatumVon
+                $overlappingRecords = Ceos_MIETER_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                    ->where('WohneinheitID', $wohneinheit->WohneinheitID)
+                    ->where('MieterID', $mieter->MieterID)
+                    ->where('DatumBis', '>=', $newDatumVon)
+                    ->lockForUpdate()
+                    ->get();
+
+                foreach ($overlappingRecords as $record) {
+                    if ($record->DatumVon != $newDatumVon) {
+                        $record->update([
+                            'DatumBis' => date('Y-m-d', strtotime($newDatumVon . ' -1 day'))
+                        ]);
+                    }
+                }
+
+                //  Find the last timeline record strictly before new DatumVon to copy previous data
+                $previous = Ceos_MIETER_TimeLine::where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
+                    ->where('WohneinheitID', $wohneinheit->WohneinheitID)
+                    ->where('MieterID', $mieter->MieterID)
+                    ->where('DatumVon', '<=', $newDatumVon)
+                    ->orderByDesc('DatumVon')
+                    ->orderByDesc('ID')
+                    ->first();
+
+                // Prepare new timeline record: copy previous data if exists
+                $newData = $previous ? $previous->toArray() : [];
+                unset($newData['ID'], $newData['DateStamp'], $newData['TimeStamp']);
+
+                // Merge API fields only (overwrite previous data with new API values)
+                $newData = array_merge($newData, $apiData);
+
+                // Create the new timeline record
+                Ceos_MIETER_TimeLine::create($newData);
+            });
+        }
     }
+
 
     private function findWohneinheit(Ceos_LIEGENSCHAFT $liegenschaft, ?Ceos_GEBAEUDE_TimeLine $gebaeude, int $menr): ?Ceos_WOHNEINHEIT_TimeLine
     {
@@ -482,7 +844,5 @@ class RE_01_01_Services
             Ceos_GEBAEUDE_TimeLine::whereIn('GebaeudeID', $gebaeudeToDelete)->delete();
             Ceos_GEBAEUDE::whereIn('GebaeudeID', $gebaeudeToDelete)->delete();
         }
-
-
     }
 }
