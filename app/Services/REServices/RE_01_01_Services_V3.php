@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class RE_01_01_Services
+class RE_01_01_Services_V3
 {
     private array $importedGebaeude = [];
     private array $importedWohneinheiten = [];
@@ -628,7 +628,9 @@ class RE_01_01_Services
         }
     }
 
-
+    /**
+     * @throws Throwable
+     */
     private function processMieter(Ceos_LIEGENSCHAFT $liegenschaft, array $mieters): void
     {
         $leerstand = "1000000000";
@@ -735,24 +737,31 @@ class RE_01_01_Services
 
                                 // If API date is not newer, ignore
                                 if (strtotime($latest->DatumVon) <= strtotime($apiData['DatumVon'])) {
+                                    if ($apiData['WohneinheitID'] == 8858) {
+                                        dd($entries);
+                                    }
                                     return;
                                 }
+
                                 // Always close latest entry
                                 $latest->update([
                                     'Geloescht_JN' => 1
                                 ]);
+
                                 // Check sequential date condition
                                 if ($previous) {
                                     $expectedDate = date(
                                         'Y-m-d',
                                         strtotime($latest->DatumVon . ' -1 day')
                                     );
+
                                     if ($previous->DatumBis === $expectedDate) {
                                         // Close previous entry only if condition matches
                                         $previous->update([
                                             'Geloescht_JN' => 1
                                         ]);
                                     }
+
                                 }
                             }
                             // allow creation
@@ -760,18 +769,24 @@ class RE_01_01_Services
                             return;
                         }
                     }
+
                     // ---------- END NEW CASE 1 LOGIC ----------
+
                     // CASE 2 → Duplicate this record
                     $baseData = $samePeriod->toArray();
+
                 }
 
                 // -------------------------------------------------
                 // CASE 3 & 4
                 // -------------------------------------------------
                 if (!isset($baseData)) {
+
                     // CASE 4 → New Mieter
                     if ($lastRecord && $lastRecord->MieterID != $apiData['MieterID']) {
+
                         $baseData = [];
+
                     } else {
                         // CASE 3 → Same Mieter
                         if ($lastRecord && $lastRecord->MieterID == $apiData['MieterID'] && !$isLeerstand) {

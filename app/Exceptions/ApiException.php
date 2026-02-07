@@ -39,6 +39,10 @@ abstract class ApiException extends Exception
         return response()->json($report, $this->getCode() ?: 422);
     }
 
-
     abstract public function getErrorCode(): string;
+
+    public function getErrors(): array
+    {
+        return $this->errors;
+    }
 }

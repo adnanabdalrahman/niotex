@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class RE_01_01_Services
+class RE_01_01_Services_v4
 {
     private array $importedGebaeude = [];
     private array $importedWohneinheiten = [];
@@ -631,25 +631,15 @@ class RE_01_01_Services
 
     private function processMieter(Ceos_LIEGENSCHAFT $liegenschaft, array $mieters): void
     {
-        $leerstand = "1000000000";
-
         foreach ($mieters as $receivedMieter) {
 
-            $isLeerstand = ($receivedMieter['partner'] === $leerstand);
-
-            // -------------------------------------------------
-            // Mieter
-            // -------------------------------------------------
+            // Resolve tenant
             $mieter = Ceos_MIETER::firstOrCreate(
                 ['MI_COMP_API_ID' => $receivedMieter['partner']],
                 ['User' => 0]
             );
 
-            $this->importedMieter[] = $mieter->MieterID;
-
-            // -------------------------------------------------
-            // Wohneinheit
-            // -------------------------------------------------
+            // Resolve Wohneinheit
             $gebaeude = $this->findGebaeude($liegenschaft, $receivedMieter['genrCeos']);
             $wohneinheit = $this->findWohneinheit(
                 $liegenschaft,
@@ -657,20 +647,9 @@ class RE_01_01_Services
                 $receivedMieter['menrCeos']
             );
 
-            if (!$wohneinheit) {
-                $this->logMissing(
-                    'No Wohneinheit found',
-                    [
-                        'genr' => $receivedMieter['genrCeos'],
-                        'menr' => $receivedMieter['menrCeos']
-                    ]
-                );
-                continue;
-            }
+            if (!$wohneinheit) continue;
 
-            // -------------------------------------------------
-            // API Fields
-            // -------------------------------------------------
+            // Build API payload
             $apiData = [
                 'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                 'WohneinheitID' => $wohneinheit->WohneinheitID,
@@ -685,121 +664,86 @@ class RE_01_01_Services
                 'User' => 1,
             ];
 
-            DB::transaction(function () use ($apiData, $isLeerstand) {
-                // -------------------------------------------------
-                // Last Record (LG + W)
-                // -------------------------------------------------
-                $lastRecord = Ceos_MIETER_TimeLine::where('LiegenschaftsID', $apiData['LiegenschaftsID'])
-                    ->where('WohneinheitID', $apiData['WohneinheitID'])
-                    ->orderByDesc('DatumVon')
-                    ->orderByDesc('ID')
-                    ->first();
+            // =====================================================
+            // CASE 1 & 2 (same tenant + same period)
+            // =====================================================
 
-                // -------------------------------------------------
-                // Same LG-W-M with same period?
-                // -------------------------------------------------
-                $samePeriod = Ceos_MIETER_TimeLine::where('LiegenschaftsID', $apiData['LiegenschaftsID'])
-                    ->where('WohneinheitID', $apiData['WohneinheitID'])
-                    ->where('MieterID', $apiData['MieterID'])
-                    ->where('DatumVon', $apiData['DatumVon'])
-                    ->where('DatumBis', $apiData['DatumBis'])
-                    ->where('Geloescht_JN', 0)
-                    ->orderByDesc('ID')
-                    ->first();
+            $samePeriod = Ceos_MIETER_TimeLine::where('LiegenschaftsID', $apiData['LiegenschaftsID'])
+                ->where('WohneinheitID', $apiData['WohneinheitID'])
+                ->where('MieterID', $apiData['MieterID'])
+                ->where('DatumVon', $apiData['DatumVon'])
+                ->where('DatumBis', $apiData['DatumBis'])
+                ->orderByDesc('ID')
+                ->first();
 
-                // -------------------------------------------------
-                // CASE 1 & 2
-                // -------------------------------------------------
-                if ($samePeriod) {
-                    $identical = true;
-                    foreach ($apiData as $field => $value) {
-                        if ($samePeriod->$field != $value) {
-                            $identical = false;
-                            break;
-                        }
-                    }
-                    if ($identical) {
-                        if ($apiData['DatumBis'] === '9999-12-31') {
-                            $entries = Ceos_MIETER_TimeLine::where('LiegenschaftsID', $apiData['LiegenschaftsID'])
-                                ->where('WohneinheitID', $apiData['WohneinheitID'])
-                                ->where('Geloescht_JN', 0)
-                                ->orderByDesc('DatumVon')
-                                ->orderByDesc('ID')
-                                ->take(2)
-                                ->get();
+            if ($samePeriod) {
 
-                            if ($entries->isNotEmpty()) {
-
-                                $latest = $entries[0];
-                                $previous = $entries[1] ?? null;
-
-                                // If API date is not newer, ignore
-                                if (strtotime($latest->DatumVon) <= strtotime($apiData['DatumVon'])) {
-                                    return;
-                                }
-                                // Always close latest entry
-                                $latest->update([
-                                    'Geloescht_JN' => 1
-                                ]);
-                                // Check sequential date condition
-                                if ($previous) {
-                                    $expectedDate = date(
-                                        'Y-m-d',
-                                        strtotime($latest->DatumVon . ' -1 day')
-                                    );
-                                    if ($previous->DatumBis === $expectedDate) {
-                                        // Close previous entry only if condition matches
-                                        $previous->update([
-                                            'Geloescht_JN' => 1
-                                        ]);
-                                    }
-                                }
-                            }
-                            // allow creation
-                        } else {
-                            return;
-                        }
-                    }
-                    // ---------- END NEW CASE 1 LOGIC ----------
-                    // CASE 2 → Duplicate this record
-                    $baseData = $samePeriod->toArray();
+                if (
+                    $samePeriod->M_Name1 == $apiData['M_Name1'] &&
+                    $samePeriod->Mietvertragsnummer == $apiData['Mietvertragsnummer'] &&
+                    $samePeriod->M_Anrede == $apiData['M_Anrede']
+                ) {
+                    continue; // Case 1
                 }
 
-                // -------------------------------------------------
-                // CASE 3 & 4
-                // -------------------------------------------------
-                if (!isset($baseData)) {
-                    // CASE 4 → New Mieter
-                    if ($lastRecord && $lastRecord->MieterID != $apiData['MieterID']) {
-                        $baseData = [];
-                    } else {
-                        // CASE 3 → Same Mieter
-                        if ($lastRecord && $lastRecord->MieterID == $apiData['MieterID'] && !$isLeerstand) {
-                            $baseData = $lastRecord->toArray();
-                        } else {
+                // Case 2
+                $new = $samePeriod->replicate(['TimeStamp', 'DateStamp']);
+                $new->M_Name1 = $apiData['M_Name1'];
+                $new->Mietvertragsnummer = $apiData['Mietvertragsnummer'];
+                $new->M_Anrede = $apiData['M_Anrede'];
+                $new->User = 1;
+                $new->save();
+                continue;
+            }
 
-                            // Last was Leerstand OR no history
-                            $baseData = [];
-                        }
-                    }
-                }
+            // =====================================================
+            // CASE 3 (same LG-W-M, different period)
+            // =====================================================
 
-                // -------------------------------------------------
-                // Prepare Insert
-                // -------------------------------------------------
-                unset(
-                    $baseData['ID'],
-                    $baseData['DateStamp'],
-                    $baseData['TimeStamp']
-                );
+            $lastSameTenantRow = Ceos_MIETER_TimeLine::where('LiegenschaftsID', $apiData['LiegenschaftsID'])
+                ->where('WohneinheitID', $apiData['WohneinheitID'])
+                ->where('MieterID', $apiData['MieterID'])
+                ->orderByDesc('DatumVon')
+                ->orderByDesc('ID')
+                ->first();
 
-                $newData = array_merge($baseData, $apiData);
+            if ($lastSameTenantRow) {
 
-                // -------------------------------------------------
-                // Insert
-                // -------------------------------------------------
-                Ceos_MIETER_TimeLine::create($newData);
-            });
+                $new = $lastSameTenantRow->replicate(['TimeStamp', 'DateStamp']);
+                $new->DatumVon = $apiData['DatumVon'];
+                $new->DatumBis = $apiData['DatumBis'];
+                $new->Mietvertragsnummer = $apiData['Mietvertragsnummer'];
+                $new->M_Name1 = $apiData['M_Name1'];
+                $new->M_Anrede = $apiData['M_Anrede'];
+                $new->User = 1;
+                $new->save();
+                continue;
+            }
+
+            // =====================================================
+            // CASE 5 (cancel last occupancy)
+            // =====================================================
+
+            $lastUnitRow = Ceos_MIETER_TimeLine::where('LiegenschaftsID', $apiData['LiegenschaftsID'])
+                ->where('WohneinheitID', $apiData['WohneinheitID'])
+                ->orderByDesc('DatumVon')
+                ->orderByDesc('ID')
+                ->first();
+
+            if (
+                $lastUnitRow &&
+                $lastUnitRow->MieterID != $apiData['MieterID'] &&
+                $apiData['DatumVon'] <= $lastUnitRow->DatumVon
+            ) {
+                Ceos_MIETER_TimeLine::create($apiData);
+                continue;
+            }
+
+            // =====================================================
+            // CASE 4 (new tenant)
+            // =====================================================
+
+            Ceos_MIETER_TimeLine::create($apiData);
         }
     }
 

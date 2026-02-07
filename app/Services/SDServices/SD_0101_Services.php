@@ -58,7 +58,7 @@ class SD_0101_Services
             $positions = $requestData['positions'];
             $data = [];
             // Adresse
-            $this->prepareAdresse($header['kunnr'], $data);
+            $this->prepareAdresse($header['kunnr'], $data, $requestData);
             // VorGruppe
             $materialGruppe = substr($positions[0]['aufnr'], 0, 2);
             $vorGruppe = $this->getVorGruppe($header['augru'], $materialGruppe);
@@ -89,16 +89,16 @@ class SD_0101_Services
      * @throws ResourceNotFoundException
      * @throws AdresseGesperrtException
      */
-    protected function prepareAdresse(string $kunnr, array &$data): void
+    protected function prepareAdresse(string $kunnr, array &$data, $requestData): void
     {
         $adresse = Adresse::where('AdressNummer', $kunnr)->first();
 
         if ($adresse === null) {
-            throw new ResourceNotFoundException('Ressource wurde nicht gefunden', ['AdressNummer' => $kunnr]);
+            throw new ResourceNotFoundException('AdressNummer wurde nicht gefunden', ['AdressNummer' => $kunnr]);
         }
 
         if ($adresse->AdrLiefersperreJN == "1") {
-            throw new AdresseGesperrtException($adresse->AdressNummer);
+            throw new AdresseGesperrtException(errors: ["AdressNummer" => $kunnr]);
         }
 
         $interneNummer = $adresse->InterneAdressnummer;
@@ -169,7 +169,7 @@ class SD_0101_Services
         $vorgang = $vorgangService->createVorgang($data);
 
         if ($vorgang === null) {
-            throw new CreationFailedException('Vorgang Erstellung fehlgeschlagen', $header);
+            throw new CreationFailedException('Vorgang Erstellung fehlgeschlagen');
         }
 
         return $vorgang;
@@ -207,7 +207,7 @@ class SD_0101_Services
             if ($artikel === null) {
                 throw new ResourceNotFoundException(
                     'Material für Position nicht gefunden',
-                    ['Material' => $artikelNummer, 'Vorgangnummer' => $vorgang['VorNummer']]
+                    ['Material' => $artikelNummer, "posnr" => $position['posnr']]
                 );
             }
 
@@ -216,7 +216,11 @@ class SD_0101_Services
             if ($preisbasis === null) {
                 throw new ResourceNotFoundException(
                     'Preisbasis für Artikel nicht gefunden',
-                    ['Material' => $artikelNummer, 'NRPreisbasis' => $artikel->NRPreisbasis]
+                    [
+                        'Material' => $artikelNummer,
+                        'NRPreisbasis' => $artikel->NRPreisbasis,
+                        "posnr" => $position['posnr']
+                    ]
                 );
             }
 
@@ -246,10 +250,10 @@ class SD_0101_Services
             $positionService = new PositionService();
             $createdPosition = $positionService->createPosition($positionData, $artikel);
 
-            if ($createdPosition === null) {
+            if ($createdPosition !== null) {
                 throw new CreationFailedException(
                     'Position Erstellung fehlgeschlagen',
-                    $positionData
+                    ["posnr" => $position['posnr']]
                 );
             }
 

@@ -2,12 +2,25 @@
 
 namespace App\Exceptions;
 
-use Exception;
+namespace App\Exceptions;
 
-class AdresseGesperrtException extends Exception
+class AdresseGesperrtException extends ApiException
 {
-    public function __construct(int $adressNummer, int $code = 403)
+
+    public function __construct(
+        string $message = "Dieser Geschäftspartner ist gesperrt.",
+        array  $errors = [],
+        int    $statusCode = 500,
+    )
     {
-        parent::__construct("Dieser Geschäftspartner ($adressNummer) ist gesperrt.", $code);
+        parent::__construct($message, $errors, $statusCode);
     }
+
+    public function getErrorCode(): string
+    {
+        return "CREATION_FAILED";
+    }
+
+
 }
+

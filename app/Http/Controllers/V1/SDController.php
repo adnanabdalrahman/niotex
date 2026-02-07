@@ -77,7 +77,6 @@ class SDController extends Controller
             }
             try {
                 $result = $this->sd0101Services->sd_0101_beauftragung($auftrag);
-
                 if ($result) {
                     $report['success'][] = [
                         'vbeln' => $vbeln,
@@ -87,13 +86,20 @@ class SDController extends Controller
                 } else {
                     $report['failed'][] = [
                         'vbeln' => $vbeln,
+                        'data' => $result,
                         'message' => "Beauftragung $vbeln konnte nicht verarbeitet werden",
                     ];
                 }
 
             } catch (Throwable $e) {
+                $errors = [];
+
+                if (method_exists($e, 'getErrors')) {
+                    $errors = $e->getErrors();
+                }
                 $report['failed'][] = [
                     'vbeln' => $vbeln,
+                    'data' => $errors,
                     'message' => $e->getMessage(),
                 ];
             }
