@@ -29,6 +29,7 @@ abstract class ApiException extends Exception
             "status_code" => $this->getCode() ?: 422,
             "code" => $this->getErrorCode(),
             "message" => $this->getMessage(),
+            //todo later change to data instead of Errors
             "errors" => $this->errors,
             "meta" => [
                 "path" => request()->path(),

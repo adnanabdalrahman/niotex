@@ -13,7 +13,6 @@ use App\Models\Ansprechpartner;
 use App\Services\BPServices;
 use App\Traits\ApiResponses;
 use Illuminate\Http\JsonResponse;
-use Throwable;
 
 class BPController extends Controller
 {
@@ -36,18 +35,16 @@ class BPController extends Controller
      * SAP → CEOS
      */
     /**
-     * @throws DBFetchException|DBSaveException
+     * @throws ResourceNotFoundException
+     * @throws DBSaveException
      */
     public function bp_01_01_Geschaeftspartner(BP_0101_geschaeftspartnerRequest $request): JsonResponse
     {
         $validated = $request->validated();
         $adressnummer = ltrim($validated['DebitorenKreditorennummer'], '0');
-        try {
-            $currentAdresse = Adresse::where('AdressNummer', $adressnummer)->first();
-        } catch (Throwable $exception) {
-            throw new DBFetchException('Fehler beim Abrufen des Geschäftspartners', [
-                'database' => $exception->getMessage(),
-            ]);
+        $currentAdresse = Adresse::where('AdressNummer', $adressnummer)->first();
+        if (!$currentAdresse) {
+            throw new ResourceNotFoundException('Adresse nicht gefunden');
         }
         $status = match (true) {
             !empty($validated['Loeschvormerkung']) => 'gelöscht',
