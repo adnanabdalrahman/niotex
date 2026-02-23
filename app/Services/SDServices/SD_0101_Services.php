@@ -69,6 +69,7 @@ class SD_0101_Services
             // Vorgang erstellen
             $vorgang = $this->createVorgang($data, $header);
             // Positionen erstellen
+            $vorgang['vbeln'] = $header['vbeln'];
             $positionsArray = $this->preparePositions($positions, $vorgang);
             return [
                 'header' => [
@@ -250,13 +251,13 @@ class SD_0101_Services
             $positionService = new PositionService();
             $createdPosition = $positionService->createPosition($positionData, $artikel);
 
-            if ($createdPosition !== null) {
+            if ($createdPosition === null) {
                 throw new CreationFailedException(
                     'Position Erstellung fehlgeschlagen',
                     ["posnr" => $position['posnr']]
                 );
             }
-
+            $createdPosition['Verkaufsbeleg'] = $vorgang['vbeln'];
             $positionsArray[] = $createdPosition;
         }
 

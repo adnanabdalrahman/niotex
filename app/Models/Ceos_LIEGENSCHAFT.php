@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Eloquent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -23,7 +24,7 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Ceos_LIEGENSCHAFT whereUser($value)
  * @property string $Liegenschaftsnummer
  * @method static Builder<static>|Ceos_LIEGENSCHAFT whereLiegenschaftsnummer($value)
- * @mixin \Eloquent
+ * @mixin Eloquent
  */
 class Ceos_LIEGENSCHAFT extends Model
 {

@@ -89,9 +89,9 @@ class BP_01_01_Services
             'AdrRabatt' => 0,
             'AdrFactoringJN' => 0,
             'KZZahlungsbedingung' => "0/0",
-            'AdrAnlageAm' => now(),
+            'AdrAnlageAm' => now()->format('Ymd'),
             'AdrAnlageDurch' => $nutzerId,
-            'AdrLetzteAenderungAm' => now(),
+            'AdrLetzteAenderungAm' => now()->format('Ymd'),
             'AdrLetzteAenderungDurch' => $nutzerId,
 
             'NRAnrede' => $data['Anrede'],

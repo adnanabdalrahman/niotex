@@ -21,10 +21,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class RE_01_01_Services
+class RE_01_01_Services_withoutDBChanges
 {
     private array $importedGebaeude = [];
     private array $importedWohneinheiten = [];
+    private array $importedMieter = [];
     private ?int $currentLiegenschaftId = null;
 
     public function re_01_01_Liegenschaften(array $receivedLiegenschaften): array
@@ -68,12 +69,12 @@ class RE_01_01_Services
         );
         $this->currentLiegenschaftId = $liegenschaft->LiegenschaftsID;
         $this->processTimeline($liegenschaft, $data);
-        $this->importGebaeude($liegenschaft, $data['adressen']);
+        $this->processGebaeude($liegenschaft, $data['adressen']);
         $this->processMieter0($liegenschaft, $data);
         $this->processKunden($liegenschaft, $data['kunden'] ?? []);
-        $this->importMietobjekte($liegenschaft, $data['mietobjekte'] ?? []);
+        $this->processMietobjekte($liegenschaft, $data['mietobjekte'] ?? []);
         $this->processMieter($liegenschaft, $data['mieter']);
-        $this->processAbrechnungen($liegenschaft, $data['abrechnungsdaten'], $data['lgart']);
+        $this->processAbrechnungen($liegenschaft, $data['abrechnungsdaten']);
     }
 
     /**
@@ -84,6 +85,7 @@ class RE_01_01_Services
     private function processTimeline(Ceos_LIEGENSCHAFT $liegenschaft, array $data): void
     {
         $kunden = $data['kunden'] ?? [];
+
         DB::transaction(function () use ($liegenschaft, $data, $kunden) {
 
             // -------------------------------------------------
@@ -92,7 +94,7 @@ class RE_01_01_Services
             $apiData = [
                 'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                 'Liegenschaftsnummer' => $data['slgnr'],
-                'MDM_LG' => $data['mdmId'],
+                'MDM' => $data['mdmId'],
                 'Fernablesung_JN' => $data['fern'],
                 'Fernablesung_Ab' => $data['fernAb'],
                 'OnlinePortal_JN' => $data['opk'],
@@ -102,7 +104,6 @@ class RE_01_01_Services
                 'Mdf' => $data['mdf'],
                 'Mdf_Bis' => $data['mdfBis'],
                 'Vertreter' => $kunden[0]['vtrCeos'] ?? null,
-                'LG_KORR_Nr' => $data['lgnrExt'],
                 'DatumVon' => $data['validfrom'],
                 'DatumBis' => $this->normalizeValidTo($data['validto'] ?? null),
                 'User' => 1,
@@ -131,7 +132,9 @@ class RE_01_01_Services
                 )->orderByDesc('ID')->first();
 
                 if ($lastRecord) {
+
                     $base = $lastRecord->toArray();
+
                     unset(
                         $base['ID'],
                         $base['DateStamp'],
@@ -193,7 +196,9 @@ class RE_01_01_Services
                 $base['TimeStamp'],
                 $base['FULL_HASH']
             );
+
             $newData = array_merge($base, $apiData);
+
             Ceos_LIEGENSCHAFT_TimeLine::create($newData);
         });
 
@@ -214,6 +219,7 @@ class RE_01_01_Services
         if (!$date || $date === '0000-00-00') {
             return '9999-12-31';
         }
+
         return $date;
     }
 
@@ -228,84 +234,108 @@ class RE_01_01_Services
     /**
      * @throws Throwable
      */
-    private function importGebaeude(Ceos_LIEGENSCHAFT $liegenschaft, array $adressen): void
-    {
-        // Reset imported list for this property
-        $this->importedGebaeude = [];
-
-        // Process incoming buildings
-        $this->processGebaeude($liegenschaft, $adressen);
-
-        // Close buildings missing from API snapshot
-        $this->closeMissingGebaeude($liegenschaft->LiegenschaftsID);
-    }
-
     private function processGebaeude(Ceos_LIEGENSCHAFT $liegenschaft, array $adressen): void
     {
         foreach ($adressen as $adresse) {
 
-            // Ensure master record exists
+            // -------------------------------------------------
+            // Gebäude master
+            // -------------------------------------------------
             $gebaeude = Ceos_GEBAEUDE::firstOrCreate(
                 ['GEB_COMP_API_ID' => $liegenschaft->Liegenschaftsnummer . '-' . $adresse['genrCeos']],
                 ['User' => 0]
             );
 
-            // Track imported buildings in this run
             $this->importedGebaeude[] = $gebaeude->GebaeudeID;
+
+            $tplnr = $adresse['tplnr'] ?? null;
 
             DB::transaction(function () use ($liegenschaft, $adresse, $gebaeude) {
 
-                // Build snapshot data from API
+                // -------------------------------------------------
+                // API data
+                // -------------------------------------------------
                 $apiData = [
                     'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                     'GebaeudeID' => $gebaeude->GebaeudeID,
                     'GebaeudeNr' => $adresse['genrCeos'],
-                    'MDM_GEB' => $adresse['mdmId'],
+                    'MDM' => $adresse['mdmId'],
                     'LG_Strasse' => $adresse['lgStr'],
-                    'GEB_TPlatz' => $adresse['tplnr'],
                     'LG_PLZ' => $adresse['lgPlz'],
                     'LG_Ort' => $adresse['lgOrt'],
                     'LAND' => 'DE',
                     'Heizanlage_JN' => $adresse['hausHeizanlage'],
                     'DatumVon' => $adresse['validfrom'],
-                    'DatumBis' => '9999-12-31',
+                    'DatumBis' => $this->normalizeValidTo($adresse['validto'] ?? null),
                     'User' => 1,
                 ];
 
-                // Fetch latest record (last state)
-                $last = Ceos_GEBAEUDE_TimeLine::where([
-                    'LiegenschaftsID' => $apiData['LiegenschaftsID'],
-                    'GebaeudeID' => $apiData['GebaeudeID'],
-                ])
+                // =================================================
+                // HISTORICAL RECORD (closed period)
+                // =================================================
+                if ($apiData['DatumBis'] !== '9999-12-31') {
+
+                    // Check duplicate by period
+                    $exists = Ceos_GEBAEUDE_TimeLine::where([
+                        'LiegenschaftsID' => $apiData['LiegenschaftsID'],
+                        'GebaeudeID' => $apiData['GebaeudeID'],
+                        'DatumVon' => $apiData['DatumVon'],
+                        'DatumBis' => $apiData['DatumBis'],
+                    ])->exists();
+
+                    if ($exists) {
+                        return;
+                    }
+
+                    // Find last record for this building
+                    $lastRecord = Ceos_GEBAEUDE_TimeLine::where([
+                        'LiegenschaftsID' => $apiData['LiegenschaftsID'],
+                        'GebaeudeID' => $apiData['GebaeudeID'],
+                    ])
+                        ->orderByDesc('ID')
+                        ->first();
+
+                    if ($lastRecord) {
+
+                        $base = $lastRecord->toArray();
+
+                        unset(
+                            $base['ID'],
+                            $base['DateStamp'],
+                            $base['TimeStamp'],
+                            $base['FULL_HASH']
+                        );
+
+                        $newData = array_merge($base, $apiData);
+
+                        Ceos_GEBAEUDE_TimeLine::create($newData);
+                        return;
+                    }
+
+                    // No history → insert as is
+                    Ceos_GEBAEUDE_TimeLine::create($apiData);
+                    return;
+                }
+
+                // =================================================
+                // CURRENT STATE = latest open record
+                // =================================================
+                $last = Ceos_GEBAEUDE_TimeLine::where('GebaeudeID', $apiData['GebaeudeID'])
+                    ->where('DatumBis', '9999-12-31')
                     ->orderByDesc('ID')
                     ->first();
 
-                // No history → insert new open record
+                // -------------------------------------------------
+                // No history → insert
+                // -------------------------------------------------
                 if (!$last) {
                     Ceos_GEBAEUDE_TimeLine::create($apiData);
                     return;
                 }
 
-                // If last state is CLOSED → reopen with new record
-                if ($last->DatumBis !== '9999-12-31') {
-
-                    $base = $last->toArray();
-
-                    unset(
-                        $base['ID'],
-                        $base['DateStamp'],
-                        $base['TimeStamp'],
-                        $base['FULL_HASH']
-                    );
-
-                    $newData = array_merge($base, $apiData);
-                    $newData['DatumBis'] = '9999-12-31';
-
-                    Ceos_GEBAEUDE_TimeLine::create($newData);
-                    return;
-                }
-
-                // Last state is OPEN → insert only if changed
+                // =================================================
+                // CASE 1 — identical current state
+                // =================================================
                 $identical = true;
 
                 foreach ($apiData as $field => $value) {
@@ -319,7 +349,9 @@ class RE_01_01_Services
                     return;
                 }
 
-                // Insert new version due to change
+                // =================================================
+                // CASE 3/4 — copy previous data
+                // =================================================
                 $base = $last->toArray();
 
                 unset(
@@ -333,45 +365,17 @@ class RE_01_01_Services
 
                 Ceos_GEBAEUDE_TimeLine::create($newData);
             });
-        }
-    }
 
-    private function closeMissingGebaeude(int $liegenschaftID): void
-    {
-        $today = now()->toDateString();
-
-        // Get latest record per building
-        $latestRecords = Ceos_GEBAEUDE_TimeLine::where('LiegenschaftsID', $liegenschaftID)
-            ->orderByDesc('ID')
-            ->get()
-            ->unique('GebaeudeID');
-
-        foreach ($latestRecords as $last) {
-
-            // Skip buildings received in API
-            if (in_array($last->GebaeudeID, $this->importedGebaeude)) {
-                continue;
+            // -------------------------------------------------
+            // SAP ID
+            // -------------------------------------------------
+            if (!empty($tplnr)) {
+                $this->createSapId(
+                    $gebaeude->GebaeudeID,
+                    'GEB_TPlatz',
+                    $tplnr
+                );
             }
-
-            // Only close if last state is OPEN
-            if ($last->DatumBis !== '9999-12-31') {
-                continue;
-            }
-
-            // Insert closure record based on last state
-            $base = $last->toArray();
-
-            unset(
-                $base['ID'],
-                $base['DateStamp'],
-                $base['TimeStamp'],
-                $base['FULL_HASH']
-            );
-
-            $base['DatumBis'] = $today;
-            $base['User'] = 1;
-
-            Ceos_GEBAEUDE_TimeLine::create($base);
         }
     }
 
@@ -390,7 +394,7 @@ class RE_01_01_Services
             'WohneinheitID' => $wohneinheit->WohneinheitID,
             'lfd_Adressnummer_GE_CEOS' => 0,
             'GebaeudeID' => $gebaeude?->GebaeudeID,
-            'MDM_WE' => null,
+            'MDM' => null,
             'WE_LfdNr' => 0,
             'WE_Bezeichnung' => 'Allgemein',
             'Gewerblich_JN' => 0,
@@ -418,7 +422,7 @@ class RE_01_01_Services
             'M_Name1' => 'Allgemein',
             'M_Anrede' => null,
             'DatumVon' => $this->today(),
-            'DatumBis' => '9999-12-31',
+            'DatumBis' => '99991231',
             'User' => 1,
         ]],
             ['LiegenschaftsID', 'lfd_Adressnummer_GE_CEOS', 'lfd_Adressnummer_ME_CEOS', 'MieterID'],
@@ -430,15 +434,12 @@ class RE_01_01_Services
     {
         return Ceos_GEBAEUDE_TimeLine::where('GebaeudeNr', $nr)
             ->where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
-            ->where('DatumBis', '9999-12-31')
-            ->orderByDesc('DatumVon')
-            ->orderByDesc('ID')
             ->first();
     }
 
     private function today(): string
     {
-        return Carbon::now()->format('Y-m-d');
+        return Carbon::now()->format('Ymd');
     }
 
     /**
@@ -447,7 +448,9 @@ class RE_01_01_Services
     private function processKunden(Ceos_LIEGENSCHAFT $liegenschaft, array $kunden): void
     {
         foreach ($kunden as $kunde) {
+
             DB::transaction(function () use ($liegenschaft, $kunde) {
+
                 // -------------------------------------------------
                 // Verwaltung master
                 // -------------------------------------------------
@@ -462,8 +465,9 @@ class RE_01_01_Services
                 $adressnummer = ltrim($kunde['kunnr'], '0');
 
                 $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
+
                 if (!$adresse) {
-                    $this->logMissing(['adressnummer' => $adressnummer]);
+                    $this->logMissing('Kein Adresse gefunden', ['adressnummer' => $adressnummer]);
                     return;
                 }
 
@@ -486,6 +490,7 @@ class RE_01_01_Services
                 // HISTORICAL RECORD (closed period)
                 // =================================================
                 if ($apiData['DatumBis'] !== '9999-12-31') {
+
                     // Check duplicate by period
                     $exists = Ceos_VERWALTUNG_TimeLine::where([
                         'LiegenschaftsID' => $apiData['LiegenschaftsID'],
@@ -505,8 +510,11 @@ class RE_01_01_Services
                     ])
                         ->orderByDesc('ID')
                         ->first();
+
                     if ($lastRecord) {
+
                         $base = $lastRecord->toArray();
+
                         unset(
                             $base['ID'],
                             $base['DateStamp'],
@@ -576,28 +584,21 @@ class RE_01_01_Services
         }
     }
 
-    private function logMissing(array $extra = []): void
+    private function logMissing(string $context, array $extra = []): void
     {
-        Log::warning("re_01_01_Liegenschaften: Kein Adresse gefunden", $extra);
+        Log::warning("re_01_01_Liegenschaften: $context", $extra);
     }
 
-    private function importMietobjekte(Ceos_LIEGENSCHAFT $liegenschaft, array $mietobjekte): void
-    {
-        // Reset imported list for this property
-        $this->importedWohneinheiten = [];
-
-        // Process incoming units
-        $this->processMietobjekte($liegenschaft, $mietobjekte);
-
-        // Close units missing from API snapshot
-        $this->closeMissingWohneinheiten($liegenschaft->LiegenschaftsID);
-    }
-
+    /**
+     * @throws Throwable
+     */
     private function processMietobjekte(Ceos_LIEGENSCHAFT $liegenschaft, array $mietobjekte): void
     {
         foreach ($mietobjekte as $mietobjekt) {
 
-            // Ensure master record exists
+            // -------------------------------------------------
+            // Wohneinheit master
+            // -------------------------------------------------
             $wohneinheit = Ceos_WOHNEINHEIT::firstOrCreate(
                 [
                     'WE_COMP_API_ID' =>
@@ -608,72 +609,98 @@ class RE_01_01_Services
                 ['User' => 0]
             );
 
-            // Track imported units in this run
             $this->importedWohneinheiten[] = $wohneinheit->WohneinheitID;
 
+            // -------------------------------------------------
             // Resolve building
+            // -------------------------------------------------
             $gebaeude = $this->findGebaeude($liegenschaft, $mietobjekt['genrCeos']);
             if (!$gebaeude) continue;
 
             DB::transaction(function () use ($liegenschaft, $mietobjekt, $wohneinheit, $gebaeude) {
 
-                // Build snapshot data from API
+                // -------------------------------------------------
+                // API data
+                // -------------------------------------------------
                 $apiData = [
                     'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                     'GebaeudeID' => $gebaeude->GebaeudeID,
                     'WohneinheitID' => $wohneinheit->WohneinheitID,
                     'lfd_Adressnummer_GE_CEOS' => $mietobjekt['genrCeos'],
                     'WE_LfdNr' => $mietobjekt['menrCeos'],
-                    'WE_Bezeichnung' => $mietobjekt['mLageBez'],
-                    'Lage' => $mietobjekt['mLage'],
+                    'WE_Bezeichnung' => $mietobjekt['mLage'],
                     'Gewerblich_JN' => $mietobjekt['gewerblichJn'],
-                    'Garage_JN' => $mietobjekt['garageJn'],
-                    'Wohn_Flaeche' => $mietobjekt['wohnFl'],
-                    'Heizung_Flaeche' => $mietobjekt['heizFl'],
-                    'WW_Flaeche' => $mietobjekt['wwFl'],
-                    'WE_HK_KORR_Nr' => $mietobjekt['korrnrHk'],
-                    'WE_KW_KORR_Nr' => $mietobjekt['korrnrKw'],
-                    'WE_TPlatz' => $mietobjekt['tplnr'],
-                    'MDM_WE' => $mietobjekt['mdmIdMe'],
+                    'MDM' => $mietobjekt['mdmIdMe'],
                     'DatumVon' => $mietobjekt['validfrom'],
-                    'DatumBis' => '9999-12-31',
+                    'DatumBis' => $this->normalizeValidTo($mietobjekt['validto'] ?? null),
                     'User' => 1,
                 ];
 
-                // Fetch latest record (last state)
-                $last = Ceos_WOHNEINHEIT_TimeLine::where([
-                    'LiegenschaftsID' => $apiData['LiegenschaftsID'],
-                    'WohneinheitID' => $apiData['WohneinheitID'],
-                ])
+                // =================================================
+                // HISTORICAL RECORD (closed period)
+                // =================================================
+                if ($apiData['DatumBis'] !== '9999-12-31') {
+
+                    // Check exact duplicate
+                    $exists = Ceos_WOHNEINHEIT_TimeLine::where([
+                        'LiegenschaftsID' => $apiData['LiegenschaftsID'],
+                        'WohneinheitID' => $apiData['WohneinheitID'],
+                        'DatumVon' => $apiData['DatumVon'],
+                        'DatumBis' => $apiData['DatumBis'],
+                    ])->exists();
+
+                    if ($exists) {
+                        return;
+                    }
+
+                    // Find last record for this unit
+                    $lastUnitRecord = Ceos_WOHNEINHEIT_TimeLine::where([
+                        'LiegenschaftsID' => $apiData['LiegenschaftsID'],
+                        'WohneinheitID' => $apiData['WohneinheitID'],
+                    ])
+                        ->orderByDesc('ID')
+                        ->first();
+
+                    if ($lastUnitRecord) {
+
+                        $base = $lastUnitRecord->toArray();
+
+                        unset(
+                            $base['ID'],
+                            $base['DateStamp'],
+                            $base['TimeStamp'],
+                            $base['FULL_HASH']
+                        );
+
+                        $newData = array_merge($base, $apiData);
+
+                        Ceos_WOHNEINHEIT_TimeLine::create($newData);
+                        return;
+                    }
+
+                    Ceos_WOHNEINHEIT_TimeLine::create($apiData);
+                    return;
+                }
+
+                // =================================================
+                // CURRENT STATE = latest open record
+                // =================================================
+                $last = Ceos_WOHNEINHEIT_TimeLine::where('WohneinheitID', $apiData['WohneinheitID'])
+                    ->where('DatumBis', '9999-12-31')
                     ->orderByDesc('ID')
                     ->first();
 
-                // No history → insert new open record
+                // -------------------------------------------------
+                // No history → insert
+                // -------------------------------------------------
                 if (!$last) {
                     Ceos_WOHNEINHEIT_TimeLine::create($apiData);
                     return;
                 }
 
-                // Last state is CLOSED → reopen with new record
-                if ($last->DatumBis !== '9999-12-31') {
-
-                    $base = $last->toArray();
-
-                    unset(
-                        $base['ID'],
-                        $base['DateStamp'],
-                        $base['TimeStamp'],
-                        $base['FULL_HASH']
-                    );
-
-                    $newData = array_merge($base, $apiData);
-                    $newData['DatumBis'] = '9999-12-31';
-
-                    Ceos_WOHNEINHEIT_TimeLine::create($newData);
-                    return;
-                }
-
-                // Last state is OPEN → insert only if changed
+                // =================================================
+                // CASE 1 — identical
+                // =================================================
                 $identical = true;
 
                 foreach ($apiData as $field => $value) {
@@ -687,7 +714,10 @@ class RE_01_01_Services
                     return;
                 }
 
-                // Insert new version due to change
+                // =================================================
+                // CASE 3/4 — copy previous data
+                // (units have no tenant dimension)
+                // =================================================
                 $base = $last->toArray();
 
                 unset(
@@ -702,7 +732,9 @@ class RE_01_01_Services
                 Ceos_WOHNEINHEIT_TimeLine::create($newData);
             });
 
-            // Create SAP IDs if available
+            // -------------------------------------------------
+            // SAP IDs
+            // -------------------------------------------------
             foreach ([
                          'tplnr' => 'WE_TPlatz',
                          'korrnrHk' => 'WE_HK_KORR_Nr',
@@ -717,44 +749,6 @@ class RE_01_01_Services
                     );
                 }
             }
-        }
-    }
-
-    private function closeMissingWohneinheiten(int $liegenschaftID): void
-    {
-        $today = now()->toDateString();
-
-        // Get latest record per unit
-        $latestRecords = Ceos_WOHNEINHEIT_TimeLine::where('LiegenschaftsID', $liegenschaftID)
-            ->orderByDesc('ID')
-            ->get()
-            ->unique('WohneinheitID');
-        foreach ($latestRecords as $last) {
-
-            // Skip units received in API
-            if (in_array($last->WohneinheitID, $this->importedWohneinheiten)) {
-                continue;
-            }
-
-            // Only close if last state is OPEN
-            if ($last->DatumBis !== '9999-12-31') {
-                continue;
-            }
-
-            // Insert closure record based on last state
-            $base = $last->toArray();
-
-            unset(
-                $base['ID'],
-                $base['DateStamp'],
-                $base['TimeStamp'],
-                $base['FULL_HASH']
-            );
-
-            $base['DatumBis'] = $today;
-            $base['User'] = 1;
-
-            Ceos_WOHNEINHEIT_TimeLine::create($base);
         }
     }
 
@@ -881,6 +875,7 @@ class RE_01_01_Services
         }
     }
 
+
     private function findWohneinheit(Ceos_LIEGENSCHAFT $liegenschaft, ?Ceos_GEBAEUDE_TimeLine $gebaeude, int $menr): ?Ceos_WOHNEINHEIT_TimeLine
     {
         if (!$gebaeude) {
@@ -889,8 +884,6 @@ class RE_01_01_Services
         return Ceos_WOHNEINHEIT_TimeLine::where('WE_LfdNr', $menr)
             ->where('GebaeudeID', $gebaeude->GebaeudeID)
             ->where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
-            ->where('DatumBis', '9999-12-31')
-            ->orderByDesc('ID')
             ->first();
     }
 
@@ -923,11 +916,11 @@ class RE_01_01_Services
     /**
      * @throws Throwable
      */
-    private function processAbrechnungen(Ceos_LIEGENSCHAFT $liegenschaft, array $abrechnungsdaten, $lgart): void
+    private function processAbrechnungen(Ceos_LIEGENSCHAFT $liegenschaft, array $abrechnungsdaten): void
     {
         foreach ($abrechnungsdaten as $receivedAbrechnung) {
 
-            DB::transaction(function () use ($liegenschaft, $receivedAbrechnung, $lgart) {
+            DB::transaction(function () use ($liegenschaft, $receivedAbrechnung) {
 
                 // -------------------------------------------------
                 // Abrechnung master
@@ -950,7 +943,6 @@ class RE_01_01_Services
                     'Stichtag_NKA' => $this->formatTo1900Date($receivedAbrechnung['sttNka']),
                     'Stichtag_STA' => $this->formatTo1900Date($receivedAbrechnung['sttNka']),
                     'Heizung_JN' => $receivedAbrechnung['hka'],
-                    'Liegenschaft_Art' => $lgart,
                     'Kaltwasser_JN' => $receivedAbrechnung['kwa'],
                     'Betriebskosten_JN' => $receivedAbrechnung['nka'],
                     'Stromkosten_JN' => $receivedAbrechnung['sta'],
@@ -1076,4 +1068,6 @@ class RE_01_01_Services
             return null;
         }
     }
+
+
 }
