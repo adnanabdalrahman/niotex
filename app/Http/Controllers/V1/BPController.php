@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\V1;
 
-use App\Exceptions\DBFetchException;
 use App\Exceptions\DBSaveException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Http\Controllers\Controller;
@@ -44,7 +43,7 @@ class BPController extends Controller
         $adressnummer = ltrim($validated['DebitorenKreditorennummer'], '0');
         $currentAdresse = Adresse::where('AdressNummer', $adressnummer)->first();
         if (!$currentAdresse) {
-            throw new ResourceNotFoundException('Adresse nicht gefunden');
+            throw new ResourceNotFoundException('Adresse nicht gefunden', ['AdressNummer' => $adressnummer]);
         }
         $status = match (true) {
             !empty($validated['Loeschvormerkung']) => 'gelöscht',

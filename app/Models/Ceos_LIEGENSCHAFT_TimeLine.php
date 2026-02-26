@@ -146,6 +146,12 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereWarmwasserJN($value)
  * @property int|null $MDM
  * @method static Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereMDM($value)
+ * @property int|null $MDM_LG
+ * @property int $Geloescht_JN
+ * @property string|null $LG_KORR_Nr
+ * @method static Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereGeloeschtJN($value)
+ * @method static Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereLGKORRNr($value)
+ * @method static Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereMDMLG($value)
  * @mixin Eloquent
  */
 class Ceos_LIEGENSCHAFT_TimeLine extends Model

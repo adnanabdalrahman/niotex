@@ -46,6 +46,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Ceos_VERWALTUNG_TimeLine whereVorLieferanschriftAnsprechpartnerID($value)
  * @method static Builder<static>|Ceos_VERWALTUNG_TimeLine whereVorRechnungsanschrift($value)
  * @method static Builder<static>|Ceos_VERWALTUNG_TimeLine whereVorRechnungsanschriftAnsprechpartnerID($value)
+ * @property int $Geloescht_JN
+ * @method static Builder<static>|Ceos_VERWALTUNG_TimeLine whereGeloeschtJN($value)
  * @mixin Eloquent
  */
 class Ceos_VERWALTUNG_TimeLine extends Model
