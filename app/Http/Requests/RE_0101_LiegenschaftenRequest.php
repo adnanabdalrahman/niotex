@@ -84,6 +84,7 @@ class RE_0101_LiegenschaftenRequest extends FormRequest
             '*.liegenschaft.mieter.*.recnnr' => 'nullable|string',
             '*.liegenschaft.mieter.*.mName' => 'nullable|string',
             '*.liegenschaft.mieter.*.mAnrede' => 'nullable|string',
+            '*.liegenschaft.mieter.*.mdmIdCn' => 'required|numeric',
             '*.liegenschaft.mieter.*.datumEinzug' => 'required|date',
             '*.liegenschaft.mieter.*.datumAuszug' => 'nullable|date',
 

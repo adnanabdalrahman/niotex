@@ -328,6 +328,16 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Vorgang7Abrechnung whereVorgangNachfolger($value)
  * @method static Builder<static>|Vorgang7Abrechnung whereVorgangVorgaenger($value)
  * @method static Builder<static>|Vorgang7Abrechnung whereWiedervorlageAM($value)
+ * @property string|null $NutzerMontage_Auftragstext
+ * @property string|null $NutzerMontage_Telefonnummer
+ * @property string|null $NutzerMontage_Wunschtermin
+ * @property string|null $NutzerMontage_Bemerkung
+ * @property string|null $NutzerMontage_Bestellnummer
+ * @method static Builder<static>|Vorgang7Abrechnung whereNutzerMontageAuftragstext($value)
+ * @method static Builder<static>|Vorgang7Abrechnung whereNutzerMontageBemerkung($value)
+ * @method static Builder<static>|Vorgang7Abrechnung whereNutzerMontageBestellnummer($value)
+ * @method static Builder<static>|Vorgang7Abrechnung whereNutzerMontageTelefonnummer($value)
+ * @method static Builder<static>|Vorgang7Abrechnung whereNutzerMontageWunschtermin($value)
  * @mixin Eloquent
  */
 class Vorgang7Abrechnung extends Model

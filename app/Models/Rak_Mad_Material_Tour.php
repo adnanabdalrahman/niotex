@@ -29,6 +29,8 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rak_Mad_Material_Tour whereTourName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rak_Mad_Material_Tour whereVorGruppe($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rak_Mad_Material_Tour whereVorNummer($value)
+ * @property string|null $Ceos_Calendar_ID
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Rak_Mad_Material_Tour whereCeosCalendarID($value)
  * @mixin \Eloquent
  */
 class Rak_Mad_Material_Tour extends Model

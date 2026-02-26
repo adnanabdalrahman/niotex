@@ -58,6 +58,14 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Ceos_MIETER_TimeLine whereLfdAdressnummerMECEOS($value)
  * @property int|null $MDM
  * @method static Builder<static>|Ceos_MIETER_TimeLine whereMDM($value)
+ * @property int|null $MDM_MI
+ * @property int|null $Geloescht_JN
+ * @property string|null $M_Strasse
+ * @property string|null $M_PlzOrt
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereGeloeschtJN($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMDMMI($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMPlzOrt($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMStrasse($value)
  * @mixin Eloquent
  */
 class Ceos_MIETER_TimeLine extends Model

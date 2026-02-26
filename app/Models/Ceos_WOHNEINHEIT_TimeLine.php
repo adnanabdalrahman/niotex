@@ -68,6 +68,22 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereLfdAdressnummerGECEOS($value)
  * @property int|null $MDM
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereMDM($value)
+ * @property float|null $Wohn_Flaeche
+ * @property float|null $Heizung_Flaeche
+ * @property float|null $WW_Flaeche
+ * @property int|null $MDM_WE
+ * @property int $Geloescht_JN
+ * @property string|null $WE_HK_KORR_Nr
+ * @property string|null $WE_KW_KORR_Nr
+ * @property string|null $WE_TPlatz
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereGeloeschtJN($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereHeizungFlaeche($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereMDMWE($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWEHKKORRNr($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWEKWKORRNr($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWETPlatz($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWWFlaeche($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWohnFlaeche($value)
  * @mixin Eloquent
  */
 class Ceos_WOHNEINHEIT_TimeLine extends Model
