@@ -66,7 +66,7 @@ class RE_01_01_Services
     {
         $liegenschaft = Ceos_LIEGENSCHAFT::updateOrCreate(
             ['Liegenschaftsnummer' => $data['slgnr']],
-            ['User' => 0]
+            ['User' => 1]
         );
         $this->currentLiegenschaftId = $liegenschaft->LiegenschaftsID;
         $this->processTimeline($liegenschaft, $data);
@@ -75,7 +75,7 @@ class RE_01_01_Services
         $this->importKunden($liegenschaft, $data['kunden'] ?? []);
         $this->importMietobjekte($liegenschaft, $data['mietobjekte'] ?? []);
         $this->processMieter($liegenschaft, $data['mieter']);
-        $this->importAbrechnungen($liegenschaft, $data['abrechnungsdaten'], $data['lgart']);
+        $this->importAbrechnungen($liegenschaft, $data['abrechnungsdaten']);
     }
 
     /**
@@ -96,6 +96,7 @@ class RE_01_01_Services
             'OnlinePortal_Ab' => $data['opkAb'],
             'UviReady_JN' => $data['uvir'],
             'UviReady_Ab' => $data['uvirAb'],
+            'Liegenschaft_Art' => $data['lgart'],
             'Mdf' => $data['mdf'],
             'Mdf_Bis' => $data['mdfBis'],
             'Vertreter' => $kunden[0]['vtrCeos'] ?? null,
@@ -182,7 +183,7 @@ class RE_01_01_Services
 
             $gebaeude = Ceos_GEBAEUDE::firstOrCreate(
                 ['GEB_COMP_API_ID' => $liegenschaft->Liegenschaftsnummer . '-' . $adresse['genrCeos']],
-                ['User' => 0]
+                ['User' => 1]
             );
 
             $this->importedGebaeude[] = $gebaeude->GebaeudeID;
@@ -328,7 +329,7 @@ class RE_01_01_Services
     {
         $wohneinheit = Ceos_WOHNEINHEIT::updateOrCreate(
             ['WE_COMP_API_ID' => $data['slgnr'] . '-0-0'],
-            ['User' => 0]
+            ['User' => 1]
         );
 
         $gebaeude = $this->findGebaeude($liegenschaft, 0);
@@ -353,7 +354,7 @@ class RE_01_01_Services
 
         $mieter = Ceos_MIETER::updateOrCreate(
             ['MI_COMP_API_ID' => $data['slgnr'] . '-0-0-0'],
-            ['User' => 0]
+            ['User' => 1]
         );
 
         Ceos_MIETER_TimeLine::upsert([[
@@ -434,7 +435,7 @@ class RE_01_01_Services
 
             $verwaltung = Ceos_VERWALTUNG::firstOrCreate(
                 ['VER_FOREIGN_ID' => $kunde['kunnr']],
-                ['User' => 0]
+                ['User' => 1]
             );
 
             $this->importedVerwaltungen[] = $verwaltung->VerwaltungID;
@@ -506,7 +507,7 @@ class RE_01_01_Services
                         $mietobjekt['genrCeos'] . '-' .
                         $mietobjekt['menrCeos'],
                 ],
-                ['User' => 0]
+                ['User' => 1]
             );
 
             $this->importedWohneinheiten[] = $wohneinheit->WohneinheitID;
@@ -562,7 +563,7 @@ class RE_01_01_Services
         foreach ($mieters as $receivedMieter) {
             $mieter = Ceos_MIETER::firstOrCreate(
                 ['MI_COMP_API_ID' => $receivedMieter['partner']],
-                ['User' => 0]
+                ['User' => 1]
             );
 
             $gebaeude = $this->findGebaeude($liegenschaft, $receivedMieter['genrCeos']);
@@ -678,7 +679,7 @@ class RE_01_01_Services
     /**
      * @throws Throwable
      */
-    private function importAbrechnungen(Ceos_LIEGENSCHAFT $liegenschaft, array $abrechnungsdaten, $lgart): void
+    private function importAbrechnungen(Ceos_LIEGENSCHAFT $liegenschaft, array $abrechnungsdaten): void
     {
         // Reset imported list for this property
         $this->importedAbrechnungen = [];
@@ -686,8 +687,7 @@ class RE_01_01_Services
         // Process incoming records
         $this->processAbrechnungen(
             $liegenschaft,
-            $abrechnungsdaten,
-            $lgart
+            $abrechnungsdaten
         );
         // Close records missing from API snapshot
         $this->closeMissingGeneric(
@@ -701,17 +701,13 @@ class RE_01_01_Services
     /**
      * @throws Throwable
      */
-    private function processAbrechnungen(
-        Ceos_LIEGENSCHAFT $liegenschaft,
-        array             $abrechnungsdaten,
-                          $lgart
-    ): void
+    private function processAbrechnungen(Ceos_LIEGENSCHAFT $liegenschaft, array $abrechnungsdaten): void
     {
         foreach ($abrechnungsdaten as $receivedAbrechnung) {
 
             $abrechnung = Ceos_ABRECHNUNG::firstOrCreate(
                 ['ABR_COMP_API_ID' => $liegenschaft->Liegenschaftsnummer],
-                ['User' => 0]
+                ['User' => 1]
             );
 
             $this->importedAbrechnungen[] = $abrechnung->AbrechnungID;
@@ -726,7 +722,6 @@ class RE_01_01_Services
                 'Stichtag_NKA' => $this->formatTo1900Date($receivedAbrechnung['sttNka']),
                 'Stichtag_STA' => $this->formatTo1900Date($receivedAbrechnung['sttSta']),
                 'Heizung_JN' => $receivedAbrechnung['hka'],
-                'Liegenschaft_Art' => $lgart,
                 'Kaltwasser_JN' => $receivedAbrechnung['kwa'],
                 'Betriebskosten_JN' => $receivedAbrechnung['nka'],
                 'Stromkosten_JN' => $receivedAbrechnung['sta'],

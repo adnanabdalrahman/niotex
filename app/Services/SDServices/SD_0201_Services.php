@@ -2,25 +2,24 @@
 
 namespace App\Services\SDServices;
 
+use App\Exceptions\CreationFailedException;
+use App\Exceptions\ResourceNotFoundException;
+use App\Exceptions\ValidationFailedException;
 use App\Models\Adresse;
 use App\Models\Artikel;
 use App\Models\Preisbasis;
 use App\Services\PositionService;
 use App\Services\VorgangService;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
-
 
 class SD_0201_Services
 {
     protected array $vorGruppe;
 
-
     protected array $mwstSatzProzentArray;
 
     public function __construct()
     {
-
         $this->vorGruppe = config('vorgruppeMapping');
         $this->mwstSatzProzentArray = [
             7 => 2,
@@ -31,41 +30,38 @@ class SD_0201_Services
 
     /**
      * SAP → CEOS
-     * Übergabe Rechnung aus einem Mietvertrag an CEOS
      * SD-02-01 Mietvertragsrechnungen
+     * @throws ResourceNotFoundException
+     * @throws ValidationFailedException
+     * @throws CreationFailedException
      */
-    public function sd_0201_mietvertragsrechnungen($requestData): ?array
+    public function sd_0201_mietvertragsrechnungen(array $requestData): ?array
     {
         $header = $requestData['header'];
         $kunnr = ltrim($header['kunnr'], '0');
         $adresse = Adresse::where('AdressNummer', $kunnr)->first();
         if ($adresse === null) {
-            Log::error(
-                "sd_0201_mietvertragsrechnungen Kein Adresse für Vorgang gefunden",
-                ['kunnr' => $requestData['kunnr']]
-            );
-            return null;
+            throw new ResourceNotFoundException('AdressNummer wurde nicht gefunden', ['AdressNummer' => $kunnr]);
         }
-        $carbonFkdat = Carbon::parse((string)$header['fkdat']);
-        $carbonVorIndividualT1 = Carbon::parse((string)$header['datumvon']);
-        $carbonVorIndividualT2 = Carbon::parse((string)$header['datumbis']);
 
-        $fkdat = $carbonFkdat->format('Ymd');
-        $datumvon = $carbonVorIndividualT1->format('Ymd');
-        $datumbis = $carbonVorIndividualT2->format('Ymd');
+        $fkdat = Carbon::parse($header['fkdat'])->format('Ymd');
+        $datumvon = Carbon::parse($header['datumvon'])->format('Ymd');
+        $datumbis = Carbon::parse($header['datumbis'])->format('Ymd');
 
-        if ($header['netwr'] > 0) {
-            $mwstSatzProzent = (($header['mwsbk'] - $header['netwr']) / $header['netwr']) * 100;
-            $mwstSatzProzent = (int)round($mwstSatzProzent);
-        } else {
-            $mwstSatzProzent = 0;
+        /* ============================================================
+           MwSt — ALWAYS FROM zzstproz
+        ============================================================ */
+
+        $mwstSatzProzent = (int)round((float)$header['zzstproz']);
+
+        if (!isset($this->mwstSatzProzentArray[$mwstSatzProzent])) {
+            throw new ValidationFailedException('Unbekannter Steuersatz', ['zzstproz' => $mwstSatzProzent]);
         }
-        if (isset($this->mwstSatzProzentArray[$mwstSatzProzent])) {
-            $mwstSatzProzentCode = $this->mwstSatzProzentArray[$mwstSatzProzent];
-        } else {
-            Log::error('sd_0201_mietvertragsrechnungen Steuersatz ist unklar');
-            return null;
-        }
+        $mwstSatzCode = $this->mwstSatzProzentArray[$mwstSatzProzent];
+
+        /* ============================================================
+           VORGANG DATA — ORIGINAL (UNTOUCHED)
+        ============================================================ */
 
         $vorgangData['VorIndividualT1'] = $datumvon;
         $vorgangData['VorIndividualT2'] = $datumbis;
@@ -90,6 +86,7 @@ class SD_0201_Services
             $vorgangData['VorStatus'] = 100430;
         }
 
+        /* ==================== VALUES ==================== */
 
         $vorgangData['VorNettowert'] = $header['netwr'];
         $vorgangData['VorNettowertMwst1'] = $header['netwr'];
@@ -100,7 +97,7 @@ class SD_0201_Services
         $vorgangData['VorRabattfaehigMwst1'] = $header['netwr'];
         $vorgangData['VorSkontofaehigMwst1'] = $header['netwr'];
 
-        $vorgangData['VorMwstSatz1'] = $mwstSatzProzentCode;
+        $vorgangData['VorMwstSatz1'] = $mwstSatzCode;
         $vorgangData['VorMwstSatzProzent1'] = $mwstSatzProzent;
         $vorgangData['VorBruttowert'] = $header['mwsbk'];
         $vorgangData['VorSkontofaehigBrutto'] = $header['mwsbk'];
@@ -144,77 +141,73 @@ class SD_0201_Services
         $vorgangData['VorWNettowertMwst1Gut'] = $header['netwr'];
         $vorgangData['VorWNettowertMwst1Rechnung'] = $header['netwr'];
 
-        $vorgang = new VorgangService();
-        $vorgang = $vorgang->createVorgang($vorgangData);
+
+        /* ==================== CREATE VORGANG ==================== */
+
+        $vorgangService = new VorgangService();
+        $vorgang = $vorgangService->createVorgang($vorgangData);
         if ($vorgang === null) {
-            Log::error('sd_0201_mietvertragsrechnungen Vorgang Creation Failed');
-            return null;
+            throw new CreationFailedException('Vorgang Erstellung fehlgeschlagen');
         }
-        //------------------------------------------------------------------------------------
-        $positions = $requestData['positions'];
+        /* ==================== POSITIONS ==================== */
 
         $positionsArray = [];
-        foreach ($positions as $key => $position) {
+
+        foreach ($requestData['positions'] as $key => $position) {
+
             $artikelNummer = ltrim($position['matnr'], '0');
+
             $artikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
+
             if ($artikel === null) {
-                Log::error(
-                    "Material für Position nicht gefunden",
-                    [
-                        'Material' => $artikelNummer,
-                        'Vorgangnummer' => $vorgang['VorNummer']
-                    ]
-                );
-                return null;
+                throw new ResourceNotFoundException('Material wurde nicht gefunden', ['matnr' => $artikelNummer]);
+            }
+            $mwstPos = (int)round((float)$position['zzstproz']);
+
+            if (!isset($this->mwstSatzProzentArray[$mwstSatzProzent])) {
+                throw new ValidationFailedException('Unbekannter Steuersatz', ['zzstproz' => $mwstSatzProzent]);
             }
 
-            if ($position['netwr'] > 0) {
-                $mwstSatzProzentPosition = (($position['mwsbp'] - $position['netwr']) / $position['netwr']) * 100;
-                $mwstSatzProzentPosition = (int)round($mwstSatzProzentPosition);
-            } else {
-                $mwstSatzProzentPosition = 0;
-            }
-            if (isset($this->mwstSatzProzentArray[$mwstSatzProzentPosition])) {
-                $mwstSatzProzentPositionCode = $this->mwstSatzProzentArray[$mwstSatzProzentPosition];
-            } else {
-                Log::error('sd_0201_mietvertragsrechnungen Position Steuersatz ist unklar');
-                return null;
-            }
+            $preisbasis = Preisbasis::where('NRPreisbasis', $artikel->NRPreisbasis)->first();
+
             $positionData['InterneVorgangsnummer'] = $vorgang['InterneVorgangsnummer'];
             $positionData['VorNummer'] = $vorgang['VorNummer'];
             $positionData['PosIndividualC1'] = $position['posnr'];
             $positionData['PosKZMengeneinheit1'] = 'ST';
             $positionData['PosMenge1'] = $position['fkimg'];
-            $positionData['PosMwstProzent'] = $mwstSatzProzentPosition;
+            $positionData['PosMwstProzent'] = $mwstPos;
             $positionData['externMenge'] = $position['fkimg'];
-            $positionData['externEinzelPreis'] = $position['netwr'] / $position['fkimg'];;
+            $positionData['externEinzelPreis'] = $position['fkimg'] > 0 ? $position['netwr'] / $position['fkimg'] : 0;
             $positionData['externGesamtPreis'] = $position['netwr'];
             $positionData['PosNummer'] = $key + 1;
             $positionData['PosNummernText'] = $key + 1;
 
-            $preisbasis = Preisbasis::where('NRPreisbasis', $artikel->NRPreisbasis)->first();
             $positionData['NRPreisbasis'] = $artikel->NRPreisbasis;
             $positionData['PosPreisfaktor'] = $preisbasis->Preisfaktor;
 
-            $positions = new PositionService();
-            $positionsArray[] = $positions->createPosition($positionData, $artikel);
+            $positionService = new PositionService();
+            $createdPosition = $positionService->createPosition($positionData, $artikel);
+
+            if ($createdPosition === null) {
+                throw new CreationFailedException(
+                    'Position Erstellung fehlgeschlagen',
+                    ["posnr" => $position['posnr']]
+                );
+            }
+            $positionsArray[] = $createdPosition;
+
         }
-        if (!empty($positionsArray)) {
-            return [
-                'header' => [
-                    'InterneVorgangsnummer' => $vorgang['InterneVorgangsnummer'],
-                    'VorNummer' => $vorgang['VorNummer'],
-                    'VorGruppe' => $vorgang['VorGruppe'],
-                ],
-                'positions' => $positionsArray
-            ];
+        if (empty($positionsArray)) {
+            throw new CreationFailedException('Positionen Erstellung fehlgeschlagen');
         }
-        Log::error('sd_0201_mietvertragsrechnungen Positions Creation Failed');
-        return null;
+        return [
+            'header' => [
+                'InterneVorgangsnummer' => $vorgang['InterneVorgangsnummer'],
+                'VorNummer' => $vorgang['VorNummer'],
+                'VorGruppe' => $vorgang['VorGruppe'],
+            ],
+            'positions' => $positionsArray
+        ];
+
     }
 }
-
-
-
-
-
