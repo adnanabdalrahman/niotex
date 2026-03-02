@@ -3,9 +3,8 @@
 namespace App\Http\Controllers\V1;
 
 use App\Helpers\SD_01_01_Validation;
+use App\Helpers\SD_02_01_Validation;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\SD_0101_beauftragungRequest;
-use App\Http\Requests\SD_0201_mietvertragsrechnungenRequest;
 use App\Http\Requests\SD_0302_fakturiertedienstleistungsrechnungRequest;
 use App\Services\SDServices;
 use App\Traits\ApiResponses;
@@ -49,10 +48,8 @@ class SDController extends Controller
     /**
      * SD-01-01 Beauftragung
      * Sap --> CEOS.
-     *
-     * @param SD_0101_beauftragungRequest $request
+     * @param Request $request
      * @return JsonResponse
-     * @throws Throwable
      */
     public function sd_0101_beauftragung(Request $request): JsonResponse
     {
@@ -142,29 +139,105 @@ class SDController extends Controller
      * SD-02-01 Mietvertragsrechnungen
      * Receive rental contract invoice data from SAP.
      *
-     * @param SD_0201_mietvertragsrechnungenRequest $request
+     * @param Request $request
      * @return JsonResponse
      */
-    public function sd_02_01_mietvertragsrechnungen(SD_0201_mietvertragsrechnungenRequest $request)
+    public function sd_02_01_mietvertragsrechnungen(Request $request): JsonResponse
     {
-        $validated = $request->validated();
-        $resultDataArray = $this->sd0201Services->sd_0201_mietvertragsrechnungen($validated);
+        $auftraege = $request->all();
+        $report = [
+            'success' => [],
+            'failed' => []
+        ];
+        foreach ($auftraege as $auftrag) {
+            $validator = Validator::make(
+                $auftrag,
+                SD_02_01_Validation::rules(),
+                SD_02_01_Validation::messages()
+            );
+            $validator->sometimes(
+                ['header.datumvon', 'header.datumbis'],
+                'nullable|date',
+                function ($input) {
+                    return $input->header['vbeln'] === $input->header['zuonr'];
+                }
+            );
 
-        if ($resultDataArray !== null) {
-            Log::info('Auftrag erfolgreich gespeichert: ', $resultDataArray);
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Auftrag erfolgreich gespeichert',
-                'data' => $resultDataArray
-            ], 202);
+            $validator->sometimes(
+                'header.datumvon',
+                'required|date',
+                function ($input) {
+                    return $input->header['vbeln'] !== $input->header['zuonr'];
+                }
+            );
+
+            $validator->sometimes(
+                'header.datumbis',
+                'required|date|after_or_equal:header.datumvon',
+                function ($input) {
+                    return $input->header['vbeln'] !== $input->header['zuonr'];
+                }
+            );
+
+
+            $vbeln = $auftrag['header']['vbeln'] ?? 'unknown';
+            if ($validator->fails()) {
+                $report['failed'][] = [
+                    'vbeln' => $vbeln,
+                    'message' => $validator->errors()->all()
+                ];
+                continue;
+            }
+            try {
+                $result = $this->sd0201Services->sd_0201_mietvertragsrechnungen($validator->validated());
+                if ($result) {
+                    // add Verkaufsbeleg to header & positions
+                    $result['header']['Verkaufsbeleg'] = $vbeln;
+                    foreach ($result['positions'] as &$pos) {
+                        $pos['Verkaufsbeleg'] = $vbeln;
+                    }
+                    $report['success'][] = [
+                        'vbeln' => $vbeln,
+                        'data' => $result,
+                        'message' => "Beauftragung $vbeln erfolgreich verarbeitet",
+                    ];
+                } else {
+                    $report['failed'][] = [
+                        'vbeln' => $vbeln,
+                        'data' => $result,
+                        'message' => "Beauftragung $vbeln konnte nicht verarbeitet werden",
+                    ];
+                }
+            } catch (Throwable $e) {
+                $errors = method_exists($e, 'getErrors') ? $e->getErrors() : [];
+                $report['failed'][] = [
+                    'vbeln' => $vbeln,
+                    'data' => $errors,
+                    'message' => $e->getMessage(),
+                ];
+            }
         }
-        return response()->json([
-            'status' => 'Error',
-            'message' => 'sd_02_01_mietvertragsrechnungen Beauftragung fehlgeschlagen',
-        ], 400);
-    }
-    // SD-02-01: SAP-->CEOS, Übergabe Werte aus Mietvertragsrechnungen an die CEOS
 
+        return match (true) {
+            empty($report['failed']) =>
+            $this->successResponse(
+                'Alle Beauftragungen erfolgreich verarbeitet',
+                $report,
+                202
+            ),
+            empty($report['success']) =>
+            $this->errorResponse(
+                'Keine Beauftragung konnte verarbeitet werden',
+                $report,
+                400
+            ),
+            default =>
+            $this->multiStatusResponse(
+                'Einige Beauftragungen wurden nicht verarbeitet',
+                $report
+            ),
+        };
+    }
 
     /*
      *  SD-03-01 CEOS --> SAP
