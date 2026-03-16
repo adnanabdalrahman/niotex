@@ -34,7 +34,6 @@ class BPController extends Controller
      * SAP → CEOS
      */
     /**
-     * @throws ResourceNotFoundException
      * @throws DBSaveException
      */
     public function bp_01_01_Geschaeftspartner(BP_0101_geschaeftspartnerRequest $request): JsonResponse
@@ -42,9 +41,6 @@ class BPController extends Controller
         $validated = $request->validated();
         $adressnummer = ltrim($validated['DebitorenKreditorennummer'], '0');
         $currentAdresse = Adresse::where('AdressNummer', $adressnummer)->first();
-        if (!$currentAdresse) {
-            throw new ResourceNotFoundException('Adresse nicht gefunden', ['AdressNummer' => $adressnummer]);
-        }
         $status = match (true) {
             !empty($validated['Loeschvormerkung']) => 'gelöscht',
             !empty($validated['Sperrkennzeichen']) => 'gesperrt',
@@ -56,6 +52,7 @@ class BPController extends Controller
         return $this->successResponse("Geschäftspartner erfolgreich " . $status,
             $data, 202);
     }
+
 
     /*
      * BP_0103 Geschaeftspartner Verwalter

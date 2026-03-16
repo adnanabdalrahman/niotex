@@ -94,13 +94,6 @@ Route::middleware([VerifyCeosWebToken::class])->group(function () {
             Route::post('/0101/zeiteinheiten ', [COController::class, 'co_01_01_Zeiteinheiten']);
         });
 
-        Route::prefix('master')->group(function () {
-            //SE-26-01: CEOSWEB-->CEOS-->SAP , reparaturauftrag
-            Route::get('/buildall/', [REController::class, 'buildAllMaster']);
-            Route::get('/buildforliegenschaft/{liegenschaftsId} ', [REController::class, 'buildMasterForLiegenschaft']);
-        });
-
-
         Route::prefix('ea')->group(function () {
             Route::post('/0201/listfiles', [EAController::class, 'EA_02_01_listFiles']);
             Route::post('/0201/fileExchange', [EAController::class, 'EA_01_01_FileExchange']);

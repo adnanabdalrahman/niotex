@@ -64,8 +64,7 @@ class SapApiClient
         ])->post($this->baseUrl . $endpoint, $data);
 
         if (!$response->successful()) {
-            \Log::error("SAP POST to '{$endpoint}' failed: " . $response->body());
-            return null;
+            throw new Exception("SAP POST to '{$endpoint}' failed: " . $response->body());
         }
         return $response->json();
     }
