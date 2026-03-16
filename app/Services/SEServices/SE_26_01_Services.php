@@ -63,7 +63,7 @@ class SE_26_01_Services
             }
             $data['Auart'] = (string)$vorgang->VorIndividualC2;
             $data['Zzlgsnr'] = (string)$vorgang->VorIndividualC3;
-            $data['Bstkd'] = (string)$vorgang7Abrechnung->Montage_Bestellnummer;
+            $data['Bstkd'] = (string)$vorgang7Abrechnung->NutzerMontage_Bestellnummer;
             $data['Vorgn'] = (string)$vorgang->VorNummer;
             $data['VorgnInt'] = (string)$vorgang->InterneVorgangsnummer;
 
