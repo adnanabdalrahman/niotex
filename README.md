@@ -171,7 +171,7 @@ php artisan queue:work --queue=slack
 # With maximum time limit
 
 php artisan queue:work --max-time=3600
-
+----------------------------------------------------------------
 Steps with NSSM (recommended)
 
 Download NSSM
