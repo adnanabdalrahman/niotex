@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 class MM_34_02_Services
 {
     /**
+     * SAP -> CEOS
      * @throws ResourceNotFoundException|\Throwable
      */
     public function mm_34_02_Statusumlagerungsreservierung($reservations): ?array
@@ -67,6 +68,7 @@ class MM_34_02_Services
                         throw new ResourceNotFoundException('Die Position wurde nicht gefunden.', [
                             'TourId' => $tourId,
                             'materials' => [$artikelNummer],
+                            'InterneVorgangsnummer' => $resultInterneVorgangsnummer,
                             'InterneArtikelnummer' => $interneArtikel->InterneArtikelnummer,
                         ]);
                     }

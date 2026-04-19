@@ -50,8 +50,8 @@ class BP_0101_geschaeftspartnerRequest extends FormRequest
             'Kundengruppe1' => 'nullable|string|max:3',
             'UVIMailadresse' => 'nullable|email|max:100',
             'PDFMailadresse' => 'nullable|email|max:100',
-            'GueltigVon' => 'nullable|date',
-            'GueltigBis' => 'nullable|date|after_or_equal:GueltigVon',
+            'GueltigVon' => 'nullable',
+            'GueltigBis' => 'nullable',
         ];
     }
 
