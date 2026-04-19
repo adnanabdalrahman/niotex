@@ -35,16 +35,21 @@ class BP_01_01_Services
         $kundengruppe1 = ($data['Adresstyp'] === 'KUN') ? ($data['Kundengruppe1'] ?? null) : null;
 
         try {
-            $adresse = Adresse::updateOrCreate(
-                ['AdressNummer' => $data['DebitorenKreditorennummer']],
-                $this->mapAdresseData($data, $kundengruppe1)
-            );
+            $adresse = Adresse::firstOrNew([
+                'AdressNummer' => $data['DebitorenKreditorennummer']
+            ]);
+            $mappedData = $this->mapAdresseData($data, $kundengruppe1);
+            if (!$adresse->exists) {
+                $mappedData['AdrAnlageAm'] = now()->format('Ymd');
+            }
+
+            $adresse->fill($mappedData);
+            $adresse->save();
         } catch (Throwable $exception) {
             throw new DBSaveException('Fehler beim Speichern oder Aktualisieren des Geschäftspartners', [
                 'database' => $exception->getMessage(),
             ]);
         }
-
         $interneAdressnummer = $adresse['InterneAdressnummer'] ?? null;
 
         // Only create/update AdresseBranche for Kunden
@@ -89,7 +94,6 @@ class BP_01_01_Services
             'AdrRabatt' => 0,
             'AdrFactoringJN' => 0,
             'KZZahlungsbedingung' => "0/0",
-            'AdrAnlageAm' => now()->format('Ymd'),
             'AdrAnlageDurch' => $nutzerId,
             'AdrLetzteAenderungAm' => now()->format('Ymd'),
             'AdrLetzteAenderungDurch' => $nutzerId,
