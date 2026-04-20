@@ -17,40 +17,30 @@ use Throwable;
 
 class VorgangService
 {
-    protected string $baseUrl;
-
-    public function __construct()
-    {
-        $this->baseUrl = config('sap.base_url');
-    }
-
     public function createVorgang($data): ?array
     {
         try {
-            $nummernkreisVorgang = NummernkreisVorgang::where('VorArt', $data['VorArt'])
-                ->where('VorGruppe', $data['VorGruppe'])
-                ->where('VNkArt', $data['VNkArt'])
-                ->lockForUpdate()
-                ->first();
-
-            if ($nummernkreisVorgang) {
-                $vorgang = Vorgang::
-                where('VorArt', $data['VorArt'])
-                    ->where('VorGruppe', $data['VorGruppe'])
-                    ->where('VorNummer', $nummernkreisVorgang->VNkAktuellerWert)
-                    ->first();
-                if ($vorgang) {
-                    $data['VorNummer'] = $nummernkreisVorgang->VNkAktuellerWert + 1;
-                } else {
-                    $data['VorNummer'] = $nummernkreisVorgang->VNkAktuellerWert;
-                }
-            } else {
-                Log::error("Kein nummernkreisVorgang für Vorgang gefunden");
-                return null;
-            }
-
-            //---------------------------------------------------------------------------
             return DB::transaction(function () use (&$data) {
+                $nummernkreis = NummernkreisVorgang::where('VorArt', $data['VorArt'])
+                    ->where('VorGruppe', $data['VorGruppe'])
+                    ->where('VNkArt', $data['VNkArt'])
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$nummernkreis) {
+                    Log::error("Kein nummernkreisVorgang gefunden");
+                    return null;
+                }
+                $data['VorNummer'] = $nummernkreis->VNkAktuellerWert;
+
+                NummernkreisVorgang::where('VorArt', $data['VorArt'])
+                    ->where('VorGruppe', $data['VorGruppe'])
+                    ->where('VNkArt', $data['VNkArt'])
+                    ->update([
+                        'VNkAktuellerWert' => $nummernkreis->VNkAktuellerWert + 1
+                    ]);
+
+                // ------------------------------------------------------------------
                 $vorgang = Vorgang::create([
                     'VorArt' => $data['VorArt'],
                     'VorGruppe' => $data['VorGruppe'],
@@ -238,17 +228,20 @@ class VorgangService
                     'VorDatumAngebot' => $data['VorDatumAngebot'] ?? NULL,
                 ]);
 
-                $createdVorgang = Vorgang::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->first();
-                if ($createdVorgang === null) {
+                if (!$vorgang) {
+                    Log::error("Vorgang creation failed");
+                    return null;
+                }
+
+
+                $vorgang->refresh();
+                if (!$vorgang->exists) {
                     Log::error('Trigger deleted the Vorgang InterneVorgangsnummer: ' . $vorgang->InterneVorgangsnummer);
                     return null;
                 }
 
-                // Add 1 to $nummernkreisVorgang->VNkAktuellerWert;
-                NummernkreisVorgang::where('VorArt', $data['VorArt'])
-                    ->where('VorGruppe', $data['VorGruppe'])
-                    ->where('VNkArt', $data['VNkArt'])
-                    ->update(['VNkAktuellerWert' => $data['VorNummer'] + 1]);
+                // ------------------------------------------------------------------
+                // Zusatz Tabellen
 
                 Vorgang2Text::insertGetId([
                     'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
@@ -445,9 +438,9 @@ class VorgangService
                 ];
             });
         } catch (Throwable $e) {
-            Log::error('Create Vorgang' . $e->getMessage());
+            Log::error('Create Vorgang ERROR: ' . $e->getMessage());
             return null;
         }
     }
-
 }
+
