@@ -2,6 +2,8 @@
 
 namespace App\Services\SDServices;
 
+use App\Exceptions\InvalidInputException;
+use App\Exceptions\ResourceNotFoundException;
 use App\Models\Adresse;
 use App\Models\Artikel;
 use App\Models\Position;
@@ -32,6 +34,8 @@ class SD_03_02_Services
     /**
      * SAP → CEOS
      * SD-03-02 fakturierte Dienstleistungsrechnung
+     * @throws ResourceNotFoundException
+     * @throws InvalidInputException
      */
     public function sd_03_02_fakturiertedienstleistungsrechnung($requestData): ?array
     {
@@ -39,44 +43,30 @@ class SD_03_02_Services
         $header = $requestData['header'];
         $vorgang = Vorgang::where('InterneVorgangsnummer', $interneVorgangsnummer)->first();
         if ($vorgang === null) {
-            Log::error(
-                "sd_03_02_fakturiertedienstleistungsrechnung Kein Vorgang gefunden",
+            throw new ResourceNotFoundException('Kein Vorgang gefunden',
                 ['InterneVorgangsnummer' => $interneVorgangsnummer]
             );
-            return null;
         }
 
         $vorgang1Wert = Vorgang1Wert::where('InterneVorgangsnummer', $interneVorgangsnummer)->first();
         if ($vorgang1Wert === null) {
-            Log::error(
-                "sd_03_02_fakturiertedienstleistungsrechnung Kein Vorgang1Wert gefunden",
+            throw new ResourceNotFoundException('Kein Vorgang1Wert gefunden',
                 ['InterneVorgangsnummer' => $interneVorgangsnummer]
             );
-            return null;
         }
 
-        $vorgang1Wert = Vorgang1Wert::where('InterneVorgangsnummer', $interneVorgangsnummer)->first();
-        if ($vorgang1Wert === null) {
-            Log::error(
-                "sd_03_02_fakturiertedienstleistungsrechnung Kein Vorgang1Wert gefunden",
-                ['InterneVorgangsnummer' => $interneVorgangsnummer]
-            );
-            return null;
-        }
         $vorgangWert = VorgangWert::where('InterneVorgangsnummer', $interneVorgangsnummer)->first();
         if ($vorgangWert === null) {
-            Log::error(
-                "sd_03_02_fakturiertedienstleistungsrechnung Kein VorgangWert gefunden",
+            throw new ResourceNotFoundException('Kein VorgangWert gefunden',
                 ['InterneVorgangsnummer' => $interneVorgangsnummer]
             );
-            return null;
         }
-
 
         $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
         if ($adresse === null) {
-            Log::error("sd_03_02_fakturiertedienstleistungsrechnung Kein Adresse für Vorgang gefunden");
-            return null;
+            throw new ResourceNotFoundException('Kein Adresse für Vorgang gefunden',
+                ['InterneVorgangsnummer' => $interneVorgangsnummer]
+            );
         }
 
         $carbonVorIndividualT1 = Carbon::parse((string)$header['datumvon']);
@@ -94,8 +84,7 @@ class SD_03_02_Services
         if (isset($this->mwstSatzProzentArray[$mwstSatzProzent])) {
             $mwstSatzProzentCode = $this->mwstSatzProzentArray[$mwstSatzProzent];
         } else {
-            Log::error('sd_03_02_fakturiertedienstleistungsrechnung Steuersatz ist unklar');
-            return null;
+            throw new InvalidInputException("Steuersatz ist unklar");
         }
 
 

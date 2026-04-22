@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1;
 
+use App\Exceptions\ResourceNotFoundException;
 use App\Helpers\SD_01_01_Validation;
 use App\Helpers\SD_02_01_Validation;
 use App\Http\Controllers\Controller;
@@ -32,7 +33,6 @@ class SDController extends Controller
         SDServices\SD_0201_Services  $sd0201Services,
         SDServices\SD_03_01_Services $sd0301Services,
         SDServices\SD_03_02_Services $sd0302Services,
-
     )
     {
         $this->sd0101Services = $sd0101Services;
@@ -54,14 +54,9 @@ class SDController extends Controller
     public function sd_0101_beauftragung(Request $request): JsonResponse
     {
         $auftraege = $request->all();
-
         $report = ['success' => [], 'failed' => []];
-
         foreach ($auftraege as $auftrag) {
-            $validator = Validator::make(
-                $auftrag,
-                SD_01_01_Validation::rules(),
-                SD_01_01_Validation::messages()
+            $validator = Validator::make($auftrag, SD_01_01_Validation::rules(), SD_01_01_Validation::messages()
             );
             $vbeln = $auftrag['header']['vbeln'] ?? 'unknown';
 
@@ -87,10 +82,8 @@ class SDController extends Controller
                         'message' => "Beauftragung $vbeln konnte nicht verarbeitet werden",
                     ];
                 }
-
             } catch (Throwable $e) {
                 $errors = [];
-
                 if (method_exists($e, 'getErrors')) {
                     $errors = $e->getErrors();
                 }
@@ -112,14 +105,13 @@ class SDController extends Controller
             $this->multiStatusResponse('Einige Beauftragungen wurden nicht verarbeitet', $report),
         };
     }
-
-
-    // SD-01-02: CEOS-->SAP, beauftragung Rückmeldung
+    //todo response and log
+    // SD-01-02: CEOSWEB-->SAP, beauftragung Rückmeldung
     public function sd_01_02_beauftragungRueckmeldung(Request $request)
     {
         $vorgangDataArray = $this->sd0102Services->sd_0102_beauftragung_rueckmeldung($request);
         if ($vorgangDataArray !== null) {
-            Log::info('Sent Vorgang: ', $vorgangDataArray);
+            Log::info('sd_0102 received Vorgang: ', $vorgangDataArray);
             return response()->json([
                 'status' => 'success',
                 'message' => 'Auftrag Status erfolgreich geändert',
@@ -150,11 +142,7 @@ class SDController extends Controller
             'failed' => []
         ];
         foreach ($auftraege as $auftrag) {
-            $validator = Validator::make(
-                $auftrag,
-                SD_02_01_Validation::rules(),
-                SD_02_01_Validation::messages()
-            );
+            $validator = Validator::make($auftrag, SD_02_01_Validation::rules(), SD_02_01_Validation::messages());
             $validator->sometimes(
                 ['header.datumvon', 'header.datumbis'],
                 'nullable|date',
@@ -162,7 +150,6 @@ class SDController extends Controller
                     return $input->header['vbeln'] === $input->header['zuonr'];
                 }
             );
-
             $validator->sometimes(
                 'header.datumvon',
                 'required|date',
@@ -170,7 +157,6 @@ class SDController extends Controller
                     return $input->header['vbeln'] !== $input->header['zuonr'];
                 }
             );
-
             $validator->sometimes(
                 'header.datumbis',
                 'required|date|after_or_equal:header.datumvon',
@@ -178,8 +164,6 @@ class SDController extends Controller
                     return $input->header['vbeln'] !== $input->header['zuonr'];
                 }
             );
-
-
             $vbeln = $auftrag['header']['vbeln'] ?? 'unknown';
             if ($validator->fails()) {
                 $report['failed'][] = [
@@ -265,27 +249,17 @@ class SDController extends Controller
      *
      * @param SD_0302_fakturiertedienstleistungsrechnungRequest $request
      * @return JsonResponse
+     * @throws ResourceNotFoundException
+     * @throws Throwable
+     * /
      */
     public function sd_03_02_fakturiertedienstleistungsrechnung(SD_0302_fakturiertedienstleistungsrechnungRequest $request)
     {
         $validated = $request->validated();
-        $resultDataArray = $this->sd0302Services->sd_03_02_fakturiertedienstleistungsrechnung($validated);
-
-        if ($resultDataArray !== null) {
-            Log::info('sd_03_02_fakturiertedienstleistungsrechnung Updated Vorgang: ', $resultDataArray);
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Auftrag erfolgreich gespeichert',
-                'data' => $resultDataArray
-            ], 202);
-        }
-        return response()->json([
-            'status' => 'Error',
-            'message' => 'sd_02_01_mietvertragsrechnungen Beauftragung fehlgeschlagen',
-        ], 400);
+        $response = $this->sd0302Services->sd_03_02_fakturiertedienstleistungsrechnung($validated);
+        return $this->successResponse("Auftrag erfolgreich gespeichert", $response);
     }
 }
-
 
 
 

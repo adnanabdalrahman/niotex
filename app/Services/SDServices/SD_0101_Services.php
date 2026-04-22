@@ -36,7 +36,7 @@ class SD_0101_Services
         ];
         $this->sd0102_path = config('sap.sd0102_path');
         $this->sd0301_path = config('sap.sd0301_path');
-        $this->vorgruppeMapping = config('vorgruppeMapping');
+        $this->vorgruppeMapping = config('vorgruppeMapping'); //$augru . $materialGruppe
         $this->vorgruppeSKTMapping = config('vorgruppeSKTMapping');
         $this->mwstSatzProzentArray = [
             7 => 2,
