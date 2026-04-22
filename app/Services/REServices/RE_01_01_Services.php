@@ -2,6 +2,7 @@
 
 namespace App\Services\REServices;
 
+use App\Exceptions\InvalidInputException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Models\Adresse;
 use App\Models\Ceos_ABRECHNUNG;
@@ -19,7 +20,6 @@ use App\Models\Ceos_WOHNEINHEIT_TimeLine;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class RE_01_01_Services
@@ -30,34 +30,20 @@ class RE_01_01_Services
     private array $importedAbrechnungen = [];
     private ?int $currentLiegenschaftId = null;
 
-    public function re_01_01_Liegenschaften(array $receivedLiegenschaften): array
+    /**
+     * Sap -> CEOS
+     * @throws Throwable
+     */
+    public function re_01_01_Liegenschaften(array $data): array
     {
-        $report = ['success' => [], 'failed' => []];
-        foreach ($receivedLiegenschaften as $wrapper) {
-            $data = $wrapper['liegenschaft'];
-            $slgnr = $data['slgnr'];
-
-            try {
-                DB::transaction(fn() => $this->processLiegenschaft($data), 3);
-                $report['success'][] = [
-                    'slgnr' => $slgnr,
-                    'message' => 'Erfolgreich importiert'
-                ];
-            } catch (Throwable $e) {
-                Log::error("Liegenschaft $slgnr failed", [
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-
-                $report['failed'][] = [
-                    'slgnr' => $slgnr,
-                    'message' => $e->getMessage()
-                ];
-            }
-        }
-
-        return $report;
+        $slgnr = $data['slgnr'];
+        DB::transaction(fn() => $this->processLiegenschaft($data), 3);
+        return [
+            'slgnr' => $slgnr,
+            'message' => 'Erfolgreich importiert'
+        ];
     }
+
 
     /**
      * @throws Throwable
@@ -78,14 +64,11 @@ class RE_01_01_Services
         $this->importAbrechnungen($liegenschaft, $data['abrechnungsdaten']);
     }
 
-    /**
-     * @throws Throwable
-     */
-
 
     private function processTimeline(Ceos_LIEGENSCHAFT $liegenschaft, array $data): void
     {
-        $kunden = $data['kunden'] ?? [];
+
+        $kunden = $data['kunden'];
         $apiData = [
             'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
             'Liegenschaftsnummer' => $data['slgnr'],
@@ -102,7 +85,7 @@ class RE_01_01_Services
             'Vertreter' => $kunden[0]['vtrCeos'] ?? null,
             'LG_KORR_Nr' => $data['lgnrExt'],
             'DatumVon' => $data['validfrom'],
-            'DatumBis' => $this->normalizeValidTo($data['validto'] ?? null),
+            'DatumBis' => $this->normalizeValidTo($data['validto']),
             'User' => 1,
         ];
 
@@ -118,10 +101,8 @@ class RE_01_01_Services
             if (!$exists) {
                 Ceos_LIEGENSCHAFT_TimeLine::create($apiData);
             }
-
             return;
         }
-
         // Current state
         $last = Ceos_LIEGENSCHAFT_TimeLine::where(
             'LiegenschaftsID',
@@ -142,7 +123,6 @@ class RE_01_01_Services
                 return;
             }
         }
-
         // identical → do nothing
     }
 
@@ -180,12 +160,10 @@ class RE_01_01_Services
     private function processGebaeude(Ceos_LIEGENSCHAFT $liegenschaft, array $adressen): void
     {
         foreach ($adressen as $adresse) {
-
             $gebaeude = Ceos_GEBAEUDE::firstOrCreate(
                 ['GEB_COMP_API_ID' => $liegenschaft->Liegenschaftsnummer . '-' . $adresse['genrCeos']],
                 ['User' => 1]
             );
-
             $this->importedGebaeude[] = $gebaeude->GebaeudeID;
 
             $apiData = [
@@ -242,7 +220,7 @@ class RE_01_01_Services
         }
 
         // =================================================
-        // ⭐ Period changed → ALWAYS insert
+        // Period changed → ALWAYS insert
         // =================================================
         if (
             ($last->DatumVon ?? null) != ($apiData['DatumVon'] ?? null) ||
@@ -256,11 +234,9 @@ class RE_01_01_Services
         // Same period → check other fields
         // =================================================
         foreach ($apiData as $field => $value) {
-
             if ($field === 'DatumVon' || $field === 'DatumBis') {
                 continue;
             }
-
             if ($last->$field != $value) {
                 $modelClass::create($apiData);
                 return;
@@ -293,7 +269,6 @@ class RE_01_01_Services
             ->unique($idColumn);
 
         foreach ($latestRecords as $last) {
-
             // Optional custom skip rule
             if ($skipCallback && $skipCallback($last)) {
                 continue;
@@ -310,21 +285,21 @@ class RE_01_01_Services
 
             // Create deleted snapshot
             $base = $last->toArray();
-
             unset(
                 $base['ID'],
                 $base['DateStamp'],
                 $base['TimeStamp'],
                 $base['FULL_HASH']
             );
-
             $base['Geloescht_JN'] = 1;
             $base['User'] = 1;
-
             $timelineModel::create($base);
         }
     }
 
+    /**
+     * @throws ResourceNotFoundException
+     */
     private function processMieter0(Ceos_LIEGENSCHAFT $liegenschaft, array $data): void
     {
         $wohneinheit = Ceos_WOHNEINHEIT::updateOrCreate(
@@ -333,6 +308,10 @@ class RE_01_01_Services
         );
 
         $gebaeude = $this->findGebaeude($liegenschaft, 0);
+        if (!$gebaeude) {
+            $message = "Gebäude 0 wurde für den Mieter 0 nicht gefunden";
+            throw new ResourceNotFoundException($message);
+        }
         $this->importedWohneinheiten[] = $wohneinheit->WohneinheitID;
 
         Ceos_WOHNEINHEIT_TimeLine::upsert([[
@@ -394,7 +373,6 @@ class RE_01_01_Services
             'GEB_COMP_API_ID',
             $liegenschaft->Liegenschaftsnummer . '-' . $nr
         )->first();
-
         if (!$master) {
             return null;
         }
@@ -432,7 +410,6 @@ class RE_01_01_Services
     private function processKunden(Ceos_LIEGENSCHAFT $liegenschaft, array $kunden): void
     {
         foreach ($kunden as $kunde) {
-
             $verwaltung = Ceos_VERWALTUNG::firstOrCreate(
                 ['VER_FOREIGN_ID' => $kunde['kunnr']],
                 ['User' => 1]
@@ -444,10 +421,7 @@ class RE_01_01_Services
             $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
 
             if (!$adresse) {
-                throw new ResourceNotFoundException(
-                    'Adresse nicht gefunden',
-                    ['adressnummer' => $adressnummer]
-                );
+                throw new ResourceNotFoundException('Adresse nicht gefunden', ['adressnummer' => $adressnummer]);
             }
 
             $apiData = [
@@ -514,11 +488,8 @@ class RE_01_01_Services
 
             $gebaeude = $this->findGebaeude($liegenschaft, $mietobjekt['genrCeos']);
             if (!$gebaeude) {
-                Log::warning(
-                    "re_01_01_Liegenschaften: Gebaeude nicht gefunden",
-                    ['genrCeos' => $mietobjekt['genrCeos']]
-                );
-                continue;
+                $message = "Gebäude " . $mietobjekt['genrCeos'] . " wurde für das Mietobjekt " . $mietobjekt['menrCeos'] . " nicht gefunden";
+                throw new ResourceNotFoundException($message);
             }
 
             $apiData = [
@@ -567,19 +538,14 @@ class RE_01_01_Services
             );
 
             $gebaeude = $this->findGebaeude($liegenschaft, $receivedMieter['genrCeos']);
-
-            $wohneinheit = $this->findWohneinheit(
-                $liegenschaft,
-                $gebaeude,
-                $receivedMieter['menrCeos']
-            );
-
+            if (!$gebaeude) {
+                $message = "Gebäude " . $receivedMieter['genrCeos'] . " wurde für den Mieter " . $receivedMieter['partner'] . " nicht gefunden";
+                throw new ResourceNotFoundException($message);
+            }
+            $wohneinheit = $this->findWohneinheit($liegenschaft, $gebaeude, $receivedMieter['menrCeos']);
             if (!$wohneinheit) {
-                Log::warning(
-                    "re_01_01_Liegenschaften: Mietobjekte nicht gefunden",
-                    ['menrCeos' => $receivedMieter['menrCeos']]
-                );
-                continue;
+                $message = "Das Mietobjekt " . $receivedMieter['menrCeos'] . " wurde für den Mieter" . $receivedMieter['partner'] . " nicht gefunden";
+                throw new ResourceNotFoundException($message);
             }
 
             $apiData = [
@@ -704,7 +670,6 @@ class RE_01_01_Services
     private function processAbrechnungen(Ceos_LIEGENSCHAFT $liegenschaft, array $abrechnungsdaten): void
     {
         foreach ($abrechnungsdaten as $receivedAbrechnung) {
-
             $abrechnung = Ceos_ABRECHNUNG::firstOrCreate(
                 ['ABR_COMP_API_ID' => $liegenschaft->Liegenschaftsnummer],
                 ['User' => 1]
@@ -717,10 +682,10 @@ class RE_01_01_Services
                 'LiegenschaftsID' => $liegenschaft->LiegenschaftsID,
                 'DatumVon' => $receivedAbrechnung['datab'],
                 'DatumBis' => $this->normalizeValidTo($receivedAbrechnung['datbi'] ?? null),
-                'Stichtag_HKA' => $this->formatTo1900Date($receivedAbrechnung['sttHka']),
-                'Stichtag_KWA' => $this->formatTo1900Date($receivedAbrechnung['sttKwa']),
-                'Stichtag_NKA' => $this->formatTo1900Date($receivedAbrechnung['sttNka']),
-                'Stichtag_STA' => $this->formatTo1900Date($receivedAbrechnung['sttSta']),
+                'Stichtag_HKA' => $this->formatTo1900Date($receivedAbrechnung['sttHka'], $liegenschaft->Liegenschaftsnummer),
+                'Stichtag_KWA' => $this->formatTo1900Date($receivedAbrechnung['sttKwa'], $liegenschaft->Liegenschaftsnummer),
+                'Stichtag_NKA' => $this->formatTo1900Date($receivedAbrechnung['sttNka'], $liegenschaft->Liegenschaftsnummer),
+                'Stichtag_STA' => $this->formatTo1900Date($receivedAbrechnung['sttSta'], $liegenschaft->Liegenschaftsnummer),
                 'Heizung_JN' => $receivedAbrechnung['hka'],
                 'Kaltwasser_JN' => $receivedAbrechnung['kwa'],
                 'Betriebskosten_JN' => $receivedAbrechnung['nka'],
@@ -747,12 +712,14 @@ class RE_01_01_Services
         }
     }
 
-    private function formatTo1900Date(?string $md): ?string
+    /**
+     * @throws InvalidInputException
+     */
+    private function formatTo1900Date(?string $md, $liegenschaftsnummer): ?string
     {
         if (empty($md) || !preg_match('/^\d{4}$/', $md)) {
             return null;
         }
-
         $month = substr($md, 0, 2);
         $day = substr($md, 2, 2);
         $date = "1900-$month-$day";
@@ -760,8 +727,13 @@ class RE_01_01_Services
         try {
             return Carbon::createFromFormat('Y-m-d', $date)->format('Y-m-d');
         } catch (Throwable $e) {
-            Log::error('Invalid month/day: ' . $e->getMessage());
-            return null;
+            throw new InvalidInputException(
+                "Ungültiges Datumsformat $md in der Liegenschaft $liegenschaftsnummer ",
+                [
+                    'liegenschaftsnummer' => $liegenschaftsnummer,
+                    'value' => $md,
+                ]
+            );
         }
     }
 }

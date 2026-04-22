@@ -3,13 +3,20 @@
 namespace App\Http\Controllers\V1;
 
 
+use App\Helpers\RE_01_01_Validation;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\RE_0101_LiegenschaftenRequest;
 use App\Services\REServices;
+use App\Traits\ApiResponses;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Throwable;
 
 
 class REController extends Controller
 {
+    use ApiResponses;
+
     protected REServices\RE_01_01_Services $re0101Services;
 
     public function __construct(REServices\RE_01_01_Services $re0101Services)
@@ -18,37 +25,54 @@ class REController extends Controller
     }
 
 
-    public function re_01_01_Liegenschaften(RE_0101_LiegenschaftenRequest $request)
+    public function re_01_01_Liegenschaften(Request $request): JsonResponse
     {
-        $validated = $request->validated();
 
-        // Service now returns a report instead of just true/null
-        $report = $this->re0101Services->re_01_01_Liegenschaften($validated);
+        $receivedLiegenschaften = $request->all();
+        $report = ['success' => [], 'failed' => []];
 
-        if (empty($report['success']) && !empty($report['failed'])) {
-            // everything failed
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Alle Liegenschaften fehlgeschlagen',
-                'report' => $report,
-            ], 400);
+
+        foreach ($receivedLiegenschaften as $wrapper) {
+            $data = $wrapper['liegenschaft'];
+            $slgnr = $data['slgnr'];
+
+            $validator = Validator::make(
+                $data,
+                RE_01_01_Validation::rules(),
+                RE_01_01_Validation::messages()
+            );
+
+            if ($validator->fails()) {
+                $report['failed'][] = [
+                    'slgnr' => $slgnr,
+                    'message' => implode(';', $validator->errors()->all())
+                ];
+                continue;
+            }
+
+            try {
+                $response = $this->re0101Services->re_01_01_Liegenschaften($data);
+                if ($response) {
+                    $report['success'][] = $response;
+                } else {
+                    $report['failed'][] = [
+                        'slgnr' => $slgnr,
+                        'message' => "Liegenschaft konnte nicht gespeichert werden"
+                    ];
+                }
+            } catch (Throwable $e) {
+                $report['failed'][] = [
+                    'slgnr' => $slgnr,
+                    'message' => $e->getMessage()
+                ];
+            }
         }
-
-        if (!empty($report['failed'])) {
-            // partial success
-            return response()->json([
-                'status' => 'partial',
-                'message' => 'Einige Liegenschaften wurden nicht importiert',
-                'report' => $report,
-            ], 207); // 207 Multi-Status is good for mixed results
-        }
-
-        // all success
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Alle Liegenschaften erfolgreich importiert',
-            'report' => $report,
-        ], 202);
+        // Return response based on success/failure
+        return match (true) {
+            empty($report['failed']) => $this->successResponse("Alle Liegenschaften erfolgreich importiert", $report, 202),
+            empty($report['success']) => $this->errorResponse("Kein Liegenschaften konnte importiert werden", $report, 400),
+            default => $this->multiStatusResponse("Einige Liegenschaften wurden nicht importiert", $report),
+        };
     }
 
 
