@@ -1,11 +1,13 @@
 <?php
 /*
+     materialGruppe und augru
     'SV' und 'ENA' → 'E',
     'SM' und 'RT1' → 'M_RM',
     'SM' und 'NA1 → 'M_NM',
     'SR' und 'RT1' → 'M_RR',
     'SR' und 'NA1' → 'M_NR',
     'SV' und 'UVI' → 'U',
+    'SV' und 'NA1' → 'U',
     alles andere → 'RE',
 */
 return [
@@ -15,4 +17,5 @@ return [
     'NA1SR' => 'M_NR',
     'ENASV' => 'E',
     'UVISV' => 'U',
+    'NA1SV' => 'U',
 ];
