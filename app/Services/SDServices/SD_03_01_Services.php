@@ -74,9 +74,9 @@ class SD_03_01_Services
         $data['AbrVon'] = $carbonAbrVon->format('Ymd');
         $data['AbrBis'] = $carbonAbrBis->format('Ymd');
         $data['ZZBUKRS'] = '1450';
-        $data['SWENJA'] = substr((string)$vorgang->VorIndividualC3, 2, 6);
+        $data['ZZSWENR'] = substr((string)$vorgang->VorIndividualC3, 2, 6);
         $data['ZZSNKSL'] = '3040';
-        $data['SEMPSTRESS'] = (string)$abrechnungseinheit->EigenschaftWert;
+        $data['ZZSEMPSL'] = (string)$abrechnungseinheit->EigenschaftWert;
 
         //---------------------------------------------------------------------------------------------
         $positions = Position::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->get();
