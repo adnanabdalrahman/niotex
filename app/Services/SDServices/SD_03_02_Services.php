@@ -94,7 +94,7 @@ class SD_03_02_Services
         $vorgang->VorIndividualC1 = $header['fakturanummer'];
         $vorgang->VorIndividualC7 = $header['vorlagebeleg'];
         $vorgang->VorIndividualC3 = $header['liegenschaft'];
-        $vorgang->VorRechnungsNummer = $vorgang->VorRechnungsnummer ?? '';
+        $vorgang->VorRechnungsNummer = $header['fakturanummer'];
         $vorgang->VorStatus = 100400; //-- 100000 Nicht gedruckt / 100010 Angebot / 100100 Auftragsbestätigung
 
         //Storno
