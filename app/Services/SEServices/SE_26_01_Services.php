@@ -118,7 +118,7 @@ class SE_26_01_Services
 
                 $positionArray[] = [
                     'Matnr' => $artikel->Artikelnummer,
-                    'TxtZ009' => (string)$position2Text->PosZusatztext,
+                    'TxtZ010' => (string)$position2Text->PosNotiz,
                     'Kwmeng' => (string)$position3Menge->PosMenge1,
                     'Vrkme' => (string)$vrkme,
                     'Vorgn' => (string)$vorgang->VorNummer,

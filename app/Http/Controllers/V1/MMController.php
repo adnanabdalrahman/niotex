@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\V1;
 
+use App\Exceptions\DBSaveException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Helpers\MM_31_01_01_Validation;
 use App\Http\Controllers\Controller;
@@ -140,25 +141,16 @@ class MMController extends Controller
     SAP → CEOS
     Übertragung für den NU zugelassene Leistungspositionen von SAP an CEOS
     */
+    /**
+     * @throws DBSaveException
+     * @throws ResourceNotFoundException
+     */
     public function mm_37_1_NuLeistungspositionen(MM_3701_nuLeistungspositionenRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $data = $this->mm371aServices->mm_37_1_NuLeistungspositionen($validated);
-
-        if ($data !== null) {
-            $message = "Leistungspositionen erfolgreich gespeichert";
-            Log::info($message);
-            return response()->json([
-                'status' => 'success',
-                'message' => $message,
-                'data' => $data
-            ], 202);
-        } else {
-            return response()->json([
-                'status' => 'Error',
-                'message' => 'Material speichern fehlgeschlagen',
-            ], 400);
-        }
+        $response = $this->mm371aServices->mm_37_1_NuLeistungspositionen($validated);
+        return $this->successResponse("Leistungspositionen erfolgreich gespeichert",
+            $response, 202);
     }
     //------------------------------------------------------------------------------------------------------------------
 

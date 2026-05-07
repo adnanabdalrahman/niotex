@@ -2,65 +2,72 @@
 
 namespace App\Services\MMServices;
 
+use App\Exceptions\DBSaveException;
+use App\Exceptions\ResourceNotFoundException;
 use App\Models\Adresse;
 use App\Models\Artikel;
 use App\Models\ArtikelKunde;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
+use Throwable;
 
 
 class MM_37_1_Services
 {
-
+    /**
+     * SAP → CEOS
+     * @throws DBSaveException
+     * @throws ResourceNotFoundException
+     */
     public function mm_37_1_NuLeistungspositionen($data): ?array
     {
-        try {
-            $adressnummer = $data['header']['kreditor'];
-            $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
-            if ($adresse === null) {
-                Log::error('mm_37_1_NuLeistungspositionen Adresse nicht gefunden: ' . $adressnummer);
-                return null;
+        $adressnummer = $data['header']['kreditor'];
+        $adresse = Adresse::where('AdressNummer', $adressnummer)->first();
+        if ($adresse === null) {
+            throw new ResourceNotFoundException('Kein Adresse für kreditor ' . $adressnummer . ' gefunden: ',
+                ["Adresse" => $adressnummer]
+            );
+        }
+
+        $gueltigVon = Carbon::parse($data['header']['gueltigVon'])->format('Ymd');
+        $gueltigBis = Carbon::parse($data['header']['gueltigBis'])->format('Ymd');
+        $artikelKundeIds = [];
+        foreach ($data['positions'] as $position) {
+            //getInterneArtikelnummer
+            $artikelNummer = ltrim($position['materialnummer'], '0');
+            $artikel = Artikel::where('ArtikelNummer', $artikelNummer)->first();
+            if ($artikel === null) {
+                throw new ResourceNotFoundException('Artikel ' . $artikelNummer . ' nicht gefunden: ',
+                    ["Artikel" => $artikelNummer]
+                );
             }
 
-            $gueltigVon = Carbon::parse($data['header']['gueltigVon'])->format('Ymd');
-            $gueltigBis = Carbon::parse($data['header']['gueltigBis'])->format('Ymd');
-            $artikelKundeIds = [];
-            foreach ($data['positions'] as $position) {
-                //getInterneArtikelnummer
-                $artikelNummer = ltrim($position['materialnummer'], '0');
-                $artikel = Artikel::where('ArtikelNummer', $artikelNummer)->first();
-                if ($artikel === null) {
-                    Log::error('mm_37_1_NuLeistungspositionen Artikel nicht gefunden: ' . $artikelNummer);
-                    return null;
-                }
+            //set artikel as Inactive
+            if ($position['loeschkennzeichen'] !== null) {
+                $artikel->ArtAltJN = 1;
+                $artikel->save();
+            }
+            $dataArtikel = [
+                'AkuBestellnummer' => $position['kontraktnummer'],
+                'AkuArtikelBezeichnung2' => $position['kontraktposition'],
+                'InterneArtikelnummer' => $artikel->InterneArtikelnummer,
+                'InterneAdressnummer' => $adresse->InterneAdressnummer,
+                'AkuArtikelBezeichnung1' => mb_substr($position['materialkurztext'], 0, 39),
+                'NRPreisbasis' => $position['preismengeneinheit'],
+                'AkuLetzterVK' => (float)$position['preis'],
+                'AkuIndividualT1' => $gueltigVon,
+                'AkuIndividualT2' => $gueltigBis,
 
-                //set artikel as Inactive
-                if ($position['loeschkennzeichen'] !== null) {
-                    $artikel->ArtAltJN = 1;
-                    $artikel->save();
-                }
-                $dataArtikel = [
-                    'AkuBestellnummer' => $position['kontraktnummer'],
-                    'AkuArtikelBezeichnung2' => $position['kontraktposition'],
-                    'InterneArtikelnummer' => $artikel->InterneArtikelnummer,
-                    'InterneAdressnummer' => $adresse->InterneAdressnummer,
-                    'AkuArtikelBezeichnung1' => mb_substr($position['materialkurztext'], 0, 39),
-                    'NRPreisbasis' => $position['preismengeneinheit'],
-                    'AkuLetzterVK' => (float)$position['preis'],
-                    'AkuIndividualT1' => $gueltigVon,
-                    'AkuIndividualT2' => $gueltigBis,
+                //-----------------------------------------------------
+                'AkuLetzterRabattWert1' => 0,
+                'AkuLetzterRabattWert2' => 0,
+                'AkuLetzteMenge1' => 0,
+                'AkuLetzteMenge2' => 0,
+                'AkuLetzterRabatt1' => 0,
+                'AkuLetzterRabatt2' => 0,
+                'AkuLetzterRabatt3' => 0,
+            ];
 
-                    //-----------------------------------------------------
-                    'AkuLetzterRabattWert1' => 0,
-                    'AkuLetzterRabattWert2' => 0,
-                    'AkuLetzteMenge1' => 0,
-                    'AkuLetzteMenge2' => 0,
-                    'AkuLetzterRabatt1' => 0,
-                    'AkuLetzterRabatt2' => 0,
-                    'AkuLetzterRabatt3' => 0,
-                ];
-
-
+            try {
                 $artikelKunde = ArtikelKunde::where('InterneArtikelnummer', $artikel->InterneArtikelnummer)
                     ->where('InterneAdressnummer', $adresse->InterneAdressnummer)
                     ->first();
@@ -85,17 +92,15 @@ class MM_37_1_Services
                         }
                         $artikelKunde->AkuVKNeu = (float)$position['preis'];
                         $artikelKunde->AkuVKNeuDatum = $gueltigVon;
-
                     }
                     $artikelKunde->save();
                 }
-                $artikelKundeIds[] = $artikelKunde->ArtikelKundeID;
+            } catch (Throwable $exception) {
+                throw new DBSaveException('Fehler beim Speichern oder Aktualisieren die ArtikelKunde', [
+                    'database' => $exception->getMessage(),
+                ]);
             }
-        } catch (\Throwable $e) {
-            Log::error(
-                'mm_37_1_NuLeistungspositionen Save  Error' . $e->getMessage(),
-            );
-            return null;
+            $artikelKundeIds[] = $artikelKunde->ArtikelKundeID;
         }
         return [
             'artikelKundeIds' => $artikelKundeIds,
