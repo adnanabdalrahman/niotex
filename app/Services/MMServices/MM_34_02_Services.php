@@ -9,12 +9,13 @@ use App\Models\Position5Individual;
 use App\Models\Rak_Mad_Material_Tour;
 use App\Models\Vorgang;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class MM_34_02_Services
 {
     /**
      * SAP -> CEOS
-     * @throws ResourceNotFoundException|\Throwable
+     * @throws ResourceNotFoundException|Throwable
      */
     public function mm_34_02_Statusumlagerungsreservierung($reservations): ?array
     {
