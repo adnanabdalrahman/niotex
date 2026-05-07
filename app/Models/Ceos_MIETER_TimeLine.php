@@ -66,6 +66,12 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Ceos_MIETER_TimeLine whereMDMMI($value)
  * @method static Builder<static>|Ceos_MIETER_TimeLine whereMPlzOrt($value)
  * @method static Builder<static>|Ceos_MIETER_TimeLine whereMStrasse($value)
+ * @property string|null $M_Telefon
+ * @property string|null $M_Mobil
+ * @property string|null $M_Email
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMEmail($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMMobil($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMTelefon($value)
  * @mixin Eloquent
  */
 class Ceos_MIETER_TimeLine extends Model

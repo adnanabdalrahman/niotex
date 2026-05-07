@@ -1198,6 +1198,7 @@ namespace PHPSTORM_META {
             'vorgruppeMapping.NA1SR' => 'string',
             'vorgruppeMapping.ENASV' => 'string',
             'vorgruppeMapping.UVISV' => 'string',
+            'vorgruppeMapping.NA1SV' => 'string',
             'vorgruppeSKTMapping.ENA' => 'string',
             'vorgruppeSKTMapping.NA1' => 'string',
             'vorgruppeSKTMapping.RT1' => 'string',
@@ -1682,6 +1683,7 @@ namespace PHPSTORM_META {
             'vorgruppeMapping.NA1SR' => 'string',
             'vorgruppeMapping.ENASV' => 'string',
             'vorgruppeMapping.UVISV' => 'string',
+            'vorgruppeMapping.NA1SV' => 'string',
             'vorgruppeSKTMapping.ENA' => 'string',
             'vorgruppeSKTMapping.NA1' => 'string',
             'vorgruppeSKTMapping.RT1' => 'string',
@@ -2166,6 +2168,7 @@ namespace PHPSTORM_META {
             'vorgruppeMapping.NA1SR' => 'string',
             'vorgruppeMapping.ENASV' => 'string',
             'vorgruppeMapping.UVISV' => 'string',
+            'vorgruppeMapping.NA1SV' => 'string',
             'vorgruppeSKTMapping.ENA' => 'string',
             'vorgruppeSKTMapping.NA1' => 'string',
             'vorgruppeSKTMapping.RT1' => 'string',
@@ -2309,9 +2312,9 @@ namespace PHPSTORM_META {
 'session.files','session.connection','session.table','session.store','session.lottery',
 'session.cookie','session.path','session.domain','session.secure','session.http_only',
 'session.same_site','session.partitioned','vorgruppeMapping.RT1SM','vorgruppeMapping.NA1SM','vorgruppeMapping.RT1SR',
-'vorgruppeMapping.NA1SR','vorgruppeMapping.ENASV','vorgruppeMapping.UVISV','vorgruppeSKTMapping.ENA','vorgruppeSKTMapping.NA1',
-'vorgruppeSKTMapping.RT1','vorgruppeSKTMapping.STT','vorgruppeSKTMapping.UVI','tinker.commands','tinker.alias',
-'tinker.dont_alias','tinker.trust_project',);
+'vorgruppeMapping.NA1SR','vorgruppeMapping.ENASV','vorgruppeMapping.UVISV','vorgruppeMapping.NA1SV','vorgruppeSKTMapping.ENA',
+'vorgruppeSKTMapping.NA1','vorgruppeSKTMapping.RT1','vorgruppeSKTMapping.STT','vorgruppeSKTMapping.UVI','tinker.commands',
+'tinker.alias','tinker.dont_alias','tinker.trust_project',);
         registerArgumentsSet('middleware', 
 'web','api',);
         registerArgumentsSet('routes', 

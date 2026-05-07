@@ -338,6 +338,10 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Vorgang7Abrechnung whereNutzerMontageBestellnummer($value)
  * @method static Builder<static>|Vorgang7Abrechnung whereNutzerMontageTelefonnummer($value)
  * @method static Builder<static>|Vorgang7Abrechnung whereNutzerMontageWunschtermin($value)
+ * @property string|null $AlteLiegenschaftsnummern
+ * @property string|null $Abrechnungseinheit
+ * @method static Builder<static>|Vorgang7Abrechnung whereAbrechnungseinheit($value)
+ * @method static Builder<static>|Vorgang7Abrechnung whereAlteLiegenschaftsnummern($value)
  * @mixin Eloquent
  */
 class Vorgang7Abrechnung extends Model
