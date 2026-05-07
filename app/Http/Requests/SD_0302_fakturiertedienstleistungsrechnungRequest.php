@@ -17,7 +17,7 @@ class SD_0302_fakturiertedienstleistungsrechnungRequest extends FormRequest
     {
         return [
             'header' => 'required|array',
-            'header.fakturanummer' => 'required|string', // VBELN VorIndividualC1
+            'header.fakturanummer' => 'required|string', // VBELN VorIndividualC1 // Rechnungsnummer
             'header.liegenschaft' => 'nullable|string', // ZZLGSNR
             'header.vorgangsnummer' => 'required|int', //VORGN
             'header.vorgangsnummerInt' => 'required|int', //interneVorgangsnummer

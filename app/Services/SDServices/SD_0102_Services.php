@@ -156,8 +156,9 @@ class SD_0102_Services
                     'Posnr' => (string)(int)$position5Individual->PosIndividualC1,
                     'Kwmeng' => (string)$position3Menge->PosMenge1,
                     'Vrkme' => (string)$vrkme,
-                    'TxtZ002' => (string)$position2Text->PosZusatztextLieferschein,
-                    'TxtZ009' => (string)$position2Text->PosZusatztext,
+                    // neue Anforderungen von Susanne
+                    //'TxtZ002' => (string)$position2Text->PosZusatztextLieferschein,
+                    //'TxtZ009' => (string)$position2Text->PosZusatztext,
                     'TxtZ010' => (string)$position2Text->PosNotiz,
                     'PosAtt' => (string)$position5Individual->PosIndividualC4,
                     'Montagedatum' => Carbon::parse($position5Individual->PosIndividualT3)->format('Ymd')

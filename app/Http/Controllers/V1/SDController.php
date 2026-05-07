@@ -227,20 +227,18 @@ class SDController extends Controller
      *  SD-03-01 CEOS --> SAP
      *  Dienstleistungsrechnung
      */
+    /**
+     * @throws ResourceNotFoundException
+     */
     public function sd_03_01_dienstleistungsrechnung(Request $request)
     {
-        $vorgangDataArray = $this->sd0301Services->sd_0301_dienstleistungsrechnung($request);
-        if ($vorgangDataArray !== null) {
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Dienstleistungsrechnung erfolgreich übernommen',
-                'data' => $vorgangDataArray
-            ], 202);
-        }
-        return response()->json([
-            'status' => 'Error',
-            'message' => 'Beauftragung fehlgeschlagen',
-        ], 400);
+        $request->validate([
+            'InterneVorgangsnummer' => 'required'
+        ]);
+        $response = $this->sd0301Services->sd_0301_dienstleistungsrechnung($request);
+        return $this->successResponse("Dienstleistungsrechnung erfolgreich übernommen",
+            $response['response']);
+
     }
 
     /**
