@@ -84,6 +84,10 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWETPlatz($value)
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWWFlaeche($value)
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWohnFlaeche($value)
+ * @property string|null $Geschosslage_SKT
+ * @property int|null $Begehreihenfolge
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereBegehreihenfolge($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereGeschosslageSKT($value)
  * @mixin Eloquent
  */
 class Ceos_WOHNEINHEIT_TimeLine extends Model

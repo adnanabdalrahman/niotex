@@ -150,8 +150,6 @@ app/
 │ ├── api.php                          <-- API routes for MM, SD, etc.
 │ └── web.php                          <-- Optional web routes for any other services
 
-php artisan ide-helper:models --write
-
 # Basic worker (runs until manually stopped)
 
 php artisan queue:work
@@ -220,6 +218,6 @@ to find in services : laravel-queue
 in all Requests validation like BP.
 
 - build different Exceptions and Groups for each API-request
-
-php artisan ide-helper:models
-php artisan ide-helper:meta
+  php artisan ide-helper:models --write
+  php artisan ide-helper:models
+  php artisan ide-helper:meta

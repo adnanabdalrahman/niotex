@@ -17,6 +17,7 @@ use App\Services\DLBuchungsdateiService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
+
 class SD_03_02_Services
 {
 
@@ -71,7 +72,6 @@ class SD_03_02_Services
             );
         }
 
-
         if ($header['nettowert'] > 0) {
             $mwstSatzProzent = (($header['gesamtsteuerbetrag'] - $header['nettowert']) / $header['nettowert']) * 100;
             $mwstSatzProzent = (int)round($mwstSatzProzent);
@@ -103,7 +103,7 @@ class SD_03_02_Services
             );
         }
 
-        $header['abrechnungseinheit'] = (string)$abrechnungseinheit?->EigenschaftWert;
+        $header['abrechnungseinheit'] = (string)$abrechnungseinheit->EigenschaftWert;
 
         $vorgang->VorIndividualT1 = $datumvon;
         $vorgang->VorIndividualT2 = $datumbis;

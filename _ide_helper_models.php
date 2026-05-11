@@ -1419,7 +1419,6 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereMDM($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereStromkostenJN($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereWarmwasserJN($value)
- * @mixin \Eloquent
  * @property int|null $EigentuemerAbrechnung_JN
  * @property int|null $MDM_ABR
  * @property int $Geloescht_JN
@@ -1509,8 +1508,32 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereWWFestkostenanteil($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereWWTemperatur($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_ABRECHNUNG_TimeLine whereWWVerbrauchskosten($value)
+ * @mixin \Eloquent
  */
 	class Ceos_ABRECHNUNG_TimeLine extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $ID
+ * @property string $createDate
+ * @property string $LiegenschaftsNummer
+ * @property string $DatumVon
+ * @property string|null $DatumBis
+ * @property int $EigenschaftTyp
+ * @property string|null $EigenschaftWert
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_DTA_Eigenschaften newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_DTA_Eigenschaften newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_DTA_Eigenschaften query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_DTA_Eigenschaften whereCreateDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_DTA_Eigenschaften whereDatumBis($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_DTA_Eigenschaften whereDatumVon($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_DTA_Eigenschaften whereEigenschaftTyp($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_DTA_Eigenschaften whereEigenschaftWert($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_DTA_Eigenschaften whereID($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_DTA_Eigenschaften whereLiegenschaftsNummer($value)
+ */
+	class Ceos_DTA_Eigenschaften extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -1572,13 +1595,13 @@ namespace App\Models{
  * @method static Builder<static>|Ceos_GEBAEUDE_TimeLine whereUser($value)
  * @property int|null $MDM
  * @method static Builder<static>|Ceos_GEBAEUDE_TimeLine whereMDM($value)
- * @mixin Eloquent
  * @property int|null $MDM_GEB
  * @property int $Geloescht_JN
  * @property string|null $GEB_TPlatz
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_GEBAEUDE_TimeLine whereGEBTPlatz($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_GEBAEUDE_TimeLine whereGeloeschtJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_GEBAEUDE_TimeLine whereMDMGEB($value)
+ * @method static Builder<static>|Ceos_GEBAEUDE_TimeLine whereGEBTPlatz($value)
+ * @method static Builder<static>|Ceos_GEBAEUDE_TimeLine whereGeloeschtJN($value)
+ * @method static Builder<static>|Ceos_GEBAEUDE_TimeLine whereMDMGEB($value)
+ * @mixin Eloquent
  */
 	class Ceos_GEBAEUDE_TimeLine extends \Eloquent {}
 }
@@ -1890,13 +1913,13 @@ namespace App\Models{
  * @method static Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereWarmwasserJN($value)
  * @property int|null $MDM
  * @method static Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereMDM($value)
- * @mixin Eloquent
  * @property int|null $MDM_LG
  * @property int $Geloescht_JN
  * @property string|null $LG_KORR_Nr
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereGeloeschtJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereLGKORRNr($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereMDMLG($value)
+ * @method static Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereGeloeschtJN($value)
+ * @method static Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereLGKORRNr($value)
+ * @method static Builder<static>|Ceos_LIEGENSCHAFT_TimeLine whereMDMLG($value)
+ * @mixin Eloquent
  */
 	class Ceos_LIEGENSCHAFT_TimeLine extends \Eloquent {}
 }
@@ -1998,15 +2021,21 @@ namespace App\Models{
  * @method static Builder<static>|Ceos_MIETER_TimeLine whereLfdAdressnummerMECEOS($value)
  * @property int|null $MDM
  * @method static Builder<static>|Ceos_MIETER_TimeLine whereMDM($value)
- * @mixin Eloquent
  * @property int|null $MDM_MI
  * @property int|null $Geloescht_JN
  * @property string|null $M_Strasse
  * @property string|null $M_PlzOrt
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereGeloeschtJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMDMMI($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMPlzOrt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMStrasse($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereGeloeschtJN($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMDMMI($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMPlzOrt($value)
+ * @method static Builder<static>|Ceos_MIETER_TimeLine whereMStrasse($value)
+ * @mixin Eloquent
+ * @property string|null $M_Telefon
+ * @property string|null $M_Mobil
+ * @property string|null $M_Email
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMEmail($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMMobil($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_MIETER_TimeLine whereMTelefon($value)
  */
 	class Ceos_MIETER_TimeLine extends \Eloquent {}
 }
@@ -2072,9 +2101,9 @@ namespace App\Models{
  * @method static Builder<static>|Ceos_VERWALTUNG_TimeLine whereVorLieferanschriftAnsprechpartnerID($value)
  * @method static Builder<static>|Ceos_VERWALTUNG_TimeLine whereVorRechnungsanschrift($value)
  * @method static Builder<static>|Ceos_VERWALTUNG_TimeLine whereVorRechnungsanschriftAnsprechpartnerID($value)
- * @mixin Eloquent
  * @property int $Geloescht_JN
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_VERWALTUNG_TimeLine whereGeloeschtJN($value)
+ * @method static Builder<static>|Ceos_VERWALTUNG_TimeLine whereGeloeschtJN($value)
+ * @mixin Eloquent
  */
 	class Ceos_VERWALTUNG_TimeLine extends \Eloquent {}
 }
@@ -2164,7 +2193,6 @@ namespace App\Models{
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereLfdAdressnummerGECEOS($value)
  * @property int|null $MDM
  * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereMDM($value)
- * @mixin Eloquent
  * @property float|null $Wohn_Flaeche
  * @property float|null $Heizung_Flaeche
  * @property float|null $WW_Flaeche
@@ -2173,14 +2201,19 @@ namespace App\Models{
  * @property string|null $WE_HK_KORR_Nr
  * @property string|null $WE_KW_KORR_Nr
  * @property string|null $WE_TPlatz
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereGeloeschtJN($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereHeizungFlaeche($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereMDMWE($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWEHKKORRNr($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWEKWKORRNr($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWETPlatz($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWWFlaeche($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWohnFlaeche($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereGeloeschtJN($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereHeizungFlaeche($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereMDMWE($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWEHKKORRNr($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWEKWKORRNr($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWETPlatz($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWWFlaeche($value)
+ * @method static Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereWohnFlaeche($value)
+ * @mixin Eloquent
+ * @property string|null $Geschosslage_SKT
+ * @property int|null $Begehreihenfolge
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereBegehreihenfolge($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Ceos_WOHNEINHEIT_TimeLine whereGeschosslageSKT($value)
  */
 	class Ceos_WOHNEINHEIT_TimeLine extends \Eloquent {}
 }
@@ -3076,9 +3109,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rak_Mad_Material_Tour whereTourName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rak_Mad_Material_Tour whereVorGruppe($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rak_Mad_Material_Tour whereVorNummer($value)
- * @mixin \Eloquent
  * @property string|null $Ceos_Calendar_ID
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Rak_Mad_Material_Tour whereCeosCalendarID($value)
+ * @mixin \Eloquent
  */
 	class Rak_Mad_Material_Tour extends \Eloquent {}
 }
@@ -4166,17 +4199,21 @@ namespace App\Models{
  * @method static Builder<static>|Vorgang7Abrechnung whereVorgangNachfolger($value)
  * @method static Builder<static>|Vorgang7Abrechnung whereVorgangVorgaenger($value)
  * @method static Builder<static>|Vorgang7Abrechnung whereWiedervorlageAM($value)
- * @mixin Eloquent
  * @property string|null $NutzerMontage_Auftragstext
  * @property string|null $NutzerMontage_Telefonnummer
  * @property string|null $NutzerMontage_Wunschtermin
  * @property string|null $NutzerMontage_Bemerkung
  * @property string|null $NutzerMontage_Bestellnummer
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Vorgang7Abrechnung whereNutzerMontageAuftragstext($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Vorgang7Abrechnung whereNutzerMontageBemerkung($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Vorgang7Abrechnung whereNutzerMontageBestellnummer($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Vorgang7Abrechnung whereNutzerMontageTelefonnummer($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Vorgang7Abrechnung whereNutzerMontageWunschtermin($value)
+ * @method static Builder<static>|Vorgang7Abrechnung whereNutzerMontageAuftragstext($value)
+ * @method static Builder<static>|Vorgang7Abrechnung whereNutzerMontageBemerkung($value)
+ * @method static Builder<static>|Vorgang7Abrechnung whereNutzerMontageBestellnummer($value)
+ * @method static Builder<static>|Vorgang7Abrechnung whereNutzerMontageTelefonnummer($value)
+ * @method static Builder<static>|Vorgang7Abrechnung whereNutzerMontageWunschtermin($value)
+ * @mixin Eloquent
+ * @property string|null $AlteLiegenschaftsnummern
+ * @property string|null $Abrechnungseinheit
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Vorgang7Abrechnung whereAbrechnungseinheit($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Vorgang7Abrechnung whereAlteLiegenschaftsnummern($value)
  */
 	class Vorgang7Abrechnung extends \Eloquent {}
 }
