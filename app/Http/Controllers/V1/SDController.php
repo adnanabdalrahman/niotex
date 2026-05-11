@@ -236,9 +236,7 @@ class SDController extends Controller
             'InterneVorgangsnummer' => 'required'
         ]);
         $response = $this->sd0301Services->sd_0301_dienstleistungsrechnung($request);
-        return $this->successResponse("Dienstleistungsrechnung erfolgreich übernommen",
-            $response['response']);
-
+        return $this->successResponse("Dienstleistungsrechnung erfolgreich übernommen");
     }
 
     /**

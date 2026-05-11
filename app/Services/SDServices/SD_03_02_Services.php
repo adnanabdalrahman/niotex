@@ -6,22 +6,25 @@ use App\Exceptions\InvalidInputException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Models\Adresse;
 use App\Models\Artikel;
+use App\Models\Ceos_DTA_Eigenschaften;
 use App\Models\Position;
 use App\Models\Position1Wert;
 use App\Models\PositionWert;
 use App\Models\Vorgang;
 use App\Models\Vorgang1Wert;
 use App\Models\VorgangWert;
+use App\Services\DLBuchungsdateiService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
-
 
 class SD_03_02_Services
 {
 
     protected array $mwstSatzProzentArray;
 
-    public function __construct()
+    public function __construct(
+        protected DLBuchungsdateiService $dlBuchungsdateiService
+    )
     {
         $this->mwstSatzProzentArray = [
             7 => 2,
@@ -29,7 +32,6 @@ class SD_03_02_Services
             0 => 4,
         ];
     }
-
 
     /**
      * SAP → CEOS
@@ -69,11 +71,6 @@ class SD_03_02_Services
             );
         }
 
-        $carbonVorIndividualT1 = Carbon::parse((string)$header['datumvon']);
-        $carbonVorIndividualT2 = Carbon::parse((string)$header['datumbis']);
-
-        $datumvon = $carbonVorIndividualT1->format('Ymd');
-        $datumbis = $carbonVorIndividualT2->format('Ymd');
 
         if ($header['nettowert'] > 0) {
             $mwstSatzProzent = (($header['gesamtsteuerbetrag'] - $header['nettowert']) / $header['nettowert']) * 100;
@@ -87,6 +84,26 @@ class SD_03_02_Services
             throw new InvalidInputException("Steuersatz ist unklar");
         }
 
+        $carbonVorIndividualT1 = Carbon::parse((string)$header['datumvon']);
+        $carbonVorIndividualT2 = Carbon::parse((string)$header['datumbis']);
+
+        $datumvon = $carbonVorIndividualT1->format('Ymd');
+        $datumbis = $carbonVorIndividualT2->format('Ymd');
+
+        $abrechnungseinheit = Ceos_DTA_Eigenschaften::query()
+            ->where('DatumVon', $datumvon)
+            ->where('DatumBis', $datumbis)
+            ->where('EigenschaftTyp', 1)
+            ->where('LiegenschaftsNummer', (string)$vorgang->VorIndividualC3)
+            ->first();
+
+        if ($abrechnungseinheit === null) {
+            throw new ResourceNotFoundException('Kein abrechnungseinheit für Vorgang gefunden',
+                ['InterneVorgangsnummer' => $interneVorgangsnummer]
+            );
+        }
+
+        $header['abrechnungseinheit'] = (string)$abrechnungseinheit?->EigenschaftWert;
 
         $vorgang->VorIndividualT1 = $datumvon;
         $vorgang->VorIndividualT2 = $datumbis;
@@ -94,7 +111,6 @@ class SD_03_02_Services
         $vorgang->VorIndividualC1 = $header['fakturanummer'];
         $vorgang->VorIndividualC7 = $header['vorlagebeleg'];
         $vorgang->VorIndividualC3 = $header['liegenschaft'];
-        $vorgang->VorRechnungsNummer = $vorgang->VorRechnungsnummer ?? '';
         $vorgang->VorStatus = 100400; //-- 100000 Nicht gedruckt / 100010 Angebot / 100100 Auftragsbestätigung
 
         //Storno
@@ -230,6 +246,7 @@ class SD_03_02_Services
             $positionsArray[] = $currentPosition->InternePositionsnummer;
         }
         if (!empty($positionsArray)) {
+            $this->dlBuchungsdateiService->create($header);
             return [
                 'header' => [
                     'InterneVorgangsnummer' => $vorgang['InterneVorgangsnummer'],
@@ -243,8 +260,3 @@ class SD_03_02_Services
         return null;
     }
 }
-
-
-
-
-
