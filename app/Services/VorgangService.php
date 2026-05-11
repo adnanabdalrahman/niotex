@@ -229,6 +229,7 @@ class VorgangService
                 ]);
 
                 if (!$vorgang) {
+                    //todo throw error
                     Log::error("Vorgang creation failed");
                     return null;
                 }
@@ -236,6 +237,7 @@ class VorgangService
 
                 $vorgang->refresh();
                 if (!$vorgang->exists) {
+                    //todo throw error
                     Log::error('Trigger deleted the Vorgang InterneVorgangsnummer: ' . $vorgang->InterneVorgangsnummer);
                     return null;
                 }
