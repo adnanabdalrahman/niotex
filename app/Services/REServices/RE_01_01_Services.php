@@ -544,7 +544,7 @@ class RE_01_01_Services
             }
             $wohneinheit = $this->findWohneinheit($liegenschaft, $gebaeude, $receivedMieter['menrCeos']);
             if (!$wohneinheit) {
-                $message = "Das Mietobjekt " . $receivedMieter['menrCeos'] . " wurde für den Mieter" . $receivedMieter['partner'] . " nicht gefunden";
+                $message = "Das Mietobjekt " . $receivedMieter['menrCeos'] . " wurde für den Mieter " . $receivedMieter['partner'] . " nicht gefunden";
                 throw new ResourceNotFoundException($message);
             }
 
@@ -627,7 +627,7 @@ class RE_01_01_Services
         return Ceos_WOHNEINHEIT_TimeLine::where('WE_LfdNr', $menr)
             ->where('GebaeudeID', $gebaeude->GebaeudeID)
             ->where('LiegenschaftsID', $liegenschaft->LiegenschaftsID)
-            ->where('DatumBis', '9999-12-31')
+            //->where('DatumBis', '9999-12-31')
             ->latest('ID')
             ->first();
     }

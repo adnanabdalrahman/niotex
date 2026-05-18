@@ -46,9 +46,7 @@ class BP_01_01_Services
             $adresse->fill($mappedData);
             $adresse->save();
         } catch (Throwable $exception) {
-            throw new DBSaveException('Fehler beim Speichern oder Aktualisieren des Geschäftspartners', [
-                'database' => $exception->getMessage(),
-            ]);
+            throw new DBSaveException('Fehler beim Speichern oder Aktualisieren des Geschäftspartners: ' . $exception->getMessage());
         }
         $interneAdressnummer = $adresse['InterneAdressnummer'] ?? null;
 
@@ -140,9 +138,7 @@ class BP_01_01_Services
                 ]
             );
         } catch (Throwable $exception) {
-            throw new DBSaveException('Fehler beim Speichern oder Aktualisieren des AdresseBranche', [
-                'database' => $exception->getMessage(),
-            ]);
+            throw new DBSaveException('Fehler beim Speichern oder Aktualisieren des AdresseBranche:' . $exception->getMessage());
         }
     }
 }

@@ -45,7 +45,6 @@ class DLBuchungsdateiService
             STR_PAD_RIGHT
         );
 
-
         /*
          * Bezugsdatum
          */
@@ -53,9 +52,7 @@ class DLBuchungsdateiService
             $header['datumbis']
         )->format('d.m.Y');
 
-
-        $eigenschaftWert = $header['liegenschaft'] ? substr($header['liegenschaft'], 2, 6) : 00000;
-
+        $eigenschaftWert = $header['liegenschaft'] ? substr($header['liegenschaft'], 1, 5) : 00000;
         /*
          * Buchungstext
          */
@@ -67,10 +64,10 @@ class DLBuchungsdateiService
             '40',
             $betrag,
             'N5',
-            $header['abrechnungseinheit'],// Abrechnungseinheit
+            $header['abrechnungseinheit'] ?? '',// Abrechnungseinheit
             '3040',
             $eigenschaftWert,
-            $bezugsdatum,
+            $bezugsdatum . "\t" . "\t" . "\t",
             'Dienstleistungsrechnung',
             $buchungstext,
         ];

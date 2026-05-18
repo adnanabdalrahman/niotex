@@ -95,10 +95,9 @@ class MM_37_1_Services
                     }
                     $artikelKunde->save();
                 }
-            } catch (Throwable $exception) {
-                throw new DBSaveException('Fehler beim Speichern oder Aktualisieren die ArtikelKunde', [
-                    'database' => $exception->getMessage(),
-                ]);
+            } catch (Throwable $e) {
+                throw new DBSaveException('Fehler beim Speichern oder Aktualisieren die ArtikelKunde: '
+                    . $e->getMessage());
             }
             $artikelKundeIds[] = $artikelKunde->ArtikelKundeID;
         }

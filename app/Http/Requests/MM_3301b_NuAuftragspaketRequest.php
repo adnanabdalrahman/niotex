@@ -6,7 +6,7 @@ use App\Exceptions\ValidationFailedException;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
-class MM_3402_StatusUmlagerungReservierungRequest extends FormRequest
+class MM_3301b_NuAuftragspaketRequest extends FormRequest
 {
 
     public function authorize(): bool
@@ -17,15 +17,9 @@ class MM_3402_StatusUmlagerungReservierungRequest extends FormRequest
     public function rules(): array
     {
         return [
-            '*.header' => 'required|array',
-            '*.header.tourId' => 'required|string|max:20',
-            '*.header.reservNo' => 'nullable',
-            '*.header.checkstatus' => 'nullable|string|max:1',
-
-            '*.materials' => 'required|array|min:1',
-            '*.materials.*.material' => 'required|string|max:20',
-            '*.materials.*.entryQnt' => 'required|numeric',
-            '*.materials.*.entryUom' => 'required|string|max:2',
+            'Vorgangnummer' => 'required',
+            'VorGruppe' => 'required',
+            'tourId' => 'required',
         ];
     }
 
@@ -45,7 +39,7 @@ class MM_3402_StatusUmlagerungReservierungRequest extends FormRequest
     /**
      * @throws ValidationFailedException
      */
-    protected function failedValidation(Validator $validator)
+    protected function failedValidation(Validator $validator): void
     {
         $errors = $validator->errors()->toArray();
         $message = "Validierung fehlgeschlagen.";

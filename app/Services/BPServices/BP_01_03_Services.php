@@ -76,10 +76,7 @@ class BP_01_03_Services
                 'Adresse' => $interneAdressnummer,
             ];
         } catch (Throwable $exception) {
-            throw new DBSaveException(
-                'Fehler beim Speichern oder Aktualisieren des Ansprechpartner',
-                ['database' => $exception->getMessage()]
-            );
+            throw new DBSaveException('Fehler beim Speichern oder Aktualisieren des Ansprechpartner: ' . $exception->getMessage());
         }
     }
 }
