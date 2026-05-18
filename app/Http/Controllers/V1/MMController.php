@@ -7,6 +7,8 @@ use App\Exceptions\ResourceNotFoundException;
 use App\Helpers\MM_31_01_01_Validation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MM_2201_SAPStockRequest;
+use App\Http\Requests\MM_3301a_NuLeistungsbestaetigungRequest;
+use App\Http\Requests\MM_3301b_NuAuftragspaketRequest;
 use App\Http\Requests\MM_3402_StatusUmlagerungReservierungRequest;
 use App\Http\Requests\MM_3701_nuLeistungspositionenRequest;
 use App\Models\Artikel;
@@ -125,7 +127,6 @@ class MMController extends Controller
     {
         $data = $request->validated();
         $response = $this->mm342Services->mm_34_02_Statusumlagerungsreservierung($data);
-
         return $response['checkstatus'] ?
             $this->successResponse("Status umlagerungsreservierung erfolgreich geprüft",
                 $response['response']) :
@@ -226,55 +227,32 @@ class MMController extends Controller
      * MM_33_01a Leistungsbestaetigung
      * CEOSWEB-->CEOS-->SAP
      *
-     * @param Request $request
+     * @param MM_3301a_NuLeistungsbestaetigungRequest $request
      * @return JsonResponse
      * @throws Exception
      */
 
-    public function mm_33_01_a_NuLeistungsbestaetigung(Request $request): JsonResponse
+    public function mm_33_01_a_NuLeistungsbestaetigung(MM_3301a_NuLeistungsbestaetigungRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'Vorgangnummer' => 'required',
-            'VorGruppe' => 'required',
-            'tourId' => 'required',
-        ]);
-        $response = $this->mm331aServices->mm_33_01_a_NuLeistungsbestaetigung($data);
-        if ($response !== null) {
-            Log::info('mm_33_01_a_NuLeistungsbestaetigung erfolgreich gesendet');
-            return response()->json([
-                'message' => 'mm_33_01_a_NuLeistungsbestaetigung erfolgreich gesendet',
-                'data' => $response
-            ]);
-        }
-        return response()->json(['message' => 'mm_33_01_a_NuLeistungsbestaetigung fehlgeschlagen'], 400);
+        $response = $this->mm331aServices->mm_33_01_a_NuLeistungsbestaetigung($request->validated());
+        return $this->successResponse('erfolgreich gesendet', $response, 202
+        );
     }
 
     /**
      * MM_33_01b NU-Auftragspaket
      * CEOSWEB-->CEOS-->SAP
      *
-     * @param Request $request
+     * @param MM_3301b_NuAuftragspaketRequest $request
      * @return JsonResponse
      * @throws Exception
      */
-
-    public function mm_33_01_b_NuAuftragspaket(Request $request): JsonResponse
+    public function mm_33_01_b_NuAuftragspaket(MM_3301b_NuAuftragspaketRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'Vorgangnummer' => 'required',
-            'VorGruppe' => 'required',
-            'tourId' => 'required',
-        ]);
-        $response = $this->mm331bServices->mm_33_01_b_NuAuftragspaket($data);
 
-        if ($response !== null) {
-            Log::info('mm_33_01_b_NuAuftragspaket erfolgreich gesendet');
-            return response()->json([
-                'message' => 'mm_33_01_b_NuAuftragspaket erfolgreich gesendet',
-                'data' => $response
-            ]);
-        }
-        return response()->json(['message' => 'mm_33_01_b_NuAuftragspaket fehlgeschlagen'], 400);
+        $response = $this->mm331bServices->mm_33_01_b_NuAuftragspaket($request->validated());
+        return $this->successResponse('mm_33_01_b_NuAuftragspaket erfolgreich gesendet', $response, 202
+        );
     }
 
 

@@ -3,22 +3,43 @@
 namespace App\Services\SDServices;
 
 use App\Exceptions\CreationFailedException;
+use App\Exceptions\DBSaveException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Exceptions\ValidationFailedException;
 use App\Models\Adresse;
 use App\Models\Artikel;
 use App\Models\Preisbasis;
 use App\Services\PositionService;
-use App\Services\VorgangService;
+use App\Services\VorgangServices\Vorgang1WertService;
+use App\Services\VorgangServices\Vorgang2TextService;
+use App\Services\VorgangServices\Vorgang3ZahlungService;
+use App\Services\VorgangServices\Vorgang4VersandService;
+use App\Services\VorgangServices\Vorgang5AngebotService;
+use App\Services\VorgangServices\Vorgang6WiederholService;
+use App\Services\VorgangServices\VorgangService;
+use App\Services\VorgangServices\VorgangWertService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class SD_0201_Services
 {
     protected array $vorGruppe;
-
     protected array $mwstSatzProzentArray;
 
-    public function __construct()
+
+    public function __construct(
+        protected VorgangService           $vorgangService,
+        protected Vorgang2TextService      $vorgang2TextService,
+        protected VorgangWertService       $vorgangWertService,
+        protected Vorgang1WertService      $vorgang1WertService,
+        protected Vorgang3ZahlungService   $vorgang3ZahlungService,
+        protected Vorgang4VersandService   $vorgang4VersandService,
+        protected Vorgang5AngebotService   $vorgang5AngebotService,
+        protected Vorgang6WiederholService $vorgang6WiederholService,
+
+        protected PositionService          $positionService
+    )
     {
         $this->vorGruppe = config('vorgruppeMapping');
         $this->mwstSatzProzentArray = [
@@ -34,6 +55,7 @@ class SD_0201_Services
      * @throws ResourceNotFoundException
      * @throws ValidationFailedException
      * @throws CreationFailedException
+     * @throws Throwable
      */
     public function sd_0201_mietvertragsrechnungen(array $requestData): ?array
     {
@@ -43,20 +65,27 @@ class SD_0201_Services
         if ($adresse === null) {
             throw new ResourceNotFoundException('AdressNummer wurde nicht gefunden', ['AdressNummer' => $kunnr]);
         }
+        $fkdat = !empty($header['fkdat'])
+            ? Carbon::parse($header['fkdat'])->format('Ymd')
+            : null;
 
-        $fkdat = Carbon::parse($header['fkdat'])->format('Ymd');
-        $datumvon = Carbon::parse($header['datumvon'])->format('Ymd');
-        $datumbis = Carbon::parse($header['datumbis'])->format('Ymd');
+        $datumvon = !empty($header['datumvon'])
+            ? Carbon::parse($header['datumvon'])->format('Ymd')
+            : null;
+
+        $datumbis = !empty($header['datumbis'])
+            ? Carbon::parse($header['datumbis'])->format('Ymd')
+            : null;
 
         /* ============================================================
            MwSt — ALWAYS FROM zzstproz
         ============================================================ */
 
         $mwstSatzProzent = (int)round((float)$header['zzstproz']);
-
         if (!isset($this->mwstSatzProzentArray[$mwstSatzProzent])) {
             throw new ValidationFailedException('Unbekannter Steuersatz', ['zzstproz' => $mwstSatzProzent]);
         }
+
         $mwstSatzCode = $this->mwstSatzProzentArray[$mwstSatzProzent];
 
         /* ============================================================
@@ -85,7 +114,6 @@ class SD_0201_Services
         if ($header['vbeln'] == $header['zuonr']) {
             $vorgangData['VorStatus'] = 100430;
         }
-
         /* ==================== VALUES ==================== */
 
         $vorgangData['VorNettowert'] = $header['netwr'];
@@ -141,73 +169,107 @@ class SD_0201_Services
         $vorgangData['VorWNettowertMwst1Gut'] = $header['netwr'];
         $vorgangData['VorWNettowertMwst1Rechnung'] = $header['netwr'];
 
+        $artikelIds = array_map(
+            fn($p) => ltrim($p['matnr'], '0'),
+            $requestData['positions']
+        );
 
-        /* ==================== CREATE VORGANG ==================== */
+        $artikelCollection = Artikel::whereIn('Artikelnummer', $artikelIds)
+            ->get()
+            ->keyBy('Artikelnummer');
 
-        $vorgangService = new VorgangService();
-        $vorgang = $vorgangService->createVorgang($vorgangData);
-        if ($vorgang === null) {
-            throw new CreationFailedException('Vorgang Erstellung fehlgeschlagen');
-        }
-        /* ==================== POSITIONS ==================== */
+        $preisbasisCollection = Preisbasis::whereIn(
+            'NRPreisbasis',
+            $artikelCollection->pluck('NRPreisbasis')
+        )->get()->keyBy('NRPreisbasis');
 
-        $positionsArray = [];
 
-        foreach ($requestData['positions'] as $key => $position) {
+        return DB::transaction(function () use ($requestData, $vorgangData, $artikelCollection, $preisbasisCollection) {
+            $positionsArray = [];
 
-            $artikelNummer = ltrim($position['matnr'], '0');
+            /* ==================== CREATE VORGANG ==================== */
+            $vorgang = $this->createVorgang($vorgangData);
 
-            $artikel = Artikel::where('Artikelnummer', $artikelNummer)->first();
+            /* ==================== POSITIONS ==================== */
+            foreach ($requestData['positions'] as $key => $position) {
+                $positionData = [];
+                $artikelNummer = ltrim($position['matnr'], '0');
 
-            if ($artikel === null) {
-                throw new ResourceNotFoundException('Material wurde nicht gefunden', ['matnr' => $artikelNummer]);
+                $artikel = $artikelCollection[$artikelNummer] ?? null;
+                if ($artikel === null) {
+                    throw new ResourceNotFoundException('Material wurde nicht gefunden', ['matnr' => $artikelNummer]);
+                }
+                $preisbasis = $preisbasisCollection[$artikel->NRPreisbasis] ?? null;
+                if ($preisbasis === null) {
+                    throw new ResourceNotFoundException('Preisbasis wurde nicht gefunden', ['NRPreisbasis' => $artikel->NRPreisbasis]);
+                }
+                $mwstPos = (int)round((float)$position['zzstproz']);
+                if (!isset($this->mwstSatzProzentArray[$mwstPos])) {
+                    throw new ValidationFailedException('Unbekannter Steuersatz', ['zzstproz' => $mwstPos]);
+                }
+
+                $positionData['InterneVorgangsnummer'] = $vorgang['InterneVorgangsnummer'];
+                $positionData['VorNummer'] = $vorgang['VorNummer'];
+                $positionData['PosIndividualC1'] = $position['posnr'];
+                $positionData['PosKZMengeneinheit1'] = 'ST';
+                $positionData['PosMenge1'] = $position['fkimg'];
+                $positionData['PosMwstProzent'] = $mwstPos;
+                $positionData['externMenge'] = $position['fkimg'];
+                $positionData['externEinzelPreis'] = $position['fkimg'] > 0 ? $position['netwr'] / $position['fkimg'] : 0;
+                $positionData['externGesamtPreis'] = $position['netwr'];
+                $positionData['PosNummer'] = $key + 1;
+                $positionData['PosNummernText'] = $key + 1;
+
+                $positionData['NRPreisbasis'] = $artikel->NRPreisbasis;
+                $positionData['PosPreisfaktor'] = $preisbasis->Preisfaktor;
+
+                try {
+                    $createdPosition = $this->positionService->createPosition($positionData, $artikel);
+                } catch (Throwable $e) {
+                    throw new DBSaveException('Fehler beim Speichern die Position: '
+                        . $e->getMessage());
+                }
+                $positionsArray[] = $createdPosition;
+
             }
-            $mwstPos = (int)round((float)$position['zzstproz']);
-
-            if (!isset($this->mwstSatzProzentArray[$mwstSatzProzent])) {
-                throw new ValidationFailedException('Unbekannter Steuersatz', ['zzstproz' => $mwstSatzProzent]);
+            if (empty($positionsArray)) {
+                throw new CreationFailedException('Positionen Erstellung fehlgeschlagen');
             }
-
-            $preisbasis = Preisbasis::where('NRPreisbasis', $artikel->NRPreisbasis)->first();
-
-            $positionData['InterneVorgangsnummer'] = $vorgang['InterneVorgangsnummer'];
-            $positionData['VorNummer'] = $vorgang['VorNummer'];
-            $positionData['PosIndividualC1'] = $position['posnr'];
-            $positionData['PosKZMengeneinheit1'] = 'ST';
-            $positionData['PosMenge1'] = $position['fkimg'];
-            $positionData['PosMwstProzent'] = $mwstPos;
-            $positionData['externMenge'] = $position['fkimg'];
-            $positionData['externEinzelPreis'] = $position['fkimg'] > 0 ? $position['netwr'] / $position['fkimg'] : 0;
-            $positionData['externGesamtPreis'] = $position['netwr'];
-            $positionData['PosNummer'] = $key + 1;
-            $positionData['PosNummernText'] = $key + 1;
-
-            $positionData['NRPreisbasis'] = $artikel->NRPreisbasis;
-            $positionData['PosPreisfaktor'] = $preisbasis->Preisfaktor;
-
-            $positionService = new PositionService();
-            $createdPosition = $positionService->createPosition($positionData, $artikel);
-
-            if ($createdPosition === null) {
-                throw new CreationFailedException(
-                    'Position Erstellung fehlgeschlagen',
-                    ["posnr" => $position['posnr']]
-                );
-            }
-            $positionsArray[] = $createdPosition;
-
-        }
-        if (empty($positionsArray)) {
-            throw new CreationFailedException('Positionen Erstellung fehlgeschlagen');
-        }
-        return [
-            'header' => [
-                'InterneVorgangsnummer' => $vorgang['InterneVorgangsnummer'],
-                'VorNummer' => $vorgang['VorNummer'],
-                'VorGruppe' => $vorgang['VorGruppe'],
-            ],
-            'positions' => $positionsArray
-        ];
-
+            return [
+                'header' => [
+                    'InterneVorgangsnummer' => $vorgang['InterneVorgangsnummer'],
+                    'VorNummer' => $vorgang['VorNummer'],
+                    'VorGruppe' => $vorgang['VorGruppe'],
+                ],
+                'positions' => $positionsArray
+            ];
+        });
     }
+
+
+    /**
+     * @throws CreationFailedException
+     */
+    protected function createVorgang(array $data): array
+    {
+        try {
+            $vorgang = $this->vorgangService->createVorgang($data);
+            $this->vorgang2TextService->saveVorgang2Text($data, $vorgang->InterneVorgangsnummer);
+            $this->vorgangWertService->saveVorgangWert($data, $vorgang->InterneVorgangsnummer);
+            $this->vorgang1WertService->saveVorgang1Wert($data, $vorgang->InterneVorgangsnummer);
+            $this->vorgang3ZahlungService->saveVorgang3Zahlung($data, $vorgang->InterneVorgangsnummer);
+            $this->vorgang4VersandService->saveVorgang4Versand($data, $vorgang->InterneVorgangsnummer);
+            $this->vorgang5AngebotService->saveVorgang5Angebot($data, $vorgang->InterneVorgangsnummer);
+            $this->vorgang6WiederholService->saveVorgang6Wiederhol($data, $vorgang->InterneVorgangsnummer);
+            return [
+                'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
+                'VorNummer' => $vorgang->VorNummer,
+                'VorGruppe' => $vorgang->VorGruppe,
+            ];
+        } catch (Throwable $e) {
+            throw new CreationFailedException('Fehler beim Vorgang Erstellung: ' . $e->getMessage());
+        }
+    }
+
+
 }

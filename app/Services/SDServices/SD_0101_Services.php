@@ -4,6 +4,7 @@ namespace App\Services\SDServices;
 
 use App\Exceptions\AdresseGesperrtException;
 use App\Exceptions\CreationFailedException;
+use App\Exceptions\DBSaveException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Models\Adresse;
 use App\Models\Artikel;
@@ -11,7 +12,14 @@ use App\Models\Ceos_GEBAEUDE_TimeLine;
 use App\Models\Ceos_LIEGENSCHAFT_TimeLine;
 use App\Models\Preisbasis;
 use App\Services\PositionService;
-use App\Services\VorgangService;
+use App\Services\VorgangServices\Vorgang1WertService;
+use App\Services\VorgangServices\Vorgang2TextService;
+use App\Services\VorgangServices\Vorgang3ZahlungService;
+use App\Services\VorgangServices\Vorgang4VersandService;
+use App\Services\VorgangServices\Vorgang5AngebotService;
+use App\Services\VorgangServices\Vorgang6WiederholService;
+use App\Services\VorgangServices\VorgangService;
+use App\Services\VorgangServices\VorgangWertService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -27,7 +35,17 @@ class SD_0101_Services
     protected array $auth;
     protected array $mwstSatzProzentArray;
 
-    public function __construct()
+    public function __construct(
+        protected VorgangService           $vorgangService,
+        protected Vorgang2TextService      $vorgang2TextService,
+        protected VorgangWertService       $vorgangWertService,
+        protected Vorgang1WertService      $vorgang1WertService,
+        protected Vorgang3ZahlungService   $vorgang3ZahlungService,
+        protected Vorgang4VersandService   $vorgang4VersandService,
+        protected Vorgang5AngebotService   $vorgang5AngebotService,
+        protected Vorgang6WiederholService $vorgang6WiederholService,
+        protected PositionService          $positionService,
+    )
     {
         $this->baseUrl = config('sap.base_url');
         $this->auth = [
@@ -50,27 +68,38 @@ class SD_0101_Services
      * SD-01-01 Beauftragung
      * @throws Throwable
      */
-    public function sd_0101_beauftragung($requestData): ?array
+    public function sd_0101_beauftragung(array $requestData): ?array
     {
-        return DB::transaction(function () use (&$requestData) {
+        $header = $requestData['header'];
+        $positions = $requestData['positions'];
+        $data = [];
+        // Adresse
+        $this->prepareAdresse($header['kunnr'], $data);
+        // VorGruppe
+        $materialGruppe = substr($positions[0]['aufnr'], 0, 2);
+        $vorGruppe = $this->getVorGruppe($header['augru'], $materialGruppe);
+        // Header Daten
+        $this->prepareHeaderData($header, $data, $vorGruppe);
+        // Liegenschaft / Gebäude
+        $this->prepareLiegenschaftData($header, $data);
+        $positionData = $this->preloadPositionData($positions);
 
-            $header = $requestData['header'];
-            $positions = $requestData['positions'];
-            $data = [];
-            // Adresse
-            $this->prepareAdresse($header['kunnr'], $data, $requestData);
-            // VorGruppe
-            $materialGruppe = substr($positions[0]['aufnr'], 0, 2);
-            $vorGruppe = $this->getVorGruppe($header['augru'], $materialGruppe);
-            // Header Daten
-            $this->prepareHeaderData($header, $data, $vorGruppe);
-            // Liegenschaft / Gebäude
-            $this->prepareLiegenschaftData($header, $data);
-            // Vorgang erstellen
-            $vorgang = $this->createVorgang($data, $header);
-            // Positionen erstellen
+        return DB::transaction(function () use (
+            $data,
+            $positions,
+            $positionData,
+            $header
+        ) {
+
+            $vorgang = $this->createVorgang($data);
+
             $vorgang['vbeln'] = $header['vbeln'];
-            $positionsArray = $this->preparePositions($positions, $vorgang);
+            $positionsArray = $this->createPositions(
+                $positions,
+                $positionData,
+                $vorgang
+            );
+
             return [
                 'header' => [
                     'InterneVorgangsnummer' => $vorgang['InterneVorgangsnummer'],
@@ -90,20 +119,16 @@ class SD_0101_Services
      * @throws ResourceNotFoundException
      * @throws AdresseGesperrtException
      */
-    protected function prepareAdresse(string $kunnr, array &$data, $requestData): void
+    protected function prepareAdresse(string $kunnr, array &$data): void
     {
         $adresse = Adresse::where('AdressNummer', $kunnr)->first();
-
         if ($adresse === null) {
             throw new ResourceNotFoundException('AdressNummer wurde nicht gefunden', ['AdressNummer' => $kunnr]);
         }
-
         if ($adresse->AdrLiefersperreJN == "1") {
             throw new AdresseGesperrtException(errors: ["AdressNummer" => $kunnr]);
         }
-
         $interneNummer = $adresse->InterneAdressnummer;
-
         $data['VorAuftraggeber'] = $interneNummer;
         $data['VorLieferanschrift'] = $interneNummer;
         $data['VorRechnungsanschrift'] = $interneNummer;
@@ -161,54 +186,85 @@ class SD_0101_Services
         }
     }
 
-    /**
-     * @throws CreationFailedException
-     */
-    protected function createVorgang(array $data, array $header): array
-    {
-        $vorgangService = new VorgangService();
-        $vorgang = $vorgangService->createVorgang($data);
-
-        if ($vorgang === null) {
-            throw new CreationFailedException('Vorgang Erstellung fehlgeschlagen');
-        }
-
-        return $vorgang;
-    }
-
-    /**
-     * @throws ResourceNotFoundException
-     * @throws CreationFailedException
-     */
-    protected function preparePositions(array $positions, array $vorgang): array
+    protected function preloadPositionData(array $positions): array
     {
         $artikelIds = array_map(
             fn($p) => ltrim($p['matnr'], '0'),
             $positions
         );
 
-        $artikelCollection = Artikel::whereIn('Artikelnummer', $artikelIds)
-            ->get()
-            ->keyBy('Artikelnummer');
+        $artikelCollection = Artikel::whereIn(
+            'Artikelnummer',
+            $artikelIds
+        )->get()->keyBy('Artikelnummer');
 
         $preisbasisCollection = Preisbasis::whereIn(
             'NRPreisbasis',
             $artikelCollection->pluck('NRPreisbasis')
-        )
-            ->get()
-            ->keyBy('NRPreisbasis');
+        )->get()->keyBy('NRPreisbasis');
+
+        return [
+            'artikel' => $artikelCollection,
+            'preisbasis' => $preisbasisCollection,
+        ];
+    }
+
+    /**
+     * @throws Throwable
+     */
+    protected function createVorgang(array $data): array
+    {
+        try {
+            $vorgang = $this->vorgangService->createVorgang($data);
+            $this->vorgang2TextService->saveVorgang2Text($data, $vorgang->InterneVorgangsnummer);
+            $this->vorgangWertService->saveVorgangWert($data, $vorgang->InterneVorgangsnummer);
+            $this->vorgang1WertService->saveVorgang1Wert($data, $vorgang->InterneVorgangsnummer);
+            $this->vorgang3ZahlungService->saveVorgang3Zahlung($data, $vorgang->InterneVorgangsnummer);
+            $this->vorgang4VersandService->saveVorgang4Versand($data, $vorgang->InterneVorgangsnummer);
+            $this->vorgang5AngebotService->saveVorgang5Angebot($data, $vorgang->InterneVorgangsnummer);
+            $this->vorgang6WiederholService->saveVorgang6Wiederhol($data, $vorgang->InterneVorgangsnummer);
+            return [
+                'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
+                'VorNummer' => $vorgang->VorNummer,
+                'VorGruppe' => $vorgang->VorGruppe,
+            ];
+        } catch (Throwable $e) {
+            throw new DBSaveException('Fehler beim Vorgang Erstellung: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * @throws ResourceNotFoundException
+     * @throws CreationFailedException
+     * @throws DBSaveException
+     */
+    protected function createPositions(
+        array $positions,
+        array $preloadedData,
+        array $vorgang
+    ): array
+    {
+
+        $artikelCollection = $preloadedData['artikel'];
+        $preisbasisCollection = $preloadedData['preisbasis'];
 
         $positionsArray = [];
+
+        $currentDate = date('Ymd');
 
         foreach ($positions as $key => $position) {
 
             $artikelNummer = ltrim($position['matnr'], '0');
+
             $artikel = $artikelCollection[$artikelNummer] ?? null;
 
             if ($artikel === null) {
                 throw new ResourceNotFoundException(
                     'Material für Position nicht gefunden',
-                    ['Material' => $artikelNummer, "posnr" => $position['posnr']]
+                    [
+                        'Material' => $artikelNummer,
+                        'posnr' => $position['posnr'],
+                    ]
                 );
             }
 
@@ -220,7 +276,7 @@ class SD_0101_Services
                     [
                         'Material' => $artikelNummer,
                         'NRPreisbasis' => $artikel->NRPreisbasis,
-                        "posnr" => $position['posnr']
+                        'posnr' => $position['posnr'],
                     ]
                 );
             }
@@ -240,7 +296,7 @@ class SD_0101_Services
                 'PosKZMengeneinheit1' => $position['vrkme'],
                 'PosIndividualC5' => $position['kwmeng'],
                 'externMenge' => $position['kwmeng'],
-                'current_date' => date('Ymd'),
+                'current_date' => $currentDate,
                 'PosIndividualT3' => $montagedatum,
                 'NRPreisbasis' => $artikel->NRPreisbasis,
                 'PosPreisfaktor' => $preisbasis->Preisfaktor,
@@ -248,23 +304,21 @@ class SD_0101_Services
                 'PosNummernText' => $key + 1,
             ];
 
-            $positionService = new PositionService();
-            $createdPosition = $positionService->createPosition($positionData, $artikel);
-
-            if ($createdPosition === null) {
-                throw new CreationFailedException(
-                    'Position Erstellung fehlgeschlagen',
-                    ["posnr" => $position['posnr']]
-                );
+            try {
+                $createdPosition = $this->positionService->createPosition($positionData, $artikel);
+            } catch (Throwable $e) {
+                throw new DBSaveException('Fehler beim Speichern die Position: ' . $e->getMessage());
             }
             $createdPosition['Verkaufsbeleg'] = $vorgang['vbeln'];
             $positionsArray[] = $createdPosition;
         }
 
         if (empty($positionsArray)) {
-            throw new CreationFailedException('Positionen Erstellung fehlgeschlagen');
+            throw new CreationFailedException(
+                'Positionen Erstellung fehlgeschlagen'
+            );
         }
-
         return $positionsArray;
     }
+
 }

@@ -12,63 +12,84 @@ use App\Services\PositionServices\Position6StuecklisteService;
 use App\Services\PositionServices\Position7ZusatzService;
 use App\Services\PositionServices\PositionService as PositionServiceTable;
 use App\Services\PositionServices\PositionWertService;
-use Illuminate\Support\Facades\Log;
-use Throwable;
 
 class PositionService
 {
-    protected string $baseUrl;
-
-    public function __construct()
+    public function __construct(
+        protected PositionServiceTable        $positionServiceTable,
+        protected Position2TextService        $position2TextService,
+        protected Position3MengeService       $position3MengeService,
+        protected Position4LieferungService   $position4LieferungService,
+        protected Position5IndividualService  $position5IndividualService,
+        protected Position6StuecklisteService $position6StuecklisteService,
+        protected Position7ZusatzService      $position7ZusatzService,
+        protected Position1WertService        $position1WertService,
+        protected PositionWertService         $positionWertService,
+    )
     {
-        $this->baseUrl = config('sap.base_url');
     }
 
-    public function createPosition($data, Artikel $artikel): ?array
+    public function createPosition(array $data, Artikel $artikel): array
     {
-        try {
-            $positionService = new PositionServiceTable();
-            $position = $positionService->createPosition($data, $artikel);
-            $internePositionsnummer = $position->InternePositionsnummer;
+        $position = $this->positionServiceTable
+            ->createPosition($data, $artikel);
 
-            $position2Text = new Position2TextService($internePositionsnummer);
-            $position2Text->savePosition2Text($data, $artikel);
+        $internePositionsnummer = $position->InternePositionsnummer;
 
-            $position3Menge = new Position3MengeService($internePositionsnummer);
-            $position3Menge->savePosition3Menge($data);
+        $this->position2TextService
+            ->savePosition2Text(
+                $data,
+                $artikel,
+                $internePositionsnummer
+            );
 
-            $position4Lieferung = new Position4LieferungService($internePositionsnummer);
-            $position4Lieferung->savePosition4Lieferung($data);
+        $this->position3MengeService
+            ->savePosition3Menge(
+                $data,
+                $internePositionsnummer
+            );
 
-            $position5Individual = new Position5IndividualService($internePositionsnummer);
-            $position5Individual->savePosition5Individual($data);
+        $this->position4LieferungService
+            ->savePosition4Lieferung(
+                $data,
+                $internePositionsnummer
+            );
 
-            $position6Stueckliste = new Position6StuecklisteService($internePositionsnummer);
-            $position6Stueckliste->savePosition6Stueckliste($data);
+        $this->position5IndividualService
+            ->savePosition5Individual(
+                $data,
+                $internePositionsnummer
+            );
 
-            $position7Zusatz = new Position7ZusatzService($internePositionsnummer);
-            $position7Zusatz->savePosition7Zusatz($data);
+        $this->position6StuecklisteService
+            ->savePosition6Stueckliste(
+                $data,
+                $internePositionsnummer
+            );
 
+        $this->position7ZusatzService
+            ->savePosition7Zusatz(
+                $data,
+                $internePositionsnummer
+            );
 
-            /* Position1Wert */
-            $position1Wert = new Position1WertService($internePositionsnummer);
-            $position1Wert->savePosition1Wert($data);
+        $this->position1WertService
+            ->savePosition1Wert(
+                $data,
+                $internePositionsnummer
+            );
 
-            /* PositionWert */
-            $positionWert = new PositionWertService($internePositionsnummer);
-            $positionWert->savePositionWert($data);
+        $this->positionWertService
+            ->savePositionWert(
+                $data,
+                $internePositionsnummer
+            );
 
-            $positionsResultArray = [
-                'InternePositionsnummer' => $internePositionsnummer,
-                'InterneVorgangsnummer' => $data['InterneVorgangsnummer'],
-                'vorgn' => $data['VorNummer'],
-                'posnr' => $data['PosIndividualC1'],
-            ];
-        } catch (Throwable $e) {
-            Log::error('Create Position' . $e->getMessage());
-            return null;
-        }
-        return $positionsResultArray;
+        return [
+            'InternePositionsnummer' => $internePositionsnummer,
+            'InterneVorgangsnummer' => $data['InterneVorgangsnummer'],
+            'vorgn' => $data['VorNummer'],
+            'posnr' => $data['PosIndividualC1'],
+        ];
     }
-
 }

@@ -221,3 +221,8 @@ in all Requests validation like BP.
   php artisan ide-helper:models --write
   php artisan ide-helper:models
   php artisan ide-helper:meta
+
+sd0101
+sd0201
+mm3301a
+mm3301b

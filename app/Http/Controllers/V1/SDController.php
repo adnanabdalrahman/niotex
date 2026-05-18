@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\V1;
 
+use App\Exceptions\DBSaveException;
+use App\Exceptions\InvalidJsonException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Helpers\SD_01_01_Validation;
 use App\Helpers\SD_02_01_Validation;
@@ -50,20 +52,24 @@ class SDController extends Controller
      * Sap --> CEOS.
      * @param Request $request
      * @return JsonResponse
+     * @throws DBSaveException
+     * @throws InvalidJsonException
      */
     public function sd_0101_beauftragung(Request $request): JsonResponse
     {
         $auftraege = $request->all();
+        if (!$request->isJson() || empty($auftraege)) {
+            throw new InvalidJsonException();
+        }
         $report = ['success' => [], 'failed' => []];
-        foreach ($auftraege as $auftrag) {
-            $validator = Validator::make($auftrag, SD_01_01_Validation::rules(), SD_01_01_Validation::messages()
-            );
-            $vbeln = $auftrag['header']['vbeln'] ?? 'unknown';
 
+        foreach ($auftraege as $auftrag) {
+            $validator = Validator::make($auftrag, SD_01_01_Validation::rules(), SD_01_01_Validation::messages());
+            $vbeln = $auftrag['header']['vbeln'] ?? 'unknown';
             if ($validator->fails()) {
                 $report['failed'][] = [
                     'vbeln' => $vbeln,
-                    'message' => $validator->errors()->all()
+                    'message' => $validator->errors()->toArray()
                 ];
                 continue;
             }
@@ -124,7 +130,6 @@ class SDController extends Controller
         ], 400);
     }
 
-
     // SD-02-01: SAP-->CEOS, Übergabe Werte aus Mietvertragsrechnungen an die CEOS
 
     /**
@@ -133,35 +138,38 @@ class SDController extends Controller
      *
      * @param Request $request
      * @return JsonResponse
+     * @throws InvalidJsonException
      */
     public function sd_02_01_mietvertragsrechnungen(Request $request): JsonResponse
     {
         $auftraege = $request->all();
-        $report = [
-            'success' => [],
-            'failed' => []
-        ];
+        if (!$request->isJson() || empty($auftraege)) {
+            throw new InvalidJsonException();
+        }
+        $report = ['success' => [], 'failed' => []];
         foreach ($auftraege as $auftrag) {
             $validator = Validator::make($auftrag, SD_02_01_Validation::rules(), SD_02_01_Validation::messages());
             $validator->sometimes(
                 ['header.datumvon', 'header.datumbis'],
                 'nullable|date',
                 function ($input) {
-                    return $input->header['vbeln'] === $input->header['zuonr'];
+                    return data_get($input, 'header.vbeln') === data_get($input, 'header.zuonr');
                 }
             );
+
             $validator->sometimes(
                 'header.datumvon',
                 'required|date',
                 function ($input) {
-                    return $input->header['vbeln'] !== $input->header['zuonr'];
+                    return data_get($input, 'header.vbeln') !== data_get($input, 'header.zuonr');
                 }
             );
+
             $validator->sometimes(
                 'header.datumbis',
                 'required|date|after_or_equal:header.datumvon',
                 function ($input) {
-                    return $input->header['vbeln'] !== $input->header['zuonr'];
+                    return data_get($input, 'header.vbeln') !== data_get($input, 'header.zuonr');
                 }
             );
             $vbeln = $auftrag['header']['vbeln'] ?? 'unknown';
@@ -192,6 +200,8 @@ class SDController extends Controller
                         'message' => "Beauftragung $vbeln konnte nicht verarbeitet werden",
                     ];
                 }
+                unset($pos);
+
             } catch (Throwable $e) {
                 $errors = method_exists($e, 'getErrors') ? $e->getErrors() : [];
                 $report['failed'][] = [
@@ -201,7 +211,6 @@ class SDController extends Controller
                 ];
             }
         }
-
         return match (true) {
             empty($report['failed']) =>
             $this->successResponse(

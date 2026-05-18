@@ -19,6 +19,8 @@ class SD_02_01_Validation
             'header.mwsbk' => 'required|numeric',
             'header.zzlgsnr' => 'required|string',
             'header.zzbukrs' => 'nullable|string',
+            'header.datumvon' => 'nullable|string',
+            'header.datumbis' => 'nullable|string',
             'header.zzstproz' => 'required|numeric',
 
             'positions' => 'required|array|min:1',
