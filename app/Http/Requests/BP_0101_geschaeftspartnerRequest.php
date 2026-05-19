@@ -95,9 +95,7 @@ class BP_0101_geschaeftspartnerRequest extends FormRequest
     protected function getValidatorInstance(): Validator
     {
         $content = $this->getContent();
-
         json_decode($content);
-
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new ValidationFailedException(
                 'Ungültiges JSON: ' . json_last_error_msg(),

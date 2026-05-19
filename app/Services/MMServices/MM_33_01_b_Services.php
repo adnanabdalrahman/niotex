@@ -3,6 +3,7 @@
 namespace App\Services\MMServices;
 
 use App\Exceptions\DBSaveException;
+use App\Exceptions\InvalidSapResponseException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Models\Adresse;
 use App\Models\Artikel;
@@ -23,6 +24,7 @@ use App\Services\PositionServices\Position7ZusatzService;
 use App\Services\PositionServices\PositionWertService;
 use App\Services\SapApiClient;
 use Exception;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -43,13 +45,13 @@ class MM_33_01_b_Services
     )
     {
         $this->mm331_path = config('sap.mm331_path');
-
     }
 
     /**
      * MM_33_01b NU-Auftragspaket
      * CEOSWEB-->CEOS-->SAP
      * @throws Exception
+     * @throws Throwable
      */
     public function mm_33_01_b_NuAuftragspaket($requestData): ?array
     {
@@ -58,13 +60,13 @@ class MM_33_01_b_Services
             ->first();
 
         if ($vorgang === null) {
-            throw new ResourceNotFoundException('Kein Vorgang vorhanden ',
+            throw new ResourceNotFoundException('Kein Vorgang gefunden.',
                 ['Vorgangnummer' => $requestData['Vorgangnummer']]
             );
         }
         $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
         if ($adresse === null) {
-            throw new ResourceNotFoundException('Kein Adresse für Vorgang gefunden',
+            throw new ResourceNotFoundException('Keine Adresse für den Vorgang gefunden.',
                 ["InterneAdressnummer" => $vorgang->VorAuftraggeber]
             );
         }
@@ -72,26 +74,23 @@ class MM_33_01_b_Services
         // get all Positions
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
         if ($positions->isEmpty()) {
-            throw new ResourceNotFoundException('Keine Positionen vorhanden',
+            throw new ResourceNotFoundException('Keine Positionen für den Vorgang gefunden.',
                 ["InterneVorgangsnummer" => $vorgang->InterneVorgangsnummer]
             );
         }
         $to_Items = [];
         $positionNummerArray = [];
 
-        $artikelCollection = Artikel::whereIn(
-            'InterneArtikelnummer',
+        $artikelCollection = Artikel::whereIn('InterneArtikelnummer',
             $positions->pluck('InterneArtikelnummer')
         )->get()->keyBy('InterneArtikelnummer');
 
-        $position3Mengen = Position3Menge::whereIn(
-            'InternePositionsnummer',
+        $position3Mengen = Position3Menge::whereIn('InternePositionsnummer',
             $positions->pluck('InternePositionsnummer')
         )->get()->keyBy('InternePositionsnummer');
 
 
-        $position5IndividualCollection = Position5Individual::whereIn(
-            'InternePositionsnummer',
+        $position5IndividualCollection = Position5Individual::whereIn('InternePositionsnummer',
             $positions->pluck('InternePositionsnummer')
         )->get()->keyBy('InternePositionsnummer');
 
@@ -110,7 +109,7 @@ class MM_33_01_b_Services
             }
             $position3Menge = $position3Mengen[$position->InternePositionsnummer] ?? null;
             if ($position3Menge === null) {
-                throw new ResourceNotFoundException('Kein PosMenge für Position gefunden',
+                throw new ResourceNotFoundException('Keine Mengenangabe für die Position gefunden.',
                     [
                         'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
                         'Position' => $position->InternePositionsnummer,
@@ -119,14 +118,13 @@ class MM_33_01_b_Services
             }
             $position5Individual = $position5IndividualCollection[$position->InternePositionsnummer] ?? null;
             if ($position5Individual === null) {
-                throw new ResourceNotFoundException('Kein Vgart für Position gefunden',
+                throw new ResourceNotFoundException('Keine Vgart-Daten für die Position gefunden.',
                     [
                         'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
                         'Position' => $position->InternePositionsnummer,
                         'InterneArtikelnummer' => $position->InterneArtikelnummer
                     ]);
             }
-
             $to_Items[] = [
                 "TourId" => (string)$requestData['tourId'],
                 'Lifnr' => $adresse->AdressNummer,
@@ -171,140 +169,134 @@ class MM_33_01_b_Services
         ) {
             if (isset($result['d'])) {
                 $receivedVorgangInfo = $result['d'];
-
                 $vorgang->VorIndividualC5 = $receivedVorgangInfo['PoItem'];
                 $vorgang->VorIndividualD6 = $receivedVorgangInfo['PoNumber'];
                 $vorgang->save();
             }
-            if (isset($result['d']['to_items']['results'])) {
-                Log::info('received_data', $result);
-                $receivedPositions = $result['d']['to_items']['results'];
-                $notExistArrayAndCreated = [];
-                $existArrayAndUpdated = [];
 
-                $artikelCollection = Artikel::whereIn(
-                    'Artikelnummer',
-                    collect($receivedPositions)->pluck('Material')
-                )->get()->keyBy('Artikelnummer');
+            if (
+                !isset($result['d']['to_items']['results']) ||
+                !is_array($result['d']['to_items']['results'])
+            ) {
+                throw new InvalidSapResponseException('Ungültige SAP-Antwort.');
+            }
 
-                $preisbasisCollection = Preisbasis::whereIn(
-                    'NRPreisbasis',
-                    collect($receivedPositions)->pluck('Peinh')
-                )->get()->keyBy('NRPreisbasis');
-                $existingPositions = Position::whereIn(
-                    'InternePositionsnummer',
-                    collect($receivedPositions)
-                        ->pluck('PosInt')
-                        ->filter()
-                )->get()->keyBy('InternePositionsnummer');
+            $receivedPositions = $result['d']['to_items']['results'];
+            Log::info('received_data', $result);
+            $notExistArrayAndCreated = [];
+            $existArrayAndUpdated = [];
 
-                $positionNummerArray = array_map('intval', $positionNummerArray);
+            $artikelCollection = Artikel::whereIn('Artikelnummer',
+                collect($receivedPositions)->pluck('Material'))->get()->keyBy('Artikelnummer');
 
-                $currentMaxPosition = max($positionNummerArray);
+            $preisbasisCollection = Preisbasis::whereIn('NRPreisbasis',
+                collect($receivedPositions)->pluck('Peinh'))->get()->keyBy('NRPreisbasis');
+            $existingPositions = Position::whereIn('InternePositionsnummer', collect($receivedPositions)
+                ->pluck('PosInt')
+                ->filter()
+            )->get()->keyBy('InternePositionsnummer');
 
-                $currentDate = date('Ymd');
+            $positionNummerArray = array_map('intval', $positionNummerArray);
+            $currentMaxPosition = empty($positionNummerArray) ? 0 : max($positionNummerArray);
+            $currentDate = date('Ymd');
 
-                foreach ($receivedPositions as $receivedPosition) {
-                    $artikel = $artikelCollection[$receivedPosition['Material']] ?? null;
-                    if ($artikel === null) {
-                        throw new ResourceNotFoundException(
-                            'Artikel nicht gefunden',
-                            ['Material' => $receivedPosition['Material']]
-                        );
-                    }
-                    $preisbasis = $preisbasisCollection[$receivedPosition['Peinh']] ?? null;
-                    if ($preisbasis === null) {
-                        throw new ResourceNotFoundException(
-                            'Preisbasis nicht gefunden',
-                            ['NRPreisbasis' => $receivedPosition['Peinh']]
-                        );
-                    }
-                    $quantity = $receivedPosition['Quantity'];
-                    $netPrice = $receivedPosition['Netpr'];
-                    $gesamtNettoPreis = $netPrice * $quantity;
-
-                    $positionData = [
-                        'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
-                        'VorNummer' => $vorgang->VorNummer,
-                        'PosIndividualC1' => $receivedPosition['Posnr'],
-                        'PosIndividualC5' => $quantity,
-                        'NRPreisbasis' => $receivedPosition['Peinh'],
-                        'PosPreisfaktor' => $preisbasis->Preisfaktor,
-                        'PosMenge1' => $quantity,
-                        'PosKZMengeneinheit1' => 'LE',
-                        'externGesamtPreis' => $gesamtNettoPreis,
-                        'externEinzelPreis' => $netPrice,
-                        'externMenge' => $quantity,
-                        'current_date' => $currentDate,
-                    ];
-
-                    if ($receivedPosition['PosInt'] != 0) {
-                        $position = $existingPositions[$receivedPosition['PosInt']] ?? null;
-                        if ($position === null) {
-                            throw new ResourceNotFoundException(
-                                'Position nicht gefunden',
-                                ['PosInt' => $receivedPosition['PosInt']]
-                            );
-                        }
-                        $internePositionsnummer = $position->InternePositionsnummer;
-                        try {
-                            $this->position5IndividualService->updatePosition5Individual($positionData, $internePositionsnummer);
-                            $this->positionWertService->updatePositionWert($positionData, $internePositionsnummer);
-                            $this->position1WertService->updatePosition1Wert($positionData, $internePositionsnummer);
-                            $this->position3MengeService->updatePosition3Menge($positionData, $internePositionsnummer);
-
-                        } catch (Throwable $e) {
-                            throw new DBSaveException(
-                                'Fehler beim Speichern Position: ' . $e->getMessage()
-                            );
-                        }
-
-                        $existArrayAndUpdated[] = $internePositionsnummer;
-
-                        ArtikelKunde::updateOrCreate(
-                            [
-                                'InterneArtikelnummer' => $artikel->InterneArtikelnummer,
-                                'InterneAdressnummer' => $adresse->InterneAdressnummer,
-                            ],
-                            [
-                                'InterneArtikelnummer' => $artikel->InterneArtikelnummer,
-                                'InterneAdressnummer' => $adresse->InterneAdressnummer,
-                                'AkuArtikelBezeichnung1' => $receivedPosition['ShortText'],
-                                'NRPreisbasis' => $receivedPosition['Peinh'],
-                                'AkuLetzterVK' => $gesamtNettoPreis,
-                                'AkuLetzterRabattWert1' => 0,
-                                'AkuLetzterRabattWert2' => 0,
-                                'AkuLetzteMenge1' => 0,
-                                'AkuLetzteMenge2' => 0,
-                                'AkuLetzterRabatt1' => 0,
-                                'AkuLetzterRabatt2' => 0,
-                                'AkuLetzterRabatt3' => 0,
-                            ]
-                        );
-                        continue;
-                    }
-                    $positionData['PosTyp'] = 2;
-                    $currentMaxPosition++;
-                    $positionData['PosNummer'] = $currentMaxPosition;
-                    $positionData['PosNummernText'] = $currentMaxPosition;
-                    try {
-                        $newPosition = $this->positionService->createPosition($positionData, $artikel);
-                    } catch (Throwable $e) {
-                        throw new DBSaveException(
-                            'Fehler beim Speichern die Position: ' . $e->getMessage()
-                        );
-                    }
-
-                    $notExistArrayAndCreated[] =
-                        $newPosition['InternePositionsnummer'];
+            foreach ($receivedPositions as $receivedPosition) {
+                if (!isset(
+                    $receivedPosition['Material'],
+                    $receivedPosition['Quantity'],
+                    $receivedPosition['Netpr'],
+                    $receivedPosition['Peinh'],
+                    $receivedPosition['PosInt']
+                )) {
+                    throw new InvalidSapResponseException('SAP-Positionsantwort ist unvollständig.',
+                        ['position' => $receivedPosition]
+                    );
                 }
-                return [
-                    'NichtOptionalePositionen' => $existArrayAndUpdated,
-                    'OptionalePositionen' => $notExistArrayAndCreated,
+                $artikel = $artikelCollection[$receivedPosition['Material']] ?? null;
+                if ($artikel === null) {
+                    throw new ResourceNotFoundException('Artikel nicht gefunden.',
+                        ['Material' => $receivedPosition['Material']]
+                    );
+                }
+                $preisbasis = $preisbasisCollection[$receivedPosition['Peinh']] ?? null;
+                if ($preisbasis === null) {
+                    throw new ResourceNotFoundException('Preisbasis nicht gefunden.',
+                        ['NRPreisbasis' => $receivedPosition['Peinh']]
+                    );
+                }
+                $quantity = $receivedPosition['Quantity'];
+                $netPrice = $receivedPosition['Netpr'];
+                $gesamtNettoPreis = $netPrice * $quantity;
+
+                $positionData = [
+                    'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
+                    'VorNummer' => $vorgang->VorNummer,
+                    'PosIndividualC1' => $receivedPosition['Posnr'],
+                    'PosIndividualC5' => $quantity,
+                    'NRPreisbasis' => $receivedPosition['Peinh'],
+                    'PosPreisfaktor' => $preisbasis->Preisfaktor,
+                    'PosMenge1' => $quantity,
+                    'PosKZMengeneinheit1' => 'LE',
+                    'externGesamtPreis' => $gesamtNettoPreis,
+                    'externEinzelPreis' => $netPrice,
+                    'externMenge' => $quantity,
+                    'current_date' => $currentDate,
                 ];
 
+                if ((int)$receivedPosition['PosInt'] !== 0) {
+                    $position = $existingPositions[$receivedPosition['PosInt']] ?? null;
+                    if ($position === null) {
+                        throw new ResourceNotFoundException('Position nicht gefunden.',
+                            ['PosInt' => $receivedPosition['PosInt']]
+                        );
+                    }
+                    $internePositionsnummer = $position->InternePositionsnummer;
+                    try {
+                        $this->position5IndividualService->updatePosition5Individual($positionData, $internePositionsnummer);
+                        $this->positionWertService->updatePositionWert($positionData, $internePositionsnummer);
+                        $this->position1WertService->updatePosition1Wert($positionData, $internePositionsnummer);
+                        $this->position3MengeService->updatePosition3Menge($positionData, $internePositionsnummer);
+                    } catch (Throwable $e) {
+                        throw new DBSaveException('Fehler beim Speichern der Position: ' . $e->getMessage());
+                    }
+                    $existArrayAndUpdated[] = $internePositionsnummer;
+                    ArtikelKunde::updateOrCreate(
+                        [
+                            'InterneArtikelnummer' => $artikel->InterneArtikelnummer,
+                            'InterneAdressnummer' => $adresse->InterneAdressnummer,
+                        ],
+                        [
+                            'InterneArtikelnummer' => $artikel->InterneArtikelnummer,
+                            'InterneAdressnummer' => $adresse->InterneAdressnummer,
+                            'AkuArtikelBezeichnung1' => $receivedPosition['ShortText'],
+                            'NRPreisbasis' => $receivedPosition['Peinh'],
+                            'AkuLetzterVK' => $gesamtNettoPreis,
+                            'AkuLetzterRabattWert1' => 0,
+                            'AkuLetzterRabattWert2' => 0,
+                            'AkuLetzteMenge1' => 0,
+                            'AkuLetzteMenge2' => 0,
+                            'AkuLetzterRabatt1' => 0,
+                            'AkuLetzterRabatt2' => 0,
+                            'AkuLetzterRabatt3' => 0,
+                        ]
+                    );
+                    continue;
+                }
+                $positionData['PosTyp'] = 2;
+                $currentMaxPosition++;
+                $positionData['PosNummer'] = $currentMaxPosition;
+                $positionData['PosNummernText'] = $currentMaxPosition;
+                try {
+                    $newPosition = $this->positionService->createPosition($positionData, $artikel);
+                } catch (Throwable $e) {
+                    throw new DBSaveException('Fehler beim Speichern der Position: ' . $e->getMessage());
+                }
+                $notExistArrayAndCreated[] = $newPosition['InternePositionsnummer'];
             }
+            return [
+                'NichtOptionalePositionen' => $existArrayAndUpdated,
+                'OptionalePositionen' => $notExistArrayAndCreated,
+            ];
         });
-        throw new DBSaveException('Fehler beim Speichern Vorgang');
     }
 }

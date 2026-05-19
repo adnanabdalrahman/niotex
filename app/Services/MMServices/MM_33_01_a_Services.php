@@ -3,6 +3,7 @@
 namespace App\Services\MMServices;
 
 use App\Exceptions\DBSaveException;
+use App\Exceptions\InvalidSapResponseException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Models\Adresse;
 use App\Models\Artikel;
@@ -42,14 +43,20 @@ class MM_33_01_a_Services
         }
         $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
         if ($adresse === null) {
-            throw new ResourceNotFoundException('Kein Adresse für Vorgang gefunden',
+            throw new ResourceNotFoundException('Keine Adresse für den Vorgang gefunden.',
                 ["InterneAdressnummer" => $vorgang->VorAuftraggeber]
             );
         }
 
-        $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
+        $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
+            ->select([
+                'InternePositionsnummer',
+                'InterneArtikelnummer',
+                'PosTyp',
+            ])->get();
+
         if ($positions->isEmpty()) {
-            throw new ResourceNotFoundException('Keine Positionen vorhanden',
+            throw new ResourceNotFoundException('Keine Positionen für den Vorgang gefunden.',
                 ["InterneVorgangsnummer" => $vorgang->InterneVorgangsnummer]
             );
         }
@@ -76,7 +83,6 @@ class MM_33_01_a_Services
             ])
             ->get()
             ->keyBy('InternePositionsnummer');
-
         $position5IndividualCollection = Position5Individual::whereIn(
             'InternePositionsnummer',
             $positions->pluck('InternePositionsnummer')->unique()
@@ -87,16 +93,14 @@ class MM_33_01_a_Services
             ])
             ->get()
             ->keyBy('InternePositionsnummer');
-
-
         $to_Items = [];
         foreach ($positions as $position) {
-            if ($position->PosTyp == 2) {
+            if ((int)$position->PosTyp === 2) {
                 continue;
             }
             $artikel = $artikelCollection[$position->InterneArtikelnummer] ?? null;
             if ($artikel === null) {
-                throw new ResourceNotFoundException('Kein Artikel für Position gefunden',
+                throw new ResourceNotFoundException('Kein Artikel für die Position gefunden.',
                     [
                         'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
                         'Position' => $position->InternePositionsnummer,
@@ -105,7 +109,7 @@ class MM_33_01_a_Services
             }
             $position3Menge = $position3Mengen[$position->InternePositionsnummer] ?? null;
             if ($position3Menge === null) {
-                throw new ResourceNotFoundException('Kein PosMenge für Position gefunden',
+                throw new ResourceNotFoundException('Keine Mengenangabe für die Position gefunden.',
                     [
                         'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
                         'Position' => $position->InternePositionsnummer,
@@ -115,7 +119,7 @@ class MM_33_01_a_Services
 
             $position5Individual = $position5IndividualCollection[$position->InternePositionsnummer] ?? null;
             if ($position5Individual === null) {
-                throw new ResourceNotFoundException('Kein PosMenge für Position gefunden',
+                throw new ResourceNotFoundException('Keine Position5Individual-Daten für die Position gefunden.',
                     [
                         'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
                         'Position' => $position->InternePositionsnummer,
@@ -159,17 +163,25 @@ class MM_33_01_a_Services
                 $vorgang->VorStatus = 100300;
                 $vorgang->save();
             } catch (Throwable $e) {
-                throw new DBSaveException('Fehler beim Speichern VorStatus: ' . $e->getMessage());
+                throw new DBSaveException('Fehler beim Speichern des Vorgangsstatus: ' . $e->getMessage());
             }
-
+            if (
+                !isset($result['d']['to_items']['results']) ||
+                !is_array($result['d']['to_items']['results'])
+            ) {
+                throw new InvalidSapResponseException('Ungültige SAP-Antwort.');
+            }
             $receivedPositionsArray = $result['d']['to_items']['results'];
-
             $sendPositionsArray = [];
             foreach ($receivedPositionsArray as $key => $position) {
+                if (!isset($position['GoodsmvmtLine'], $position['Goodsmovement'])) {
+                    throw new InvalidSapResponseException('SAP-Positionsantwort ist unvollständig.',
+                        ['position' => $position]
+                    );
+                }
                 $sendPositionsArray[$key]['GoodsmvmtLine'] = $position['GoodsmvmtLine'];
                 $sendPositionsArray[$key]['Goodsmovement'] = $position['Goodsmovement'];
             }
-
             return [
                 'Header' => [
                     'tourId' => $result['d']['TourId'],
@@ -177,7 +189,7 @@ class MM_33_01_a_Services
                 'Positions' => $sendPositionsArray,
             ];
         }
-        throw new DBSaveException('Fehler beim Speichern Vorgang');
+        throw new InvalidSapResponseException('SAP-Antwort ist leer oder ungültig.');
     }
 
     private function formatSapDate(?string $date): ?string

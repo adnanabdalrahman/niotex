@@ -134,9 +134,6 @@ class MMController extends Controller
                 $response['response'], 202);
     }
 
-
-
-
     //------------------------------------------------------------------------------------------------------------------
     /*
     SAP → CEOS
@@ -246,15 +243,14 @@ class MMController extends Controller
      * @param MM_3301b_NuAuftragspaketRequest $request
      * @return JsonResponse
      * @throws Exception
+     * @throws Throwable
      */
     public function mm_33_01_b_NuAuftragspaket(MM_3301b_NuAuftragspaketRequest $request): JsonResponse
     {
-
         $response = $this->mm331bServices->mm_33_01_b_NuAuftragspaket($request->validated());
         return $this->successResponse('mm_33_01_b_NuAuftragspaket erfolgreich gesendet', $response, 202
         );
     }
-
 
     /**
      * MM-22-1 Abfrage nach Lagerbestände

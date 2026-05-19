@@ -258,11 +258,10 @@ class SDController extends Controller
      * @throws Throwable
      * /
      */
-    public function sd_03_02_fakturiertedienstleistungsrechnung(SD_0302_fakturiertedienstleistungsrechnungRequest $request)
+    public function sd_03_02_fakturiertedienstleistungsrechnung(SD_0302_fakturiertedienstleistungsrechnungRequest $request): JsonResponse
     {
-        $validated = $request->validated();
-        $response = $this->sd0302Services->sd_03_02_fakturiertedienstleistungsrechnung($validated);
-        return $this->successResponse("Auftrag erfolgreich gespeichert", $response);
+        $response = $this->sd0302Services->sd_03_02_fakturiertedienstleistungsrechnung($request->validated());
+        return $this->successResponse('Fakturierte Dienstleistungsrechnung erfolgreich verarbeitet.', $response);
     }
 }
 

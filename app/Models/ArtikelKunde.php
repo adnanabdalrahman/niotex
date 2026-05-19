@@ -111,6 +111,19 @@ use Illuminate\Database\Eloquent\Model;
 class ArtikelKunde extends Model
 {
     public $timestamps = false;
+    protected $fillable = [
+        'AkuLetzterVK',
+        'InterneAdressnummer',
+        'AkuArtikelBezeichnung1',
+        'NRPreisbasis',
+        'AkuLetzterRabattWert2',
+        'AkuLetzterRabattWert1',
+        'AkuLetzteMenge1',
+        'AkuLetzterRabatt1',
+        'AkuLetzteMenge2',
+        'AkuLetzterRabatt2',
+        'AkuLetzterRabatt3',
+    ];
     protected $connection = 'sqlsrv';
     protected $table = 'cis.ArtikelKunde';
     protected $primaryKey = 'ArtikelKundeID';
