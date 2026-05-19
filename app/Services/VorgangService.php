@@ -187,7 +187,7 @@ class VorgangService
             'Lagerortnummer' => $data['Lagerortnummer'] ?? NULL,
             'VkzID' => $data['VkzID'] ?? NULL,
             'VorIndividualD1' => $data['VorIndividualD1'] ?? NULL,
-            'VorIndividualD2' => $data['VorIndividualD2'] ?? NULL,
+            'VorIndividualD2' => $data['VorIndividualD2'] ?? NULL, // 
             'VorIndividualD3' => $data['VorIndividualD3'] ?? NULL,
             'VorUebertragenAm' => $data['VorUebertragenAm'] ?? NULL,
             'VorImportAbrufnummer' => $data['VorImportAbrufnummer'] ?? NULL,

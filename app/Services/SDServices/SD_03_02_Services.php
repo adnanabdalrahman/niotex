@@ -72,7 +72,7 @@ class SD_03_02_Services
 
             $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
             if ($adresse === null) {
-                throw new ResourceNotFoundException('Kein Adresse für Vorgang gefunden',
+                throw new ResourceNotFoundException('Keine Adresse für den Vorgang gefunden.',
                     ['InterneVorgangsnummer' => $interneVorgangsnummer]
                 );
             }
@@ -176,18 +176,7 @@ class SD_03_02_Services
             $artikelCollection = Artikel::whereIn('Artikelnummer', $artikelnummern
             )->get()->keyBy('Artikelnummer');
 
-            $positionCollection = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer
-            )->get()->keyBy(function ($position) {
-                return $position->InterneArtikelnummer . '_' . $position->PosNummer;
-            });
-            $positionIds = $positionCollection->pluck('InternePositionsnummer');
-
-            $position1WertCollection = Position1Wert::whereIn('InternePositionsnummer', $positionIds
-            )->get()->keyBy('InternePositionsnummer');
-
-            $positionWertCollection = PositionWert::whereIn('InternePositionsnummer', $positionIds
-            )->get()->keyBy('InternePositionsnummer');
-
+            
             foreach ($positions as $position) {
                 $artikelnummer = ltrim($position['material'], '0');
                 $artikel = $artikelCollection[$artikelnummer] ?? null;
@@ -199,26 +188,19 @@ class SD_03_02_Services
                         ]
                     );
                 }
-                $positionKey = $artikel->InterneArtikelnummer . '_' . $position['positionsnummer'];
 
-                $currentPosition = $positionCollection[$positionKey] ?? null;
+                $currentPosition = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
+                    ->where('InterneArtikelnummer', $artikel->InterneArtikelnummer)
+                    ->first();
+
                 if ($currentPosition === null) {
-                    throw new ResourceNotFoundException('Keine Adresse für den Vorgang gefunden.',
+                    throw new ResourceNotFoundException('Keine Position für den Vorgang gefunden.',
                         [
                             'InterneVorgangsnummer' => $interneVorgangsnummer,
                             'positionsnummer' => $position['positionsnummer']
                         ]
                     );
                 }
-                $positionsText = trim((string)$currentPosition->PosNummernText);
-                $artikelnummer = (string)$artikel->Artikelnummer;
-                if (($positionsText === '1.1' && $artikelnummer === '12')
-                    || ($positionsText === '1.2' && $artikelnummer == '52')
-                    || ($positionsText === '2' && $artikelnummer == '90')
-                ) {
-                    $shouldCreateDlBuchungsdatei = false;
-                }
-
                 if ($position['nettowertposition'] > 0) {
                     $mwstSatzProzentPosition = (($position['steuerwertposition'] - $position['nettowertposition']) / $position['nettowertposition']) * 100;
                     $mwstSatzProzentPosition = (int)round($mwstSatzProzentPosition);
@@ -235,7 +217,10 @@ class SD_03_02_Services
                 }
                 $einzelPreis = $position['nettowertposition'] / $position['menge'];
 
-                $position1wert = $position1WertCollection[$currentPosition->InternePositionsnummer] ?? null;
+                $position1wert = Position1Wert::where(
+                    'InternePositionsnummer',
+                    $currentPosition->InternePositionsnummer
+                )->first();
                 if ($position1wert === null) {
                     throw new ResourceNotFoundException('Kein Position1Wert für den Vorgang gefunden',
                         [
@@ -256,9 +241,14 @@ class SD_03_02_Services
 
                 $position1wert->save();
 
-                $positionWert = $positionWertCollection[$currentPosition->InternePositionsnummer] ?? null;
+
+                $positionWert = PositionWert::where(
+                    'InternePositionsnummer',
+                    $currentPosition->InternePositionsnummer
+                )->first();
+
                 if ($positionWert === null) {
-                    throw new ResourceNotFoundException('Kein $positionWert für Vorgang gefunden',
+                    throw new ResourceNotFoundException('Kein PositionWert für den Vorgang gefunden.',
                         [
                             'InterneVorgangsnummer' => $interneVorgangsnummer,
                             'positionsnummer' => $position['positionsnummer']
@@ -269,6 +259,22 @@ class SD_03_02_Services
                 $positionWert->save();
                 $positionsArray[] = $currentPosition->InternePositionsnummer;
             }
+
+
+            $shouldCreateDlBuchungsdatei = !Position::query()
+                ->join(
+                    'Artikel',
+                    'Position.InterneArtikelnummer',
+                    '=',
+                    'Artikel.InterneArtikelnummer'
+                )
+                ->where(
+                    'Position.InterneVorgangsnummer',
+                    (int)$vorgang->VorIndividualD2
+                )
+                ->whereIn('Artikel.Artikelnummer', ['12', '52', '90'])
+                ->exists();
+
             if (!empty($positionsArray)) {
                 if ($shouldCreateDlBuchungsdatei) {
                     $abrechnungseinheit = Ceos_DTA_Eigenschaften::query()
