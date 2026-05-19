@@ -176,7 +176,7 @@ class SD_03_02_Services
             $artikelCollection = Artikel::whereIn('Artikelnummer', $artikelnummern
             )->get()->keyBy('Artikelnummer');
 
-            
+
             foreach ($positions as $position) {
                 $artikelnummer = ltrim($position['material'], '0');
                 $artikel = $artikelCollection[$artikelnummer] ?? null;
@@ -260,22 +260,35 @@ class SD_03_02_Services
                 $positionsArray[] = $currentPosition->InternePositionsnummer;
             }
 
-
-            $shouldCreateDlBuchungsdatei = !Position::query()
-                ->join(
-                    'Artikel',
-                    'Position.InterneArtikelnummer',
-                    '=',
-                    'Artikel.InterneArtikelnummer'
-                )
-                ->where(
-                    'Position.InterneVorgangsnummer',
-                    (int)$vorgang->VorIndividualD2
-                )
-                ->whereIn('Artikel.Artikelnummer', ['12', '52', '90'])
-                ->exists();
-
             if (!empty($positionsArray)) {
+                $matchingCount = Position::query()
+                    ->join(
+                        'Artikel',
+                        'Position.InterneArtikelnummer',
+                        '=',
+                        'Artikel.InterneArtikelnummer'
+                    )
+                    ->where(
+                        'Position.InterneVorgangsnummer',
+                        (int)$vorgang->VorIndividualD2
+                    )
+                    ->where(function ($query) {
+                        $query
+                            ->where(function ($q) {
+                                $q->where('Artikel.Artikelnummer', '12')
+                                    ->where('Position.PosNummernText', '1.1');
+                            })
+                            ->orWhere(function ($q) {
+                                $q->where('Artikel.Artikelnummer', '52')
+                                    ->where('Position.PosNummernText', '1.2');
+                            })
+                            ->orWhere(function ($q) {
+                                $q->where('Artikel.Artikelnummer', '90')
+                                    ->where('Position.PosNummernText', '2');
+                            });
+                    })
+                    ->count();
+                $shouldCreateDlBuchungsdatei = $matchingCount !== 3;
                 if ($shouldCreateDlBuchungsdatei) {
                     $abrechnungseinheit = Ceos_DTA_Eigenschaften::query()
                         ->where('DatumVon', $datumvon)
