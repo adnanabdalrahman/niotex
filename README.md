@@ -219,10 +219,35 @@ in all Requests validation like BP.
 
 - build different Exceptions and Groups for each API-request
   php artisan ide-helper:models --write
-  php artisan ide-helper:models
+  php artisan ide-helper:models // create models
   php artisan ide-helper:meta
 
-sd0101
-sd0201
-mm3301a
-mm3301b
+incoming request
+SAP → CEOS:
+MM 3101 materialstammdaten
+MM 3701 nuleistungspositionen
+MM 3402 statusumlagerungsreservierung
+BP 0101 geschaeftspartner
+BP 0103 verwalter
+SD 0101 beauftragung Falk
+SD 0201 mietvertragsrechnungen Falk
+SD 0302 fakturiertedienstleistungsrechnung Falk
+RE 0101 liegenschaften Gabi
+
+Ceos Web → Ceos → Sap
+MM 2201 lagerbestaende ***
+MM 3301a leistungsbestaetigung
+MM 3301b nuauftragspaket
+MM 3401 umlagerungsreservierung ***
+MM 3502 materialverbrauch ****
+SD 0102 beauftragungRueckmeldung Falk ***
+SD 0301 dienstleistungsrechnung Falk
+SE 2601 reparaturauftrag Falk ***
+CO 0101 zeiteinheiten ****
+
+
+
+
+
+
+

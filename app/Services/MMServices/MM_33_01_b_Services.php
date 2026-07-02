@@ -94,6 +94,7 @@ class MM_33_01_b_Services
             $positions->pluck('InternePositionsnummer')
         )->get()->keyBy('InternePositionsnummer');
 
+        /** @var Position $position */
         foreach ($positions as $position) {
             $positionNummerArray[] = $position->PosNummer;
 

@@ -2,6 +2,9 @@
 
 namespace App\Services\SEServices;
 
+use App\Exceptions\InvalidSapResponseException;
+use App\Exceptions\ResourceNotFoundException;
+use App\Exceptions\SapBusinessException;
 use App\Models\Adresse;
 use App\Models\Artikel;
 use App\Models\Position;
@@ -15,131 +18,136 @@ use Throwable;
 
 class SE_26_01_Services
 {
-    protected string $baseUrl;
     protected string $se2601_path;
 
     public function __construct()
     {
-        $this->baseUrl = config('sap.base_url');
         $this->se2601_path = config('sap.se2601_path');
     }
 
     /**
      * SE-26-01 Reparaturauftrag
+     *
+     * @param array $requestData
+     * @return array
+     * @throws ResourceNotFoundException
+     * @throws InvalidSapResponseException
+     * @throws SapBusinessException
+     * @throws Throwable
      */
 
-    public function se_26_01_Reparaturauftrag($request)
+    public function se_26_01_Reparaturauftrag(array $requestData): array
     {
-        //todo Bstkd addieren in Kopf ebene CHR35
-        try {
-            $data = [];
-            $vorgang = Vorgang::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->first();
+        $data = [];
+        $interneVorgangsnummer = $requestData['InterneVorgangsnummer'];
 
-            if ($vorgang === null) {
-                Log::error(
-                    "se_26_01_Reparaturauftrag Kein Vorgang gefunden",
-                    ['InterneVorgangsnummer' => $request->InterneVorgangsnummer]
-                );
-                return null;
-            }
-            $vorgang7Abrechnung = Vorgang7Abrechnung::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->first();
-            if ($vorgang7Abrechnung === null) {
-                Log::error(
-                    "se_26_01_Reparaturauftrag Kein vorgang7Abrechnung gefunden",
-                    ['InterneVorgangsnummer' => $request->InterneVorgangsnummer]
-                );
-                return null;
-            }
+        $vorgang = Vorgang::where('InterneVorgangsnummer', $interneVorgangsnummer)->first();
 
-            $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
-            if ($adresse !== null) {
-                $data['Kunnr'] = $adresse->AdressNummer;
-            } else {
-                Log::error(
-                    "Kein Adresse für Vorgang gefunden",
-                    ['Vorgangnummer' => $request->InterneVorgangsnummer]
-                );
-                return null;
-            }
-            $data['Auart'] = (string)$vorgang->VorIndividualC2;
-            $data['Zzlgsnr'] = (string)$vorgang->VorIndividualC3;
-            $data['Bstkd'] = (string)$vorgang7Abrechnung->NutzerMontage_Bestellnummer;
-            $data['Vorgn'] = (string)$vorgang->VorNummer;
-            $data['VorgnInt'] = (string)$vorgang->InterneVorgangsnummer;
-
-            //---------------------------------------------------------------------------------------------
-            $positions = Position::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)->get();
-            $positionArray = [];
-            foreach ($positions as $position) {
-                $artikel = Artikel::where('InterneArtikelnummer', $position->InterneArtikelnummer)->first();
-                if (is_null($artikel)) {
-                    Log::error(
-                        "Artikel für Position nicht gefunden",
-                        [
-                            'Vorgangnummer' => $request->InterneVorgangsnummer,
-                            'InterneArtikelnummer' => $position->InterneArtikelnummer,
-                            'InternePositionsnummer' => $position->InternePositionsnummer,
-                        ]
-                    );
-                    return null;
-                }
-
-                $position3Menge = Position3Menge::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
-                    ->where('InternePositionsnummer', $position->InternePositionsnummer)
-                    ->first();
-                if (is_null($position3Menge)) {
-                    Log::error(
-                        "Position3Menge nicht gefunden",
-                        [
-                            'Vorgangnummer' => $request->InterneVorgangsnummer,
-                            'InternePositionsnummer' => $position->InternePositionsnummer,
-                        ]
-                    );
-                    return null;
-                }
-                $position2Text = Position2Text::where('InterneVorgangsnummer', $request->InterneVorgangsnummer)
-                    ->where('InternePositionsnummer', $position->InternePositionsnummer)
-                    ->first();
-                if (is_null($position2Text)) {
-                    Log::error(
-                        "position2Text nicht gefunden",
-                        [
-                            'Vorgangnummer' => $request->InterneVorgangsnummer,
-                            'InternePositionsnummer' => $position->InternePositionsnummer,
-                        ]
-                    );
-                    return null;
-                }
-                if ($position3Menge->PosKZMengeneinheit1 == "Stck") {
-                    $vrkme = "ST";
-                } else {
-                    $vrkme = $position3Menge->PosKZMengeneinheit1;
-                }
-
-                $positionArray[] = [
-                    'Matnr' => $artikel->Artikelnummer,
-                    'TxtZ010' => (string)$position2Text->PosNotiz,
-                    'Kwmeng' => (string)$position3Menge->PosMenge1,
-                    'Vrkme' => (string)$vrkme,
-                    'Vorgn' => (string)$vorgang->VorNummer,
-                    'VorgnInt' => (string)$vorgang->InterneVorgangsnummer,
-                    'Abgru' => '',
-                ];
-            }
-            $data['to_Items'] = $positionArray;
-            Log::info('se-26-01 Sent data', $data);
-            $result = app(SapApiClient::class)->post($this->se2601_path, $data);
-            Log::info('se-26-01 Received data', $result);
-            if ($result === null ||
-                !isset($result['d']['Status']) ||
-                $result['d']['Status'] === "error") {
-                Log::error('se-26-01 Error received');
-                return null;
-            }
-            return $result;
-        } catch (Throwable $e) {
-            Log::error($e->getMessage());
-            return null;
+        if ($vorgang === null) {
+            throw new ResourceNotFoundException('Kein Vorgang gefunden.',
+                ['InterneVorgangsnummer' => $interneVorgangsnummer,]
+            );
         }
+        $vorgang7Abrechnung = Vorgang7Abrechnung::where('InterneVorgangsnummer', $interneVorgangsnummer)->first();
+        if ($vorgang7Abrechnung === null) {
+            throw new ResourceNotFoundException('Keine Vorgang7Abrechnung für den Vorgang gefunden.',
+                ['InterneVorgangsnummer' => $interneVorgangsnummer,]
+            );
+        }
+        $adresse = Adresse::where('InterneAdressnummer', $vorgang->VorAuftraggeber)->first();
+        if ($adresse === null) {
+            throw new ResourceNotFoundException('Keine Adresse für den Vorgang gefunden.',
+                [
+                    'InterneAdressnummer' => $vorgang->VorAuftraggeber,
+                ]
+            );
+        }
+
+        $data['Kunnr'] = $adresse->AdressNummer;
+        $data['Auart'] = (string)$vorgang->VorIndividualC2;
+        $data['Zzlgsnr'] = (string)$vorgang->VorIndividualC3;
+        $data['Bstkd'] = (string)$vorgang7Abrechnung->NutzerMontage_Bestellnummer;
+        $data['Vorgn'] = (string)$vorgang->VorNummer;
+        $data['VorgnInt'] = (string)$vorgang->InterneVorgangsnummer;
+
+        //---------------------------------------------------------------------------------------------
+        $positions = Position::where('InterneVorgangsnummer', $interneVorgangsnummer)->get();
+        if ($positions->isEmpty()) {
+            throw new ResourceNotFoundException('Keine Positionen für den Vorgang gefunden.',
+                ['InterneVorgangsnummer' => $interneVorgangsnummer,]
+            );
+        }
+        $positionArray = [];
+
+        /** @var Position $position */
+        foreach ($positions as $position) {
+            $artikel = Artikel::where('InterneArtikelnummer', $position->InterneArtikelnummer)->first();
+            if ($artikel === null) {
+                throw new ResourceNotFoundException('Kein Artikel für die Position gefunden.',
+                    [
+                        'InterneVorgangsnummer' => $interneVorgangsnummer,
+                        'InterneArtikelnummer' => $position->InterneArtikelnummer,
+                        'InternePositionsnummer' => $position->InternePositionsnummer,
+                    ]
+                );
+            }
+            $position3Menge = Position3Menge::where('InterneVorgangsnummer', $interneVorgangsnummer)
+                ->where('InternePositionsnummer', $position->InternePositionsnummer)
+                ->first();
+            if ($position3Menge === null) {
+                throw new ResourceNotFoundException('Keine Mengenangabe für die Position gefunden.',
+                    [
+                        'InterneVorgangsnummer' => $interneVorgangsnummer,
+                        'Position' => $position->InternePositionsnummer,
+                    ]
+                );
+            }
+
+            $position2Text = Position2Text::where('InterneVorgangsnummer', $interneVorgangsnummer)
+                ->where('InternePositionsnummer', $position->InternePositionsnummer)
+                ->first();
+            if ($position2Text === null) {
+                throw new ResourceNotFoundException('Keine Position2Text-Daten für die Position gefunden.',
+                    [
+                        'InterneVorgangsnummer' => $interneVorgangsnummer,
+                        'Position' => $position->InternePositionsnummer,
+                    ]
+                );
+            }
+            if ($position3Menge->PosKZMengeneinheit1 == "Stck") {
+                $vrkme = "ST";
+            } else {
+                $vrkme = $position3Menge->PosKZMengeneinheit1;
+            }
+
+            $positionArray[] = [
+                'Matnr' => $artikel->Artikelnummer,
+                'TxtZ010' => (string)$position2Text->PosNotiz,
+                'Kwmeng' => (string)$position3Menge->PosMenge1,
+                'Vrkme' => (string)$vrkme,
+                'Vorgn' => (string)$vorgang->VorNummer,
+                'VorgnInt' => (string)$vorgang->InterneVorgangsnummer,
+                'Abgru' => '',
+            ];
+        }
+        $data['to_Items'] = $positionArray;
+        Log::info('se-26-01 Sent data', $data);
+        $result = app(SapApiClient::class)->post($this->se2601_path, $data);
+        Log::info('se-26-01 Received data', $result);
+
+
+        if (
+            !isset($result['d']) ||
+            !isset($result['d']['Status'])
+        ) {
+            throw new InvalidSapResponseException('Ungültige SAP-Antwort.');
+        }
+        if ($result['d']['Status'] === 'error') {
+            throw new SapBusinessException(
+                $result['d']['Message'] ?? 'SAP hat die Anfrage abgelehnt.',
+                $result['d']
+            );
+        }
+        return $result;
     }
 }

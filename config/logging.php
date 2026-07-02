@@ -51,16 +51,16 @@ return [
     */
 
     'channels' => [
-        'sap_requests' => [
+        'incoming_requests' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/sap_requests.log'),
+            'path' => storage_path('logs/incoming_requests.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,
         ],
-        'ceosweb_requests' => [
+        'outcoming_requests' => [
             'driver' => 'daily',
-            'path' => storage_path('logs/ceosweb_requests.log'),
+            'path' => storage_path('logs/outcoming_requests.log'),
             'level' => env('LOG_LEVEL', 'debug'),
             'days' => env('LOG_DAILY_DAYS', 14),
             'replace_placeholders' => true,

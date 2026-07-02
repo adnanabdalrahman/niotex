@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Services\Logging\OutgoingLogger;
 use Exception;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 class SapApiClient
 {
@@ -51,21 +53,40 @@ class SapApiClient
     /**
      * General method to send POST request with CSRF token
      * @throws Exception
+     * @throws Throwable
      */
     public function post(string $endpoint, array $data)
     {
-//        $tokenEndpoint = $endpoint;
-//        $auth = $this->fetchToken($tokenEndpoint);
-        $response = Http::withHeaders([
+        $headers = [
             'X-Requested-With' => 'XMLHttpRequest',
             'Accept' => 'application/json',
             'client_id' => $this->client_id,
             'client_secret' => $this->client_secret,
-        ])->post($this->baseUrl . $endpoint, $data);
+        ];
+
+        // Store outgoing request
+        $outgoingRequest = OutgoingLogger::storeRequest(
+            targetSystem: 'sap',
+            endpoint: $endpoint,
+            method: 'POST',
+            headers: $headers,
+            payload: $data
+        );
+
+        $startedAt = microtime(true);
+
+        $response = Http::withHeaders($headers)->post($this->baseUrl . $endpoint, $data);
+        // Store outgoing response
+        OutgoingLogger::storeResponse(
+            $outgoingRequest,
+            $response,
+            (int)round((microtime(true) - $startedAt) * 1000)
+        );
 
         if (!$response->successful()) {
             throw new Exception("SAP POST to '{$endpoint}' failed: " . $response->body());
         }
+
         return $response->json();
     }
 
@@ -73,17 +94,45 @@ class SapApiClient
     /**
      * @throws ConnectionException
      * @throws Exception
+     * @throws Throwable
      */
     public function get(string $endpoint, string $data)
     {
-        $response = Http::withHeaders([
+        $headers = [
             'Accept' => 'application/json',
             'client_id' => $this->client_id,
             'client_secret' => $this->client_secret,
-        ])->get($this->baseUrl . $endpoint . $data);
+        ];
+
+        // Store outgoing request
+        $outgoingRequest = OutgoingLogger::storeRequest(
+            targetSystem: 'sap',
+            endpoint: $endpoint,
+            method: 'GET',
+            headers: $headers,
+            payload: [
+                'query' => $data,
+            ]
+        );
+
+        $startedAt = microtime(true);
+
+        $response = Http::withHeaders($headers)
+            ->get($this->baseUrl . $endpoint . $data);
+
+        // Store outgoing response
+        OutgoingLogger::storeResponse(
+            $outgoingRequest,
+            $response,
+            (int)round((microtime(true) - $startedAt) * 1000)
+        );
+
         if (!$response->successful()) {
-            throw new Exception("SAP GET to '{$endpoint}' failed: " . $response->body());
+            throw new Exception(
+                "SAP GET to '{$endpoint}' failed: " . $response->body()
+            );
         }
+
         return $response->json();
     }
 

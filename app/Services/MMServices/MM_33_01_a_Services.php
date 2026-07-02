@@ -29,7 +29,7 @@ class MM_33_01_a_Services
 
     /**
      * CEOSWEB-->CEOS-->SAP
-     * @throws Exception
+     * @throws Exception|Throwable
      */
     public function mm_33_01_a_NuLeistungsbestaetigung($requestData): ?array
     {
@@ -64,36 +64,28 @@ class MM_33_01_a_Services
         $artikelCollection = Artikel::whereIn(
             'InterneArtikelnummer',
             $positions->pluck('InterneArtikelnummer')->unique()
-        )
-            ->select([
-                'InterneArtikelnummer',
-                'Artikelnummer',
-                'ArtBezeichnung1',
-            ])
-            ->get()
-            ->keyBy('InterneArtikelnummer');
+        )->select([
+            'InterneArtikelnummer',
+            'Artikelnummer',
+            'ArtBezeichnung1',
+        ])->get()->keyBy('InterneArtikelnummer');
 
         $position3Mengen = Position3Menge::whereIn(
             'InternePositionsnummer',
             $positions->pluck('InternePositionsnummer')->unique()
-        )
-            ->select([
-                'InternePositionsnummer',
-                'PosMenge1',
-            ])
-            ->get()
-            ->keyBy('InternePositionsnummer');
+        )->select([
+            'InternePositionsnummer',
+            'PosMenge1',
+        ])->get()->keyBy('InternePositionsnummer');
         $position5IndividualCollection = Position5Individual::whereIn(
             'InternePositionsnummer',
             $positions->pluck('InternePositionsnummer')->unique()
-        )
-            ->select([
-                'InternePositionsnummer',
-                'PosIndividualC2',
-            ])
-            ->get()
-            ->keyBy('InternePositionsnummer');
+        )->select([
+            'InternePositionsnummer',
+            'PosIndividualC2',
+        ])->get()->keyBy('InternePositionsnummer');
         $to_Items = [];
+        /** @var Position $position */
         foreach ($positions as $position) {
             if ((int)$position->PosTyp === 2) {
                 continue;
@@ -156,40 +148,43 @@ class MM_33_01_a_Services
             "Datb" => $this->formatSapDate($vorgang->VorIndividualT2 ?? null),
             "to_items" => $to_Items
         ];
+
         Log::info("mm_33_01_a_NuLeistungsbestaetigung sent Data", $requestData);
         $result = app(SapApiClient::class)->post($this->mm331_path, $requestData);
-        if ($result !== null && isset($result['d']['TourId'])) {
-            try {
-                $vorgang->VorStatus = 100300;
-                $vorgang->save();
-            } catch (Throwable $e) {
-                throw new DBSaveException('Fehler beim Speichern des Vorgangsstatus: ' . $e->getMessage());
-            }
-            if (
-                !isset($result['d']['to_items']['results']) ||
-                !is_array($result['d']['to_items']['results'])
-            ) {
-                throw new InvalidSapResponseException('Ungültige SAP-Antwort.');
-            }
-            $receivedPositionsArray = $result['d']['to_items']['results'];
-            $sendPositionsArray = [];
-            foreach ($receivedPositionsArray as $key => $position) {
-                if (!isset($position['GoodsmvmtLine'], $position['Goodsmovement'])) {
-                    throw new InvalidSapResponseException('SAP-Positionsantwort ist unvollständig.',
-                        ['position' => $position]
-                    );
-                }
-                $sendPositionsArray[$key]['GoodsmvmtLine'] = $position['GoodsmvmtLine'];
-                $sendPositionsArray[$key]['Goodsmovement'] = $position['Goodsmovement'];
-            }
-            return [
-                'Header' => [
-                    'tourId' => $result['d']['TourId'],
-                ],
-                'Positions' => $sendPositionsArray,
-            ];
+        Log::info('mm_33_01_a_NuLeistungsbestaetigung received Response', $result);
+
+        if (!isset($result['d']) ||
+            !isset($result['d']['TourId']) ||
+            !isset($result['d']['to_items']['results']) ||
+            !is_array($result['d']['to_items']['results'])
+        ) {
+            throw new InvalidSapResponseException('Ungültige SAP-Antwort.');
         }
-        throw new InvalidSapResponseException('SAP-Antwort ist leer oder ungültig.');
+        try {
+            $vorgang->VorStatus = 100300;
+            $vorgang->save();
+        } catch (Throwable $e) {
+            throw new DBSaveException('Fehler beim Speichern des Vorgangsstatus: ' . $e->getMessage());
+        }
+
+        $receivedPositionsArray = $result['d']['to_items']['results'];
+        $sendPositionsArray = [];
+        foreach ($receivedPositionsArray as $key => $position) {
+            if (!isset($position['GoodsmvmtLine'], $position['Goodsmovement'])) {
+                throw new InvalidSapResponseException('SAP-Positionsantwort ist unvollständig.',
+                    ['position' => $position]
+                );
+            }
+            $sendPositionsArray[$key]['GoodsmvmtLine'] = $position['GoodsmvmtLine'];
+            $sendPositionsArray[$key]['Goodsmovement'] = $position['Goodsmovement'];
+        }
+        return [
+            'Header' => [
+                'tourId' => $result['d']['TourId'],
+            ],
+            'Positions' => $sendPositionsArray,
+        ];
+
     }
 
     private function formatSapDate(?string $date): ?string

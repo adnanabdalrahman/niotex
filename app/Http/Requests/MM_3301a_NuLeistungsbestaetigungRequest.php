@@ -17,7 +17,7 @@ class MM_3301a_NuLeistungsbestaetigungRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'Vorgangnummer' => 'required',
+            'Vorgangnummer' => 'required|numeric',
             'VorGruppe' => 'required',
             'tourId' => 'required',
         ];

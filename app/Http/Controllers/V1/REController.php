@@ -25,12 +25,14 @@ class REController extends Controller
     }
 
 
+    /**
+     * @throws Throwable
+     */
     public function re_01_01_Liegenschaften(Request $request): JsonResponse
     {
 
         $receivedLiegenschaften = $request->all();
         $report = ['success' => [], 'failed' => []];
-
 
         foreach ($receivedLiegenschaften as $wrapper) {
             $data = $wrapper['liegenschaft'];

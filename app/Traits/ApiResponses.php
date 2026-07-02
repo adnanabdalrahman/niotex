@@ -2,13 +2,12 @@
 
 namespace App\Traits;
 
+use App\Services\Logging\ResponseLogger;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
+use Throwable;
 
 trait ApiResponses
 {
-
-
     /**
      * Return a standardized success JSON response.
      *
@@ -17,6 +16,7 @@ trait ApiResponses
      * @param int $statusCode
      * @param string $code
      * @return JsonResponse
+     * @throws Throwable
      */
     public function multiStatusResponse(
         string $message = "Einige Daten wurden nicht importiert",
@@ -25,8 +25,7 @@ trait ApiResponses
         string $code = "PARTIAL"
     ): JsonResponse
     {
-        Log::warning(request()->path() . ": " . $message, $data);
-        return response()->json([
+        $response = [
             "status" => "partial",
             "status_code" => $statusCode,
             "code" => $code,
@@ -35,9 +34,11 @@ trait ApiResponses
             "meta" => [
                 "path" => request()->path(),
                 "timestamp" => now()->toIso8601String(),
-                "trace_id" => uniqid('', true)
+                "trace_id" => request()->attributes->get('trace_id'),
             ]
-        ], $statusCode);
+        ];
+        ResponseLogger::log('warning', $response);
+        return response()->json($response, $statusCode);
     }
 
     /**
@@ -46,6 +47,7 @@ trait ApiResponses
      * @param string $message
      * @param mixed|null $data
      * @return JsonResponse
+     * @throws Throwable
      */
     protected function ok(string $message, mixed $data = null): JsonResponse
     {
@@ -60,15 +62,15 @@ trait ApiResponses
      * @param int $statusCode
      * @param string $code
      * @return JsonResponse
+     * @throws Throwable
      */
     public function successResponse(
         string $message = "Success",
         mixed  $data = null,
         int    $statusCode = 200,
-        string $code = "OK"
-    ): JsonResponse
+        string $code = "OK"): JsonResponse
     {
-        Log::info(request()->path() . ": " . $message, [
+        $response = [
             "status" => "success",
             "status_code" => $statusCode,
             "code" => $code,
@@ -77,21 +79,11 @@ trait ApiResponses
             "meta" => [
                 "path" => request()->path(),
                 "timestamp" => now()->toIso8601String(),
-                "trace_id" => uniqid('', true)
+                "trace_id" => request()->attributes->get('trace_id'),
             ]
-        ]);
-        return response()->json([
-            "status" => "success",
-            "status_code" => $statusCode,
-            "code" => $code,
-            "message" => $message,
-            "data" => $data,
-            "meta" => [
-                "path" => request()->path(),
-                "timestamp" => now()->toIso8601String(),
-                "trace_id" => uniqid('', true)
-            ]
-        ], $statusCode);
+        ];
+        ResponseLogger::log('info', $response);
+        return response()->json($response, $statusCode);
     }
 
     /**
@@ -100,6 +92,7 @@ trait ApiResponses
      * @param string $message
      * @param int $statusCode
      * @return JsonResponse
+     * @throws Throwable
      */
     protected function fail(string $message, int $statusCode = 422): JsonResponse
     {
@@ -110,32 +103,28 @@ trait ApiResponses
      * Return a standardized error JSON response.
      *
      * @param string $message
-     * @param array $errors
-     * @param string $code
+     * @param array $data
      * @param int $statusCode
+     * @param string $code
      * @return JsonResponse
+     * @throws Throwable
      */
-    public function errorResponse(
-        string $message,
-        array  $errors = [],
-        int    $statusCode = 422,
-        string $code = "ERROR"
-    ): JsonResponse
+    public function errorResponse(string $message, array $data = [], int $statusCode = 422, string $code = "ERROR"): JsonResponse
     {
-        Log::error(request()->path() . ": " . $message, $errors);
-        return response()->json([
+        $response = [
             "status" => "error",
             "status_code" => $statusCode,
             "code" => $code,
             "message" => $message,
-            "errors" => $errors,
+            "data" => $data,
             "meta" => [
                 "path" => request()->path(),
                 "timestamp" => now()->toIso8601String(),
-                "trace_id" => uniqid('', true)
+                "trace_id" => request()->attributes->get('trace_id'),
             ]
-        ], $statusCode);
+        ];
+        ResponseLogger::log('error', $response);
+        return response()->json($response, $statusCode);
     }
-
 
 }

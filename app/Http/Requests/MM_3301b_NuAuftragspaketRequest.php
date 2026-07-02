@@ -17,7 +17,7 @@ class MM_3301b_NuAuftragspaketRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'Vorgangnummer' => 'required',
+            'Vorgangnummer' => 'required|numeric',
             'VorGruppe' => 'required',
             'tourId' => 'required',
         ];

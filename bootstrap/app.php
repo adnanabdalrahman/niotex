@@ -4,10 +4,10 @@ use App\Exceptions\ApiException;
 use App\Helpers\RequestSource;
 use App\Notifications\ErrorNotifiable;
 use App\Notifications\ErrorReportNotification;
+use App\Services\Logging\ResponseLogger;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Support\Facades\Log;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -23,52 +23,52 @@ return Application::configure(basePath: dirname(__DIR__))
 
         //Controls how an exception is converted into an HTTP response (JSON, HTML, etc.) sent back
         $ex->renderable(function (Throwable $e) {
-
             if ($e instanceof ApiException) {
                 return $e->render();
             }
-            // Fallback for any other unhandled exceptions
-            return response()->json([
+            $response = [
                 "status" => "error",
                 "status_code" => 500,
                 "code" => "INTERNAL_SERVER_ERROR",
                 "message" => $e->getMessage() ?: "An unexpected error occurred.",
-                "errors" => [],
+                "data" => [],
                 "meta" => [
                     "path" => request()->path(),
                     "timestamp" => now()->toIso8601String(),
-                    "trace_id" => uniqid('', true),
+                    "trace_id" => request()->attributes->get('trace_id'),
                 ]
-            ], 500);
+            ];
+            ResponseLogger::log('critical', $response);
+            // Fallback for any other unhandled exceptions
+            return response()->json($response, 500);
         });
 
         $ex->reportable(function (Throwable $e) {
-            $context[] = [];
-            $context['errors'] = [];
-            $context['errorCode'] = '';
+            $data = [];
+            $errorCode = '';
             if ($e instanceof ApiException) {
-                $context['errors'] = $e->errors ?? [];
-                $context['errorCode'] = $e->getErrorCode();
+                $data = $e->getData();
+                $errorCode = $e->getErrorCode();
             }
             $channel = RequestSource::getChannel();
+            $statusCode = $e instanceof ApiException ? ($e->getCode() ?: 422) : 500;
             $report = [
                 "status" => "error",
-                "status_code" => $e->getCode() ?: 422,
-                "code" => $context['errorCode'],
+                "status_code" => $statusCode,
+                "code" => $errorCode,
                 "message" => $e->getMessage(),
-                "errors" => $context['errors'],
+                "data" => $data,
                 "channel" => $channel,
                 "meta" => [
                     "path" => request()->path(),
                     "timestamp" => now()->toIso8601String(),
-                    "trace_id" => uniqid('', true)
+                    "trace_id" => request()->attributes->get('trace_id'),
                 ]
             ];
 
             $notifiable = new ErrorNotifiable();
             $notifiable->notify(new ErrorReportNotification($report));
 
-            Log::channel($channel)->error(request()->path() . " " . $e->getMessage(), $context);
         })->stop();
     })
     ->create();

@@ -4,16 +4,17 @@ namespace App\Http\Controllers\V1;
 
 use App\Exceptions\DBSaveException;
 use App\Exceptions\InvalidJsonException;
+use App\Exceptions\InvalidSapResponseException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Helpers\SD_01_01_Validation;
 use App\Helpers\SD_02_01_Validation;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SD_0102_beauftragungRueckmeldungRequest;
 use App\Http\Requests\SD_0302_fakturiertedienstleistungsrechnungRequest;
 use App\Services\SDServices;
 use App\Traits\ApiResponses;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Throwable;
 
@@ -53,7 +54,7 @@ class SDController extends Controller
      * @param Request $request
      * @return JsonResponse
      * @throws DBSaveException
-     * @throws InvalidJsonException
+     * @throws InvalidJsonException|Throwable
      */
     public function sd_0101_beauftragung(Request $request): JsonResponse
     {
@@ -111,23 +112,16 @@ class SDController extends Controller
             $this->multiStatusResponse('Einige Beauftragungen wurden nicht verarbeitet', $report),
         };
     }
-    //todo response and log
-    // SD-01-02: CEOSWEB-->SAP, beauftragung Rückmeldung
-    public function sd_01_02_beauftragungRueckmeldung(Request $request)
+
+    /**
+     * @throws Throwable
+     * @throws InvalidSapResponseException
+     * @throws ResourceNotFoundException
+     */
+    public function sd_01_02_beauftragungRueckmeldung(SD_0102_beauftragungRueckmeldungRequest $request): JsonResponse
     {
-        $vorgangDataArray = $this->sd0102Services->sd_0102_beauftragung_rueckmeldung($request);
-        if ($vorgangDataArray !== null) {
-            Log::info('sd_0102 received Vorgang: ', $vorgangDataArray);
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Auftrag Status erfolgreich geändert',
-                'data' => $vorgangDataArray
-            ], 202);
-        }
-        return response()->json([
-            'status' => 'Error',
-            'message' => 'Beauftragung fehlgeschlagen',
-        ], 400);
+        $response = $this->sd0102Services->sd_0102_beauftragung_rueckmeldung($request->validated());
+        return $this->successResponse('Auftrag Status erfolgreich geändert', $response, 202);
     }
 
     // SD-02-01: SAP-->CEOS, Übergabe Werte aus Mietvertragsrechnungen an die CEOS
@@ -138,7 +132,7 @@ class SDController extends Controller
      *
      * @param Request $request
      * @return JsonResponse
-     * @throws InvalidJsonException
+     * @throws InvalidJsonException|Throwable
      */
     public function sd_02_01_mietvertragsrechnungen(Request $request): JsonResponse
     {
@@ -156,7 +150,6 @@ class SDController extends Controller
                     return data_get($input, 'header.vbeln') === data_get($input, 'header.zuonr');
                 }
             );
-
             $validator->sometimes(
                 'header.datumvon',
                 'required|date',
@@ -164,7 +157,6 @@ class SDController extends Controller
                     return data_get($input, 'header.vbeln') !== data_get($input, 'header.zuonr');
                 }
             );
-
             $validator->sometimes(
                 'header.datumbis',
                 'required|date|after_or_equal:header.datumvon',
@@ -213,22 +205,11 @@ class SDController extends Controller
         }
         return match (true) {
             empty($report['failed']) =>
-            $this->successResponse(
-                'Alle Beauftragungen erfolgreich verarbeitet',
-                $report,
-                202
-            ),
+            $this->successResponse('Alle Beauftragungen erfolgreich verarbeitet', $report, 202),
             empty($report['success']) =>
-            $this->errorResponse(
-                'Keine Beauftragung konnte verarbeitet werden',
-                $report,
-                400
-            ),
+            $this->errorResponse('Keine Beauftragung konnte verarbeitet werden', $report, 400),
             default =>
-            $this->multiStatusResponse(
-                'Einige Beauftragungen wurden nicht verarbeitet',
-                $report
-            ),
+            $this->multiStatusResponse('Einige Beauftragungen wurden nicht verarbeitet', $report),
         };
     }
 
@@ -237,7 +218,7 @@ class SDController extends Controller
      *  Dienstleistungsrechnung
      */
     /**
-     * @throws ResourceNotFoundException
+     * @throws ResourceNotFoundException|Throwable
      */
     public function sd_03_01_dienstleistungsrechnung(Request $request)
     {

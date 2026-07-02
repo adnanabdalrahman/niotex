@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\V1;
 
 use App\Exceptions\DBSaveException;
+use App\Exceptions\InvalidSapResponseException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Helpers\MM_31_01_01_Validation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MM_2201_SAPStockRequest;
 use App\Http\Requests\MM_3301a_NuLeistungsbestaetigungRequest;
 use App\Http\Requests\MM_3301b_NuAuftragspaketRequest;
+use App\Http\Requests\MM_3401_umlagerungsreservierungRequest;
 use App\Http\Requests\MM_3402_StatusUmlagerungReservierungRequest;
+use App\Http\Requests\MM_3502_materialverbrauchRequest;
 use App\Http\Requests\MM_3701_nuLeistungspositionenRequest;
 use App\Models\Artikel;
 use App\Services\MMServices;
@@ -17,7 +20,6 @@ use App\Traits\ApiResponses;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Throwable;
 
@@ -63,6 +65,7 @@ class MMController extends Controller
      *
      * @param Request $request
      * @return JsonResponse
+     * @throws Throwable
      */
 
     public function mm_31_1_Materialstammdaten(Request $request): JsonResponse
@@ -91,7 +94,6 @@ class MMController extends Controller
 
             try {
                 $data = $this->mm311Services->mm_31_01_materialstammdaten($materialData);
-
                 if ($data) {
                     $report['success'][] = [
                         'Material' => $data['Material'],
@@ -125,13 +127,11 @@ class MMController extends Controller
      */
     public function mm_34_02_Statusumlagerungsreservierung(MM_3402_StatusUmlagerungReservierungRequest $request): JsonResponse
     {
-        $data = $request->validated();
-        $response = $this->mm342Services->mm_34_02_Statusumlagerungsreservierung($data);
+        $response = $this->mm342Services->mm_34_02_Statusumlagerungsreservierung($request->validated());
         return $response['checkstatus'] ?
-            $this->successResponse("Status umlagerungsreservierung erfolgreich geprüft",
-                $response['response']) :
-            $this->successResponse("Status umlagerungsreservierung erfolgreich gespeichert",
-                $response['response'], 202);
+            $this->successResponse("Status umlagerungsreservierung erfolgreich geprüft", $response['response']) :
+            $this->successResponse("Status umlagerungsreservierung erfolgreich gespeichert", $response['response'],
+                202);
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -142,11 +142,11 @@ class MMController extends Controller
     /**
      * @throws DBSaveException
      * @throws ResourceNotFoundException
+     * @throws Throwable
      */
     public function mm_37_1_NuLeistungspositionen(MM_3701_nuLeistungspositionenRequest $request): JsonResponse
     {
-        $validated = $request->validated();
-        $response = $this->mm371aServices->mm_37_1_NuLeistungspositionen($validated);
+        $response = $this->mm371aServices->mm_37_1_NuLeistungspositionen($request->validated());
         return $this->successResponse("Leistungspositionen erfolgreich gespeichert",
             $response, 202);
     }
@@ -156,37 +156,19 @@ class MMController extends Controller
      * MM_34_01 Umlagerungsreservierung
      * CEOSWEB-->CEOS-->SAP
      *
-     * @param Request $request
+     * @param MM_3401_umlagerungsreservierungRequest $request
      * @return JsonResponse
-     * @throws Exception
+     * @throws DBSaveException
+     * @throws ResourceNotFoundException
+     * @throws Throwable
+     * @throws InvalidSapResponseException
      */
-
-    public function mm_34_01_umlagerungsreservierung(Request $request): JsonResponse
+    public function mm_34_01_umlagerungsreservierung(MM_3401_umlagerungsreservierungRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'Vorgangnummer' => 'required',
-            'VorGruppe' => 'required',
-            'tourId' => 'required',
-            'tourDate' => 'required|date',
-        ]);
-
-        $response = $this->mm341Services->mm_34_01_umlagerungsreservierung($data);
-        if ($response !== null) {
-            $message = "mm_34_01_umlagerungsreservierung erfolgreich gesendet";
-            Log::info($message);
-            return response()->json([
-                'status' => 'success',
-                'message' => $message,
-                'data' => $response
-            ]);
-        } else {
-            return response()->json([
-                'status' => 'Error',
-                'message' => 'mm_34_01_umlagerungsreservierung fehlgeschlagen',
-            ], 400);
-        }
-
+        $response = $this->mm341Services->mm_34_01_umlagerungsreservierung($request->validated());
+        return $this->successResponse('Umlagerungsreservierung erfolgreich gesendet', $response, 202);
     }
+
 
     //------------------------------------------------------------------------------------------------------------------
 
@@ -194,30 +176,16 @@ class MMController extends Controller
      * MM_35_02 materialverbrauch
      * CEOSWEB-->CEOS-->SAP
      *
-     * @param Request $request
+     * @param MM_3502_materialverbrauchRequest $request
      * @return JsonResponse
      * @throws Exception
+     * @throws Throwable
      */
 
-    public function mm_35_02_materialverbrauch(Request $request): JsonResponse
+    public function mm_35_02_materialverbrauch(MM_3502_materialverbrauchRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'Vorgangnummer' => 'required',
-            'VorGruppe' => 'required',
-            'tourId' => 'required',
-            'tourDate' => 'required|date',
-        ]);
-
-        $response = $this->mm352Services->mm_35_02_materialverbrauch($data);
-        if ($response !== null) {
-            Log::info('mm_35_02_materialverbrauch erfolgreich gesendet');
-            return response()->json(
-                [
-                    'message' => 'mm_35_02_materialverbrauch erfolgreich gesendet',
-                    'data' => $response
-                ]);
-        }
-        return response()->json(['message' => 'mm_35_02_materialverbrauch fehlgeschlagen'], 400);
+        $response = $this->mm352Services->mm_35_02_materialverbrauch($request->validated());
+        return $this->successResponse('Materialverbrauch erfolgreich gesendet', $response, 202);
     }
 
     /**
@@ -226,7 +194,7 @@ class MMController extends Controller
      *
      * @param MM_3301a_NuLeistungsbestaetigungRequest $request
      * @return JsonResponse
-     * @throws Exception
+     * @throws Exception|Throwable
      */
 
     public function mm_33_01_a_NuLeistungsbestaetigung(MM_3301a_NuLeistungsbestaetigungRequest $request): JsonResponse
@@ -252,12 +220,14 @@ class MMController extends Controller
         );
     }
 
+
     /**
      * MM-22-1 Abfrage nach Lagerbestände
      * Get stock Level from SAP.
      *
      * @param MM_2201_SAPStockRequest $request
      * @return JsonResponse
+     * @throws Throwable
      */
     public function mm_22_1_lagerbestaende(MM_2201_SAPStockRequest $request): JsonResponse
     {
@@ -266,15 +236,9 @@ class MMController extends Controller
             $validated['artikelnummer'],
             $validated['lager']
         );
-        if ($response !== null) {
-            Log::info('mm_22_1_lagerbestaende erfolgreich gesendet');
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Menge erfolgreich gespeichert',
-                'data' => $response
-            ]);
-        }
-        return response()->json(['message' => 'Menge speichern fehlgeschlagen'], 400);
+        return $this->successResponse('Menge erfolgreich gespeichert', $response, 202
+        );
     }
+
 
 }

@@ -28,7 +28,7 @@ class TestCeosInterfaceQueue extends Command
             "status_code" => 422,
             "code" => "QUEUE_TEST",
             "message" => "Test queue message for ceosinterface",
-            "errors" => null,
+            "data" => null,
             "meta" => [
                 "path" => "test/queue",
                 "timestamp" => now()->toIso8601String(),

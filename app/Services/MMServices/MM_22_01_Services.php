@@ -3,13 +3,15 @@
 namespace App\Services\MMServices;
 
 
+use App\Exceptions\DBSaveException;
+use App\Exceptions\InvalidSapResponseException;
+use App\Exceptions\ResourceNotFoundException;
 use App\Models\Artikel;
 use App\Models\ArtikelLager;
 use App\Services\SapApiClient;
-use Exception;
 use Illuminate\Support\Facades\Log;
-use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use Throwable;
 
 class MM_22_01_Services
 {
@@ -25,48 +27,56 @@ class MM_22_01_Services
      * Get stock Level from SAP.
      * @param array $artikelnummer
      * @param string $lager
-     * @return array|null
+     * @return array
+     * @throws DBSaveException
+     * @throws InvalidSapResponseException
+     * @throws ResourceNotFoundException
+     * @throws Throwable
+     * @throws NotFoundExceptionInterface
      */
-    public function mm_22_01_lagerbestaende(array $artikelnummer, string $lager): ?array
+    public function mm_22_01_lagerbestaende(array $artikelnummer, string $lager): array
     {
         $materialEqArray = array_map(function ($artikelnummer) {
-            return "Material  eq '{$artikelnummer}'";
+            return "Material  eq '$artikelnummer'";
         }, $artikelnummer);
         $materialFilterString = implode(' or ', $materialEqArray);
-        $data = "?\$filter=( {$materialFilterString} ) and Storage eq '{$lager}'  and Plant eq '1270'";
-        try {
-            $response = app(SapApiClient::class)->get($this->mm221_path, $data);
-            if ($response === null) {
-                Log::error('mm_22_01_lagerbestaende Error Response');
-                return null;
+        $data = "?\$filter=( $materialFilterString ) and Storage eq '$lager'  and Plant eq '1270'";
+        Log::info("mm_22_01_lagerbestaende sent Data", [$data]);
+        $result = app(SapApiClient::class)->get($this->mm221_path, $data);
+        Log::info('mm_22_01_lagerbestaende received Response', $result);
+
+        if (
+            !isset($result['d']) ||
+            !isset($result['d']['results']) ||
+            !is_array($result['d']['results'])
+        ) {
+            throw new InvalidSapResponseException('Ungültige SAP-Antwort.');
+        }
+
+        $responseData = [];
+        foreach ($result['d']['results'] as $item) {
+            $amount = ($item['Amount']);
+            $receivedArtikelnummer = $item['Material'];
+            $artikel = Artikel::where('Artikelnummer', $receivedArtikelnummer)->first();
+            if ($artikel === null) {
+                throw new ResourceNotFoundException(
+                    'Kein Artikel gefunden.',
+                    ['Artikelnummer' => $receivedArtikelnummer]
+                );
             }
-            Log::info('mm_22_01_lagerbestaende received Response', $response);
-            if (isset($response['d']['results'])) {
-                $responseData = [];
-
-                foreach ($response['d']['results'] as $result) {
-                    $amount = ($result['Amount']);
-                    $receivedArtikelnummer = $result['Material'];
-                    $artikel = Artikel::where('Artikelnummer', $receivedArtikelnummer)->first();
-                    ArtikelLager::updateOrCreate(
-                        [
-                            'interneArtikelnummer' => $artikel->InterneArtikelnummer
-                        ],
-                        [
-                            'AlaPhysikalischeMenge1' => $amount,
-                        ]
-                    );
-
-                    $responseData[] = ['Artikelnummer' => $artikel->InterneArtikelnummer, 'Amount' => $amount];
-                }
-
-            } else {
-                Log::error('mm_22_01_lagerbestaende Kein Amount gefunden', $response);
-                return null;
+            try {
+                ArtikelLager::updateOrCreate(
+                    [
+                        'interneArtikelnummer' => $artikel->InterneArtikelnummer
+                    ],
+                    [
+                        'AlaPhysikalischeMenge1' => $amount,
+                    ]
+                );
+            } catch (Throwable $e) {
+                throw new DBSaveException('Fehler beim Speichern des Lagerbestands: ' . $e->getMessage());
             }
-        } catch (Exception|NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            Log::error('mm_22_01_lagerbestaende' . $e->getMessage());
-            return null;
+            $responseData[] = ['Artikelnummer' => $artikel->InterneArtikelnummer, 'Amount' => $amount];
         }
         return $responseData;
     }

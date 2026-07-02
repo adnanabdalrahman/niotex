@@ -2,14 +2,17 @@
 
 namespace App\Services\MMServices;
 
+use App\Exceptions\DBSaveException;
+use App\Exceptions\InvalidSapResponseException;
+use App\Exceptions\ResourceNotFoundException;
 use App\Models\Artikel;
 use App\Models\Position;
 use App\Models\Position3Menge;
 use App\Models\Vorgang;
 use App\Services\SapApiClient;
 use Carbon\Carbon;
-use Exception;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class MM_34_01_Services
 {
@@ -24,21 +27,22 @@ class MM_34_01_Services
     /**
      * MM-34-1 Umlagerungsreservierung
      * CEOSWEB-->CEOSAPI-->SAP
-     * @throws Exception
+     * @throws DBSaveException
+     * @throws InvalidSapResponseException
+     * @throws ResourceNotFoundException
+     * @throws Throwable
      */
 
-    public function mm_34_01_umlagerungsreservierung($requestData): ?array
+    public function mm_34_01_umlagerungsreservierung($requestData): array
     {
         $vorgang = Vorgang::where('VorNummer', $requestData['Vorgangnummer'])
             ->where('VorGruppe', $requestData['VorGruppe']) //M_LG
             ->first();
 
         if ($vorgang === null) {
-            Log::error(
-                'mm_34_01_umlagerungsreservierung Kein Vorgang vorhanden',
+            throw new ResourceNotFoundException('Kein Vorgang gefunden.',
                 ['Vorgangnummer' => $requestData['Vorgangnummer']]
             );
-            return null;
         }
 
         $milliseconds = Carbon::parse($requestData['tourDate'])->timestamp * 1000;
@@ -47,34 +51,42 @@ class MM_34_01_Services
         $positions = Position::where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)->get();
 
         $to_Items = [];
+        /** @var Position $position */
         foreach ($positions as $position) {
             if ($position->InterneArtikelnummer === null) {
-                Log::error(
-                    'mm_34_01_umlagerungsreservierung Kein InterneArtikelnummer in Position gefunden',
+                throw new ResourceNotFoundException(
+                    'Keine InterneArtikelnummer für die Position gefunden.',
                     [
-                        'InterneVorgangsnummer' => $requestData['Vorgangnummer'],
-                        'Position' => $position->InternePositionsnummer
+                        'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
+                        'Position' => $position->InternePositionsnummer,
                     ]
                 );
-                return null;
             }
             $artikel = Artikel::find($position->InterneArtikelnummer);
 
             if ($artikel === null) {
-                Log::error(
-                    'mm_34_01_umlagerungsreservierung Kein Artikel für Position gefunden',
+                throw new ResourceNotFoundException(
+                    'Kein Artikel für die Position gefunden.',
                     [
-                        'InterneVorgangsnummer' => $requestData['Vorgangnummer'],
+                        'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
                         'Position' => $position->InternePositionsnummer,
-                        'InterneArtikelnummer' => $position->InterneArtikelnummer
+                        'InterneArtikelnummer' => $position->InterneArtikelnummer,
                     ]
                 );
-                return null;
             }
 
             $position3Menge = Position3Menge::where('InternePositionsnummer', $position->InternePositionsnummer)
                 ->where('InterneVorgangsnummer', $vorgang->InterneVorgangsnummer)
                 ->first();
+            if ($position3Menge === null) {
+                throw new ResourceNotFoundException(
+                    'Keine Mengenangabe für die Position gefunden.',
+                    [
+                        'InterneVorgangsnummer' => $vorgang->InterneVorgangsnummer,
+                        'Position' => $position->InternePositionsnummer,
+                    ]
+                );
+            }
             $to_Items[] = [
                 'Material' => $artikel->Artikelnummer,
                 "EntryQnt" => (string)(int)$position3Menge->PosMenge1,
@@ -92,29 +104,31 @@ class MM_34_01_Services
         ];
         Log::info("mm_34_01_umlagerungsreservierung sent Data", $requestData);
         $response = app(SapApiClient::class)->post($this->mm341_path, $requestData);
-        if ($response === null) {
-            Log::error('mm_34_01_umlagerungsreservierung Error Response');
-            return null;
-        }
         Log::info("mm_34_01_umlagerungsreservierung received Data", $response);
 
-        if (isset($response['d'])) {
-            $reservNo = $response['d']['ReservNo'] ?? null;
-
-            $lager = $response['d']['MoveStloc'] ?? null;
-            if ($reservNo !== null) {
-                $reservNo = ltrim($reservNo, '0');
-                $vorgang->VorStatus = 100220;
-                $vorgang->VorIndividualC4 = $reservNo;
-                $vorgang->save();
-                return [
-                    'reservNo' => $reservNo,
-                    'lager' => $lager
-                ];
-            }
+        if (
+            !isset($response['d']) ||
+            !isset($response['d']['ReservNo']) ||
+            !isset($response['d']['MoveStloc']
+            )
+        ) {
+            throw new InvalidSapResponseException('Ungültige SAP-Antwort.');
         }
-        return null;
+        $reservNo = $response['d']['ReservNo'];
+        $lager = $response['d']['MoveStloc'];
+        $reservNo = ltrim($reservNo, '0');
+        try {
+            $vorgang->VorStatus = 100220;
+            $vorgang->VorIndividualC4 = $reservNo;
+            $vorgang->save();
+        } catch (Throwable $e) {
+            throw new DBSaveException(
+                'Fehler beim Speichern des Vorgangs: ' . $e->getMessage()
+            );
+        }
+        return [
+            'reservNo' => $reservNo,
+            'lager' => $lager
+        ];
     }
-
-
 }

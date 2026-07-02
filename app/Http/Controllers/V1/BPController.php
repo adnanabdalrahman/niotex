@@ -12,6 +12,7 @@ use App\Models\Ansprechpartner;
 use App\Services\BPServices;
 use App\Traits\ApiResponses;
 use Illuminate\Http\JsonResponse;
+use Throwable;
 
 class BPController extends Controller
 {
@@ -35,6 +36,7 @@ class BPController extends Controller
      */
     /**
      * @throws DBSaveException
+     * @throws Throwable
      */
     public function bp_01_01_Geschaeftspartner(BP_0101_geschaeftspartnerRequest $request): JsonResponse
     {
@@ -59,7 +61,7 @@ class BPController extends Controller
      * SAP → CEOS
      */
     /**
-     * @throws ResourceNotFoundException|DBSaveException
+     * @throws ResourceNotFoundException|DBSaveException|Throwable
      */
     public function bp_01_03_Verwalter(BP_0103_verwalterRequest $request): JsonResponse
     {
@@ -77,13 +79,11 @@ class BPController extends Controller
         where('InterneAdressnummer', $adresse->InterneAdressnummer)
             ->where('AnsIndividualC1', $validated['Geschaeftspartnernummer'])
             ->first();
-
         $status = match (true) {
             $request['LVorm'] !== null => 'gelöscht',
             $currentAnsprechpartner !== null => 'aktualisiert',
             default => 'gespeichert',
         };
-
         $data = $this->bp0103Services->bp_0103_verwalter($validated, $adresse->InterneAdressnummer);
         return $this->successResponse("Verwalter erfolgreich " . $status,
             $data, 202);

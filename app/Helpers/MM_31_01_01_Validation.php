@@ -10,10 +10,12 @@ class MM_31_01_01_Validation
             'Material' => 'required|numeric|digits:18',
             'Materialkurztext' => 'required|string|max:40',
             'Warengruppe' => 'required|string|max:9',
+            'Langtext' => 'nullable|string|max:1000',
+
             'Bezeichnung1' => 'required|string|max:100',
             'Bezeichnung2' => 'nullable|string|max:50',
             'Basismengeneinheit' => 'required|string|max:3',
-            'LVorm' => 'nullable|string',
+            'LVorm' => 'nullable|string|max:1',
             'BKSchluessel' => 'nullable|string|max:3',
             'CEOSWarengruppe' => 'required|string|max:4',
             'CEOSArtikelgruppe' => 'required|string|max:10',
@@ -26,8 +28,6 @@ class MM_31_01_01_Validation
             'Hersteller' => 'nullable|string|max:10',
             'Herstellerteilenummer' => 'nullable|string|max:40',
             'EANNummerSAP' => 'nullable|string|max:16',
-            'Langtext' => 'nullable|string|max:1000',
-            'Matchcode' => 'nullable|string|max:100',
         ];
     }
 

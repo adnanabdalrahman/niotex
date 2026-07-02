@@ -28,7 +28,9 @@ class MM_34_02_Services
                 $checkStatus = $reservation['header']['checkstatus'];
                 $reservNo = $reservation['header']['reservNo'];
                 $response['response']['TourId'] = $tourId;
-                $interneVorgangsnummerArray = Rak_Mad_Material_Tour::where('TourID', $tourId)->get()->pluck('InterneVorgangsnummer')->toArray();;
+                $interneVorgangsnummerArray = Rak_Mad_Material_Tour::where('TourID', $tourId)->get()
+                    ->pluck('InterneVorgangsnummer')
+                    ->toArray();
 
                 if (empty($interneVorgangsnummerArray)) {
                     throw new ResourceNotFoundException('Kein Vorgänge für diese Tour gefunden.', [
