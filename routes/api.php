@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\NiotixDigitalTwinController;
 use App\Http\Controllers\Api\V1\NiotixInfluxDbController;
 use App\Http\Controllers\Api\V1\NiotixVirtualDeviceController;
+use App\Http\Controllers\Api\V1\RakHistorySyncController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -26,5 +27,5 @@ Route::prefix('v1')->group(function () {
     );
     Route::post('influxdb/states/history', [NiotixInfluxDbController::class, 'getStateHistory']);
     Route::post('influxdb/states/synchistory', [NiotixInfluxDbController::class, 'syncStateHistory']);
-
+    Route::post('/rak/history/sync', [RakHistorySyncController::class, 'sync']);
 });

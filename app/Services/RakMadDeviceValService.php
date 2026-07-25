@@ -16,8 +16,8 @@ class RakMadDeviceValService
 
                 RakMadDeviceVal::updateOrCreate(
                     [
-                        'LS_Nummer' => $payload['dtwin_title'],
-                        'GeraeteNummer' => $payload['dtwin_title'],
+                        'LS_Nummer' => $payload['LS_Nummer'],
+                        'GeraeteNummer' => $payload['GeraeteNummer'],
                         'Datum' => $point['date'],
                     ],
                     [
@@ -28,3 +28,4 @@ class RakMadDeviceValService
         }
     }
 }
+
