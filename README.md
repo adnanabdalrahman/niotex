@@ -25,3 +25,5 @@ in all Requests validation like BP.
 
 2922607a-804a-4009-9217-e6fc568ce71c
 9ZRI0124858404
+
+& "C:\CeosServerPlus\xampp\php\php.exe" artisan migrate

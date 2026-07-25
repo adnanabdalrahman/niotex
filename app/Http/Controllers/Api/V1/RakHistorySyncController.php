@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\RakLiegenschaftHistorySyncJob;
 use App\Services\RakLiegenschaftHistorySyncService;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
@@ -28,7 +29,7 @@ class RakHistorySyncController extends Controller
             'to' => ['required', 'date'],
         ]);
 
-        $result = $this->service->sync(
+        $result = RakLiegenschaftHistorySyncJob::dispatch(
             $request->LS_Nummer,
             $request->from,
             $request->to,
