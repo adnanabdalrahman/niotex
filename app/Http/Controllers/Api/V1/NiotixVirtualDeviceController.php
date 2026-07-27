@@ -28,9 +28,8 @@ class NiotixVirtualDeviceController extends Controller
      */
     public function index()
     {
-        $virtualDevices = $this->virtualDeviceService->getAllFromNiotix();
-        return $this->successResponse('Virtual devices retrieved successfully.', $virtualDevices['data']
-        );
+        $this->virtualDeviceService->getAllFromNiotix();
+        return $this->successResponse('Virtual devices retrieved successfully.');
     }
 
     /**

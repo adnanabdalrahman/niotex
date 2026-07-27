@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Jobs\RakLiegenschaftHistorySyncJob;
 use App\Services\RakLiegenschaftHistorySyncService;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,7 +18,6 @@ class RakHistorySyncController extends Controller
 
     /**
      * @throws \Throwable
-     * @throws ConnectionException
      */
     public function sync(Request $request): JsonResponse
     {
