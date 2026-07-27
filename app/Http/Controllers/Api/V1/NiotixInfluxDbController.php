@@ -8,6 +8,7 @@ use App\Services\Niotix\InfluxDbService;
 use App\Traits\ApiResponses;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
+use Throwable;
 
 class NiotixInfluxDbController extends Controller
 {
@@ -23,14 +24,17 @@ class NiotixInfluxDbController extends Controller
     /**
      * POST /influxdb/query
      *
-     * @throws ConnectionException
+     * @throws ConnectionException|Throwable
      */
     public function syncStateHistory(QueryRequest $request): JsonResponse
     {
-        $result = $this->influxDbService->syncStateHistory($request->validated());
-        return $this->successResponse('Query executed successfully', $result);
+        $this->influxDbService->syncStateHistory($request->validated());
+        return $this->successResponse('Query executed successfully', []);
     }
 
+    /**
+     * @throws ConnectionException
+     */
     public function getStateHistory(QueryRequest $request): JsonResponse
     {
         $result = $this->influxDbService->getStateHistory($request->validated());

@@ -63,6 +63,7 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NiotixVirtualDevice whereOperationalStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NiotixVirtualDevice whereRx2DataRate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NiotixVirtualDevice whereSkipFcntCheck($value)
+ * @property int|null $line_number
  * @mixin \Eloquent
  */
 class NiotixVirtualDevice extends Model

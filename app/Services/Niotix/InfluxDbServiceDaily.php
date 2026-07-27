@@ -122,69 +122,28 @@ class InfluxDbServiceDaily
     private function extractMonthlyPoints(array $values): array
     {
         // Remove null values
-        $values = array_filter(
-            $values,
-            fn(array $row) => $row[1] !== null
-        );
-
+        $values = array_filter($values, fn(array $row) => $row[1] !== null);
         $months = [];
-
         foreach ($values as [$timestamp, $value]) {
-
             $date = Carbon::createFromTimestampMs($timestamp);
-
             $key = $date->format('Y-m');
-
             $months[$key][] = [
                 'timestamp' => $timestamp,
                 'date' => $date,
                 'value' => $value,
             ];
         }
-
         $result = [];
-
         foreach ($months as $month => $rows) {
-
-            usort(
-                $rows,
-                fn($a, $b) => $a['timestamp'] <=> $b['timestamp']
-            );
-
-            $first = $rows[0];
-            $last = $rows[count($rows) - 1];
-
-            $middle = collect($rows)
-                ->sortBy(
-                    fn($row) => abs($row['date']->day - 15)
-                )
-                ->first();
-
+            usort($rows, fn($a, $b) => $a['timestamp'] <=> $b['timestamp']);
+            $last = end($rows);
             $result[] = [
                 'month' => $month,
-
-                'first' => [
-                    'date' => $first['date']->toDateString(),
-                    'timestamp' => $first['timestamp'],
-                    'value' => $first['value'],
-                ],
-
-                'middle' => [
-                    'date' => $middle['date']->toDateString(),
-                    'timestamp' => $middle['timestamp'],
-                    'value' => $middle['value'],
-                ],
-
-                'last' => [
-                    'date' => $last['date']->toDateString(),
-                    'timestamp' => $last['timestamp'],
-                    'value' => $last['value'],
-                ],
+                'date' => $last['date']->toDateString(),
+                'timestamp' => $last['timestamp'],
+                'value' => $last['value'],
             ];
         }
-
         return $result;
     }
-
-
 }
