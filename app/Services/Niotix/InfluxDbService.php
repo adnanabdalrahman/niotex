@@ -48,11 +48,21 @@ class InfluxDbService
      */
     public function getStateHistory(array $data): array
     {
+        $query = $this->buildQuery($data);
+        logger()->info('Niotix InfluxDB Request', [
+            'endpoint' => self::QUERY_ENDPOINT,
+            'payload' => [
+                'epoch' => 'ms',
+                'q' => $query,
+            ],
+            'context' => $data,
+        ]);
+
         $response = $this->niotixApiClient->post(
             self::QUERY_ENDPOINT,
             [
                 'epoch' => 'ms',
-                'q' => $this->buildQuery($data),
+                'q' => $query,
             ]
         );
         return $this->extractMonthlyPoints(data_get($response, 'results.0.series.0.values', []));
