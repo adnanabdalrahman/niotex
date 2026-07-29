@@ -20,12 +20,13 @@ return [
         '4B' => [
             'value_1',
         ],
-
         '4S' => [
             'totalizer_heating',
             'totalizer_heating_at_set_day',
         ],
-
+        '04B' => [
+            'value_1',
+        ],
         '9S' => [
             'volume_totalizer',
         ],

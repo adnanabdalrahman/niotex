@@ -7,6 +7,7 @@ use App\Jobs\RakLiegenschaftHistorySyncJob;
 use App\Services\RakLiegenschaftHistorySyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Throwable;
 
 class RakHistorySyncController extends Controller
 {
@@ -17,9 +18,9 @@ class RakHistorySyncController extends Controller
     }
 
     /**
-     * @throws \Throwable
+     * @throws Throwable
      */
-    public function sync(Request $request): JsonResponse
+    public function syncForLiegenschaft(Request $request): JsonResponse
     {
         $request->validate([
             'LS_Nummer' => ['required', 'string'],

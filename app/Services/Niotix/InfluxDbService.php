@@ -37,6 +37,7 @@ class InfluxDbService
      */
     public function syncStateHistory(array $payload): void
     {
+
         $points = $this->getStateHistory($payload);
         DB::transaction(function () use ($points, $payload) {
             $this->deviceValService->store($points, $payload);
@@ -55,9 +56,7 @@ class InfluxDbService
                 'q' => $this->buildQuery($data),
             ]
         );
-        return $this->extractMonthlyPoints(
-            data_get($response, 'results.0.series.0.values', [])
-        );
+        return $this->extractMonthlyPoints(data_get($response, 'results.0.series.0.values', []));
     }
 
     private function buildQuery(array $data): string

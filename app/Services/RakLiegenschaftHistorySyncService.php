@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Services\Niotix\InfluxDbService;
 use Illuminate\Http\Client\ConnectionException;
+use Throwable;
 
 class RakLiegenschaftHistorySyncService
 {
@@ -16,7 +17,7 @@ class RakLiegenschaftHistorySyncService
     }
 
     /**
-     * @throws \Throwable
+     * @throws Throwable
      * @throws ConnectionException
      */
     public function sync(
@@ -31,26 +32,18 @@ class RakLiegenschaftHistorySyncService
         $deviceNumbers = $this->deviceService->getDeviceNumbers($lsNumber);
 
         foreach ($deviceNumbers as $deviceNumber) {
-
             $devicesCount++;
-
-            $stateIdentifiers = $this->deviceStateService
-                ->getStateIdentifiers($deviceNumber);
-
+            $stateIdentifiers = $this->deviceStateService->getStateIdentifiers($deviceNumber);
             if (empty($stateIdentifiers)) {
                 continue;
             }
-
             foreach ($stateIdentifiers as $stateIdentifier) {
-
                 $statesCount++;
-
                 $this->influxDbService->syncStateHistory([
                     'dtwin_title' => $deviceNumber,
                     'state_identifier' => $stateIdentifier,
                     'from' => $from,
                     'to' => $to,
-                    'LS_Nummer' => $lsNumber,
                     'GeraeteNummer' => $deviceNumber,
                 ]);
             }

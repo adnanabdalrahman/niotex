@@ -24,14 +24,8 @@ class RakLiegenschaftHistorySyncJob implements ShouldQueue
      * @throws Throwable
      * @throws ConnectionException
      */
-    public function handle(
-        RakLiegenschaftHistorySyncService $service
-    ): void
+    public function handle(RakLiegenschaftHistorySyncService $service): void
     {
-        $service->sync(
-            $this->lsNumber,
-            $this->from,
-            $this->to,
-        );
+        $service->sync($this->lsNumber, $this->from, $this->to);
     }
 }
