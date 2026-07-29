@@ -14,6 +14,7 @@ class QueryRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'lsnummer' => ['required', 'string'],
             'dtwin_title' => ['required', 'string'],
             'state_identifier' => ['required', 'string'],
             'from' => ['required', 'date'],

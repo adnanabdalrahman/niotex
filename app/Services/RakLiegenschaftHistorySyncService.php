@@ -44,6 +44,7 @@ class RakLiegenschaftHistorySyncService
                     'state_identifier' => $stateIdentifier,
                     'from' => $from,
                     'to' => $to,
+                    'LS_Nummer' => $lsNumber,
                     'GeraeteNummer' => $deviceNumber,
                 ]);
             }

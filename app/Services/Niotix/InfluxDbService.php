@@ -37,8 +37,10 @@ class InfluxDbService
      */
     public function syncStateHistory(array $payload): void
     {
-
         $points = $this->getStateHistory($payload);
+
+        $payload['LS_Nummer'] = $payload['dtwin_title'];
+        $payload['GeraeteNummer'] = $payload['lsnummer'];
         DB::transaction(function () use ($points, $payload) {
             $this->deviceValService->store($points, $payload);
         });
