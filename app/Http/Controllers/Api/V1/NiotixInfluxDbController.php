@@ -39,16 +39,19 @@ class NiotixInfluxDbController extends Controller
         return $this->successResponse('Query executed successfully', []);
     }
 
+    /**
+     */
     public function syncDevicesStateHistoryForLiegenschaft(Request $request): JsonResponse
     {
         $request->validate([
-            'LS_Nummer' => ['required', 'string'],
+            'lsnummer' => ['required', 'string'],
+            'device_type' => ['nullable', 'string'],
             'from' => ['required', 'date'],
             'to' => ['required', 'date'],
         ]);
-
         $result = RakLiegenschaftHistorySyncJob::dispatch(
-            $request->LS_Nummer,
+            $request->lsnummer,
+            $request->device_type,
             $request->from,
             $request->to,
         );

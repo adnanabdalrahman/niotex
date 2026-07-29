@@ -14,6 +14,7 @@ class RakLiegenschaftHistorySyncJob implements ShouldQueue
 
     public function __construct(
         public string $lsNumber,
+        public string $device_type,
         public string $from,
         public string $to,
     )
@@ -26,6 +27,7 @@ class RakLiegenschaftHistorySyncJob implements ShouldQueue
      */
     public function handle(RakLiegenschaftHistorySyncService $service): void
     {
-        $service->sync($this->lsNumber, $this->from, $this->to);
+
+        $service->sync($this->lsNumber, $this->device_type, $this->from, $this->to);
     }
 }

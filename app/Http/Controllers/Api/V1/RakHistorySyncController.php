@@ -23,13 +23,13 @@ class RakHistorySyncController extends Controller
     public function syncForLiegenschaft(Request $request): JsonResponse
     {
         $request->validate([
-            'LS_Nummer' => ['required', 'string'],
+            'lsnummer' => ['required', 'string'],
             'from' => ['required', 'date'],
             'to' => ['required', 'date'],
         ]);
 
         $result = RakLiegenschaftHistorySyncJob::dispatch(
-            $request->LS_Nummer,
+            $request->lsnummer,
             $request->from,
             $request->to,
         );

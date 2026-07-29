@@ -5,10 +5,9 @@ namespace App\Services;
 class RakDeviceStateService
 {
 
-    public function getStateIdentifiers(string $deviceNumber): array
+    public function getDeviceConfig(string $deviceNumber): ?array
     {
-        $prefix = strtoupper(substr($deviceNumber, 0, 2));
-
-        return config("rak_devices.state_identifiers.$prefix", []);
+        $prefix = strtoupper(substr($deviceNumber, 0, 3));
+        return config("rak_devices.devices.$prefix");
     }
 }

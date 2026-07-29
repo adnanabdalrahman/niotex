@@ -19,9 +19,9 @@ class InfluxDbService
     private const FILL = 'null';
 
     private const FILTER_TAGS = [
-        'dtwin_title',
-        'dtwin_id',
-        'state_identifier',
+        'geraeteNummer' => 'dtwin_title',
+        'dtwin_id' => 'dtwin_id',
+        'state_identifier' => 'state_identifier',
     ];
 
     public function __construct(
@@ -38,9 +38,6 @@ class InfluxDbService
     public function syncStateHistory(array $payload): void
     {
         $points = $this->getStateHistory($payload);
-
-        $payload['LS_Nummer'] = $payload['dtwin_title'];
-        $payload['GeraeteNummer'] = $payload['lsnummer'];
         DB::transaction(function () use ($points, $payload) {
             $this->deviceValService->store($points, $payload);
         });
@@ -80,13 +77,13 @@ class InfluxDbService
 
         $where = [];
 
-        foreach (self::FILTER_TAGS as $tag) {
-            if (!empty($data[$tag])) {
+        foreach (self::FILTER_TAGS as $payloadKey => $tagName) {
+            if (!empty($data[$payloadKey])) {
                 $where[] = $this->whereEquals(
-                    $tag,
-                    is_string($data[$tag])
-                        ? $this->escape($data[$tag])
-                        : $data[$tag]
+                    $tagName,
+                    is_string($data[$payloadKey])
+                        ? $this->escape($data[$payloadKey])
+                        : $data[$payloadKey]
                 );
             }
         }

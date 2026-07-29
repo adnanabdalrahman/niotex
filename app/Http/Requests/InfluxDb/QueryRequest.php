@@ -15,7 +15,7 @@ class QueryRequest extends FormRequest
     {
         return [
             'lsnummer' => ['required', 'string'],
-            'dtwin_title' => ['required', 'string'],
+            'geraeteNummer' => ['required', 'string'],
             'state_identifier' => ['required', 'string'],
             'from' => ['required', 'date'],
             'to' => ['required', 'date', 'after_or_equal:from'],

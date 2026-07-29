@@ -26,5 +26,5 @@ Route::prefix('v1')->group(function () {
     );
     Route::post('influxdb/states/gethistory', [NiotixInfluxDbController::class, 'getDeviceStateHistory']);
     Route::post('influxdb/states/syncDeviceStateHistory', [NiotixInfluxDbController::class, 'syncDeviceStateHistory']);
-    Route::post('/rak/history/sync', [NiotixInfluxDbController::class, 'syncDevicesStateHistoryForLiegenschaft']);
+    Route::post('/rak/history/syncDevicesStateHistoryForLiegenschaft', [NiotixInfluxDbController::class, 'syncDevicesStateHistoryForLiegenschaft']);
 });

@@ -17,8 +17,8 @@ class RakMadDeviceValService
             try {
                 RakMadDeviceVal::updateOrCreate(
                     [
-                        'LS_Nummer' => $payload['LS_Nummer'],
-                        'GeraeteNummer' => $payload['GeraeteNummer'],
+                        'LS_Nummer' => $payload['lsnummer'],
+                        'GeraeteNummer' => $payload['geraeteNummer'],
                         'Datum' => $point['date'],
                     ],
                     [

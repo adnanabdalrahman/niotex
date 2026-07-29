@@ -1,34 +1,56 @@
 <?php
-
 return [
 
-    'state_identifiers' => [
+    'devices' => [
 
-        '9Z' => [
-            'value_1',
-        ],
-
-        '8Z' => [
-            'value_1',
-        ],
-
-        '6Z' => [
-            'daily_cooling',
-            'daily_heating',
+        '9ZR' => [
+            'device_type' => 'WMZ',
+            'description' => '9ZRI0124858364',
+            'state_identifiers' => [
+                'value_1',
+            ],
         ],
 
-        '4B' => [
-            'value_1',
+        '8ZR' => [
+            'device_type' => 'WMZ',
+            'description' => 'Zenner PDC Water Meter (EMM metering)',
+            'state_identifiers' => [
+                'value_1',
+            ],
         ],
-        '4S' => [
-            'totalizer_heating',
-            'totalizer_heating_at_set_day',
+
+        '6ZR' => [
+            'device_type' => 'WMZ',
+            'description' => ' Zenner WMZ ',
+            'state_identifiers' => [
+                'daily_cooling',
+                'daily_heating',
+            ],
         ],
+
         '04B' => [
-            'value_1',
+            'device_type' => 'HKVE',
+            'description' => 'Zenner HKVE',
+            'state_identifiers' => [
+                'value_1',
+            ],
         ],
-        '9S' => [
-            'volume_totalizer',
+
+        '4SO' => [
+            'device_type' => 'HKV',
+            'description' => 'Sontex HKV 878',
+            'state_identifiers' => [
+                'totalizer_heating',
+                'totalizer_heating_at_set_day',
+            ]
+        ],
+
+        '9SO' => [
+            'device_type' => 'WATER',
+            'description' => 'Sontex Superaqua 1 (SCS)',
+            'state_identifiers' => [
+                'volume_totalizer',
+            ],
         ],
 
     ],
