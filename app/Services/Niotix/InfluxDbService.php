@@ -65,6 +65,9 @@ class InfluxDbService
                 'q' => $query,
             ]
         );
+        logger()->info(
+            data_get($response, 'results.0.series.0.values', [])
+        );
         return $this->extractMonthlyPoints(data_get($response, 'results.0.series.0.values', []));
     }
 

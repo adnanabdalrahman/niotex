@@ -12,7 +12,7 @@ return [
         ],
 
         '8ZR' => [
-            'device_type' => 'WMZ',
+            'device_type' => 'KWZ',
             'description' => 'Zenner PDC Water Meter (EMM metering)',
             'state_identifiers' => [
                 'value_1',

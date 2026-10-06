@@ -19,9 +19,9 @@ class InfluxDbServiceDaily
     private const FILL = 'null';
 
     private const FILTER_TAGS = [
-        'dtwin_title',
-        'dtwin_id',
-        'state_identifier',
+        'geraeteNummer' => 'dtwin_title',
+        'dtwin_id' => 'dtwin_id',
+        'state_identifier' => 'state_identifier',
     ];
 
     public function __construct(
@@ -56,7 +56,7 @@ class InfluxDbServiceDaily
             ]
         );
 
-        return $this->extractMonthlyPoints(
+        return $this->extractPoints(
             data_get($response, 'results.0.series.0.values', [])
         );
     }
@@ -80,13 +80,13 @@ class InfluxDbServiceDaily
 
         $where = [];
 
-        foreach (self::FILTER_TAGS as $tag) {
-            if (!empty($data[$tag])) {
+        foreach (self::FILTER_TAGS as $payloadKey => $tagName) {
+            if (!empty($data[$payloadKey])) {
                 $where[] = $this->whereEquals(
-                    $tag,
-                    is_string($data[$tag])
-                        ? $this->escape($data[$tag])
-                        : $data[$tag]
+                    $tagName,
+                    is_string($data[$payloadKey])
+                        ? $this->escape($data[$payloadKey])
+                        : $data[$payloadKey]
                 );
             }
         }
@@ -119,31 +119,20 @@ class InfluxDbServiceDaily
         return str_replace("'", "\\'", $value);
     }
 
-    private function extractMonthlyPoints(array $values): array
+    private function extractPoints(array $values): array
     {
-        // Remove null values
-        $values = array_filter($values, fn(array $row) => $row[1] !== null);
-        $months = [];
+        $result = [];
+
         foreach ($values as [$timestamp, $value]) {
-            $date = Carbon::createFromTimestampMs($timestamp);
-            $key = $date->format('Y-m');
-            $months[$key][] = [
+
+            $result[] = [
                 'timestamp' => $timestamp,
-                'date' => $date,
+                'date' => Carbon::createFromTimestampMs($timestamp)
+                    ->toDateTimeString(),
                 'value' => $value,
             ];
         }
-        $result = [];
-        foreach ($months as $month => $rows) {
-            usort($rows, fn($a, $b) => $a['timestamp'] <=> $b['timestamp']);
-            $last = end($rows);
-            $result[] = [
-                'month' => $month,
-                'date' => $last['date']->toDateString(),
-                'timestamp' => $last['timestamp'],
-                'value' => $last['value'],
-            ];
-        }
+
         return $result;
     }
 }

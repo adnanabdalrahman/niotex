@@ -21,33 +21,28 @@ class RakLiegenschaftHistorySyncService
      * @throws ConnectionException
      */
     public function sync(
-        string $lsNumber,
-        string $device_type,
-        string $from,
-        string $to,
+        string  $lsNumber,
+        ?string $device_type,
+        string  $from,
+        string  $to,
     ): array
     {
         $devicesCount = 0;
         $statesCount = 0;
         $deviceNumbers = $this->deviceService->getDeviceNumbers($lsNumber);
         foreach ($deviceNumbers as $deviceNumber) {
+            $deviceNumber = str_replace(["\r", "\n"], '', $deviceNumber);
+            $deviceNumber = trim($deviceNumber);
             $config = $this->deviceStateService->getDeviceConfig($deviceNumber);
             if ($config === null) {
                 continue;
             }
-            if (
-                !empty($device_type) &&
-                $config['device_type'] !== $device_type
-            ) {
+            if (!empty($device_type) && $config['device_type'] !== $device_type) {
                 continue;
             }
-
             $devicesCount++;
-
             foreach ($config['state_identifiers'] as $stateIdentifier) {
-
                 $statesCount++;
-
                 $this->influxDbService->syncStateHistory([
                     'dtwin_title' => $deviceNumber,
                     'state_identifier' => $stateIdentifier,

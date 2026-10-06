@@ -27,3 +27,12 @@ in all Requests validation like BP.
 9ZRI0124858404
 
 & "C:\CeosServerPlus\xampp\php\php.exe" artisan migrate
+
+
+
+
+
+Run : 
+
+C:\CeosServerPlus\xampp\php\php.exe artisan serve
+C:\CeosServerPlus\xampp\php\php.exe artisan queue:work

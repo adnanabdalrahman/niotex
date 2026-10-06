@@ -39,7 +39,8 @@ return [
             'connection' => env('DB_QUEUE_CONNECTION'),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
-            'retry_after' => (int)env('DB_QUEUE_RETRY_AFTER', 90),
+            // Must be longer than the longest job timeout (RakLiegenschaftHistorySyncJob: 3600s)
+            'retry_after' => (int)env('DB_QUEUE_RETRY_AFTER', 3700),
             'after_commit' => false,
         ],
         

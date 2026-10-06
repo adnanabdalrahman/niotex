@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\InfluxDb\QueryRequest;
 use App\Jobs\RakLiegenschaftHistorySyncJob;
 use App\Services\Niotix\InfluxDbService;
+use App\Services\Niotix\InfluxDbServiceDaily;
 use App\Services\RakLiegenschaftHistorySyncService;
 use App\Traits\ApiResponses;
 use Illuminate\Http\Client\ConnectionException;
@@ -18,14 +19,17 @@ class NiotixInfluxDbController extends Controller
     use ApiResponses;
 
     protected InfluxDbService $influxDbService;
+    protected InfluxDbServiceDaily $influxDbServiceDaily;
 
     public function __construct(
         InfluxDbService                             $influxDbService,
+        InfluxDbServiceDaily                        $influxDbServiceDaily,
         protected RakLiegenschaftHistorySyncService $service
     )
     {
 
         $this->influxDbService = $influxDbService;
+        $this->influxDbServiceDaily = $influxDbServiceDaily;
     }
 
     /**
@@ -70,5 +74,15 @@ class NiotixInfluxDbController extends Controller
         $result = $this->influxDbService->getStateHistory($request->validated());
         return $this->successResponse('Query executed successfully', $result);
     }
+
+    /**
+     * @throws ConnectionException
+     */
+    public function getDeviceDailyStateHistory(QueryRequest $request): JsonResponse
+    {
+        $result = $this->influxDbServiceDaily->getStateHistory($request->validated());
+        return $this->successResponse('Query executed successfully', $result);
+    }
+
 
 }
